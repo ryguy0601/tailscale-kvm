@@ -1,6 +1,7 @@
 import socket
 import json
 import ctypes
+from ctypes import wintypes
 import os
 import sys
 import time
@@ -45,9 +46,11 @@ user32.SetProcessDPIAware()
 
 screen_width = user32.GetSystemMetrics(0)
 screen_height = user32.GetSystemMetrics(1)
+center_x = screen_width // 2
+center_y = screen_height // 2
 
 is_remote = False
-last_mouse_pos = None
+ignore_next_warp = False
 last_clipboard_text = ""
 sock = None
 sock_lock = threading.Lock()
@@ -105,23 +108,23 @@ def clipboard_monitor():
         time.sleep(0.5)
 
 def switch_to_remote():
-    global is_remote, last_mouse_pos
+    global is_remote, ignore_next_warp
     if sock is None:
         return
     is_remote = True
     print("[*] Control shifted -> Omarchy (Hyprland)")
-    # Pin cursor to the rightmost boundary edge so it stays active
-    rect = (ctypes.c_long * 4)(screen_width - 1, 0, screen_width, screen_height)
-    user32.ClipCursor(ctypes.byref(rect))
+    # Warp cursor to center of screen for full 360-degree relative mouse movement
+    ignore_next_warp = True
+    user32.SetCursorPos(center_x, center_y)
 
 def switch_to_local():
-    global is_remote
+    global is_remote, ignore_next_warp
     is_remote = False
     print("[*] Control shifted -> Windows Local")
     user32.ClipCursor(None)
-    user32.SetCursorPos(screen_width - 60, screen_height // 2)
-
-# --- Win32 Low-Level Event Interceptors (Suppresses Local Windows Duplication) ---
+    ignore_next_warp = True
+    # Place cursor just inside the right edge of Windows
+    user32.SetCursorPos(screen_width - 80, center_y)
 
 # Windows Message IDs
 WM_MOUSEMOVE   = 0x0200
@@ -142,33 +145,41 @@ WM_SYSKEYUP    = 0x0105
 VK_F12         = 0x7B
 
 def win32_mouse_filter(msg, data):
-    global is_remote, last_mouse_pos
+    global is_remote, ignore_next_warp
 
     x = data.pt.x
     y = data.pt.y
 
-    # Check for crossing to remote boundary
+    # Check for boundary crossing to Omarchy
     if not is_remote:
         if x >= screen_width - 2:
-            last_mouse_pos = (x, y)
             switch_to_remote()
             if mouse_listener:
                 mouse_listener.suppress_event()
             return False
         return True
 
-    # When in remote mode:
-    # 1. Dispatch mouse moves
+    # In remote mode:
+    # 1. Handle mouse movement
     if msg == WM_MOUSEMOVE:
-        if last_mouse_pos is not None:
-            dx = x - last_mouse_pos[0]
-            dy = y - last_mouse_pos[1]
-            if dx != 0 or dy != 0:
-                send_msg({"type": "mouse_move", "dx": dx, "dy": dy})
-        last_mouse_pos = (x, y)
-        return True
+        if ignore_next_warp:
+            ignore_next_warp = False
+            return False
 
-    # 2. Dispatch clicks and SUPPRESS them locally so Windows doesn't click
+        dx = x - center_x
+        dy = y - center_y
+
+        if dx != 0 or dy != 0:
+            send_msg({"type": "mouse_move", "dx": dx, "dy": dy})
+            # Snap cursor back to center to allow infinite free movement in all directions (X & Y)
+            ignore_next_warp = True
+            user32.SetCursorPos(center_x, center_y)
+
+        if mouse_listener:
+            mouse_listener.suppress_event()
+        return False
+
+    # 2. Clicks (suppressed locally, sent to Omarchy)
     if msg in (WM_LBUTTONDOWN, WM_RBUTTONDOWN, WM_MBUTTONDOWN):
         btn = "left" if msg == WM_LBUTTONDOWN else ("right" if msg == WM_RBUTTONDOWN else "middle")
         send_msg({"type": "mouse_click", "button": btn, "action": "down"})
@@ -183,9 +194,8 @@ def win32_mouse_filter(msg, data):
             mouse_listener.suppress_event()
         return False
 
-    # 3. Dispatch scrolls and SUPPRESS them locally
+    # 3. Scrolls (suppressed locally, sent to Omarchy)
     if msg == WM_MOUSEWHEEL:
-        # High word of mouseData contains wheel delta (standard increment is 120)
         wheel_delta = ctypes.c_short(data.mouseData >> 16).value
         scroll_units = 1 if wheel_delta > 0 else -1
         send_msg({"type": "mouse_scroll", "dx": 0, "dy": scroll_units})
@@ -219,7 +229,6 @@ def win32_keyboard_filter(msg, data):
     if evdev_code is not None:
         send_msg({"type": "key", "code": evdev_code, "action": action})
 
-    # SUPPRESS keystroke so Windows doesn't execute hotkeys, type letters, or backspace locally
     if keyboard_listener:
         keyboard_listener.suppress_event()
     return False
