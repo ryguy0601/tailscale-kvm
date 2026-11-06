@@ -60,18 +60,19 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 <div class="container">
 
 <h1>tailscale-kvm — Complete Call Flow &amp; Architecture Documentation</h1>
-<p class="subtitle">Generated from graphify knowledge graph: 40 nodes, 51 edges, 8 communities. Commit: c4c8086</p>
+<p class="subtitle">Generated from graphify knowledge graph: 129 nodes, 162 edges, 13 communities. Commit: 9637a21</p>
 
 <div class="nav">
     <a href="#overview">Architecture Overview</a>
+    <a href="#extract-pipeline">Extraction Pipeline</a>
     <a href="#build-graph">Graph Build</a>
-    <a href="#kvm-clientpy-linux">Kvm Clientpy Linux</a>
-    <a href="#kvm-hostpy-windows">Kvm Hostpy Windows</a>
+    <a href="#cli-skills">CLI &amp; Skill Installers</a>
     <a href="#windows-kvm-hostpy">Windows Kvm Hostpy</a>
-    <a href="#evdevpy-windows-translate">Evdevpy Windows Translate</a>
+    <a href="#kvm-clientpy-linux">Kvm Clientpy Linux</a>
     <a href="#setup-receiversh-linux">Setup Receiversh Linux</a>
     <a href="#setup-windowsps1-windows">Setup Windowsps1 Windows</a>
-    <a href="#windows-kvm-hostpy-542c59">Windows Kvm Hostpy</a>
+    <a href="#host-tailscale-kvm">Host Tailscale Kvm</a>
+    <a href="#receiver-tailscale-kvm">Receiver Tailscale Kvm</a>
 </div>
 
 <!-- ====== Architecture Overview ====== -->
@@ -81,28 +82,26 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
+    EXTRACT_PIPELINE_5F350230("Extraction Pipeline<br/><small>29 nodes</small>")
+    class EXTRACT_PIPELINE_5F350230 module;
     BUILD_GRAPH_321CBB04("Graph Build<br/><small>10 nodes</small>")
     class BUILD_GRAPH_321CBB04 module;
-    KVM_CLIENTPY_LINUX_1D25B8C9("Kvm Clientpy Linux<br/><small>9 nodes</small>")
-    class KVM_CLIENTPY_LINUX_1D25B8C9 module;
-    KVM_HOSTPY_WINDOWS_E23C7866("Kvm Hostpy Windows<br/><small>8 nodes</small>")
-    class KVM_HOSTPY_WINDOWS_E23C7866 module;
-    WINDOWS_KVM_HOSTPY_8B2C7F19("Windows Kvm Hostpy<br/><small>5 nodes</small>")
+    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>54 nodes</small>")
+    class CLI_SKILLS_9964CBB8 module;
+    WINDOWS_KVM_HOSTPY_8B2C7F19("Windows Kvm Hostpy<br/><small>19 nodes</small>")
     class WINDOWS_KVM_HOSTPY_8B2C7F19 module;
-    EVDEVPY_WINDOWS_TRANSLATE_3D23AE70("Evdevpy Windows Translate<br/><small>2 nodes</small>")
-    class EVDEVPY_WINDOWS_TRANSLATE_3D23AE70 module;
+    KVM_CLIENTPY_LINUX_1D25B8C9("Kvm Clientpy Linux<br/><small>11 nodes</small>")
+    class KVM_CLIENTPY_LINUX_1D25B8C9 module;
     SETUP_RECEIVERSH_LINUX_6530A4CC("Setup Receiversh Linux<br/><small>2 nodes</small>")
     class SETUP_RECEIVERSH_LINUX_6530A4CC module;
     SETUP_WINDOWSPS1_WINDOWS_6F96163F("Setup Windowsps1 Windows<br/><small>2 nodes</small>")
     class SETUP_WINDOWSPS1_WINDOWS_6F96163F module;
-    WINDOWS_KVM_HOSTPY_542C59_E489F400("Windows Kvm Hostpy<br/><small>2 nodes</small>")
-    class WINDOWS_KVM_HOSTPY_542C59_E489F400 module;
-    KVM_HOSTPY_WINDOWS_E23C7866 -->|contains x5| WINDOWS_KVM_HOSTPY_8B2C7F19
-    KVM_HOSTPY_WINDOWS_E23C7866 -->|imports x3| KVM_CLIENTPY_LINUX_1D25B8C9
-    KVM_HOSTPY_WINDOWS_E23C7866 -->|imports x2| EVDEVPY_WINDOWS_TRANSLATE_3D23AE70
-    KVM_HOSTPY_WINDOWS_E23C7866 -->|contains x2| WINDOWS_KVM_HOSTPY_542C59_E489F400
-    WINDOWS_KVM_HOSTPY_8B2C7F19 -->|calls| EVDEVPY_WINDOWS_TRANSLATE_3D23AE70
-    WINDOWS_KVM_HOSTPY_542C59_E489F400 -->|calls| WINDOWS_KVM_HOSTPY_8B2C7F19
+    HOST_TAILSCALE_KVM_5F916E6E("Host Tailscale Kvm<br/><small>1 nodes</small>")
+    class HOST_TAILSCALE_KVM_5F916E6E module;
+    RECEIVER_TAILSCALE_KVM_389A10DC("Receiver Tailscale Kvm<br/><small>1 nodes</small>")
+    class RECEIVER_TAILSCALE_KVM_389A10DC module;
+    CLI_SKILLS_9964CBB8 -->|contains x10| EXTRACT_PIPELINE_5F350230
+    WINDOWS_KVM_HOSTPY_8B2C7F19 -->|imports x3| KVM_CLIENTPY_LINUX_1D25B8C9
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -119,30 +118,360 @@ flowchart LR
     <h4>Architecture Layers</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>Layer</th><th>Nodes</th><th>Communities</th></tr>
-      <tr><td>Graph Build</td><td>10</td><td><code>5</code></td></tr><tr><td>Kvm Clientpy Linux</td><td>9</td><td><code>0</code></td></tr><tr><td>Kvm Hostpy Windows</td><td>8</td><td><code>1</code></td></tr><tr><td>Windows Kvm Hostpy</td><td>5</td><td><code>2</code></td></tr><tr><td>Evdevpy Windows Translate</td><td>2</td><td><code>3</code></td></tr><tr><td>Setup Receiversh Linux</td><td>2</td><td><code>4</code></td></tr><tr><td>Setup Windowsps1 Windows</td><td>2</td><td><code>6</code></td></tr><tr><td>Windows Kvm Hostpy</td><td>2</td><td><code>7</code></td></tr>
+      <tr><td>Extraction Pipeline</td><td>29</td><td><code>7, 10, 8, 9</code></td></tr><tr><td>Graph Build</td><td>10</td><td><code>5</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>54</td><td><code>2, 3</code></td></tr><tr><td>Windows Kvm Hostpy</td><td>19</td><td><code>1</code></td></tr><tr><td>Kvm Clientpy Linux</td><td>11</td><td><code>0</code></td></tr><tr><td>Setup Receiversh Linux</td><td>2</td><td><code>4</code></td></tr><tr><td>Setup Windowsps1 Windows</td><td>2</td><td><code>6</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Core Flow</h4>
-    <div class="arrow-chain">Graph Build -&gt; Kvm Clientpy Linux -&gt; Kvm Hostpy Windows -&gt; Windows Kvm Hostpy -&gt; Evdevpy Windows Translate -&gt; Setup Receiversh Linux -&gt; Setup Windowsps1 Windows</div>
+    <div class="arrow-chain">Graph Build -&gt; Extraction Pipeline -&gt; CLI &amp; Skill Installers -&gt; Windows Kvm Hostpy -&gt; Kvm Clientpy Linux -&gt; Setup Receiversh Linux -&gt; Setup Windowsps1 Windows</div>
   </div>
 </div>
 <div class="grid">
   <div class="card">
     <h4>Graph Report Highlights</h4>
     <ul>
-      <li>40 nodes · 51 edges · 8 communities (2 shown, 6 thin omitted)</li>
-      <li>Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 2 edges (avg confidence: 0.85)</li>
+      <li>129 nodes · 162 edges · 13 communities (9 shown, 4 thin omitted)</li>
+      <li>Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 2 edges (avg confidence: 0.85)</li>
       <li>Token cost: 0 input · 0 output</li>
-      <li>1. `⚡ Tailscale Software KVM: Windows Host to Omarchy / Hyprland` - 7 edges</li>
-      <li>2. `send_msg()` - 6 edges</li>
-      <li>3. `win32_keyboard_filter()` - 4 edges</li>
+      <li>1. `HostMessage` - 7 edges</li>
+      <li>2. `keyboard_hook_proc()` - 7 edges</li>
+      <li>3. `⚡ Tailscale Software KVM: Windows Host to Omarchy / Hyprland` - 7 edges</li>
     </ul>
   </div>
 </div>
 <hr>
-<!-- ====== 2. Graph Build ====== -->
-<h2 id="build-graph">2. Graph Build</h2>
+<!-- ====== 2. Extraction Pipeline ====== -->
+<h2 id="extract-pipeline">2. Extraction Pipeline</h2>
+<p>Extraction Pipeline groups implementation around rust, mainrs, windows, host, mostly in windows-host/src/main.rs, linux-receiver/src/main.rs, rust/README.md. This section covers 29 nodes and 29 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Extraction Pipeline (29 nodes, 29 edges)
+    subgraph extract_pipeline_windows_host_src_main_rs_4521a6f8["windows-host/src/main.rs"]
+        rust_windows_host_src_main_keyboard_hook_proc_4f9930d6("keyboard_hook_proc()<br/><small>windows-host/src/main.rs</small>")
+        rust_windows_host_src_main_mouse_hook_proc_fd6f0c48("mouse_hook_proc()<br/><small>windows-host/src/main.rs</small>")
+        rust_windows_host_src_main_start_clipboard_sync_9f84f0ae("start_clipboard_sync()<br/><small>windows-host/src/main.rs</small>")
+        rust_windows_host_src_main_switch_to_local_edf722af("switch_to_local()<br/><small>windows-host/src/main.rs</small>")
+        rust_windows_host_src_main_send_payload_9d2c6efd("send_payload()<br/><small>windows-host/src/main.rs</small>")
+        rust_windows_host_src_main_switch_to_remote_7434905e("switch_to_remote()<br/><small>windows-host/src/main.rs</small>")
+        rust_windows_host_src_main_hostmessage_clipboard_7c828e0d("Clipboard<br/><small>windows-host/src/main.rs</small>")
+        rust_windows_host_src_main_hostmessage_77651c52("HostMessage<br/><small>windows-host/src/main.rs</small>")
+    end
+    subgraph extract_pipeline_linux_receiver_src_main_rs_cbf421fe["linux-receiver/src/main.rs"]
+        rust_linux_receiver_src_main_incomingmessage_cli_51ac64aa("Clipboard<br/><small>linux-receiver/src/main.rs</small>")
+        rust_linux_receiver_src_main_incomingmessage_fcb9d552("IncomingMessage<br/><small>linux-receiver/src/main.rs</small>")
+        rust_linux_receiver_src_main_incomingmessage_key_6006abf2("Key<br/><small>linux-receiver/src/main.rs</small>")
+        rust_linux_receiver_src_main_incomingmessage_mou_645a40a2("MouseClick<br/><small>linux-receiver/src/main.rs</small>")
+        rust_linux_receiver_src_main_incomingmessage_mou_374c121b("MouseMove<br/><small>linux-receiver/src/main.rs</small>")
+        rust_linux_receiver_src_main_incomingmessage_mou_b1a1d7bd("MouseScroll<br/><small>linux-receiver/src/main.rs</small>")
+    end
+    subgraph extract_pipeline_External_generated_e23197dc["External / generated"]
+        lparam_c77e3ad0("LPARAM")
+        lresult_38a909cb("LRESULT")
+        wparam_99f6356b("WPARAM")
+    end
+    rust_windows_host_src_vk_map_translate_vk_7d47532a("translate_vk()<br/><small>windows-host/src/vk_map.rs</small>")
+    rust_windows_host_src_main_keyboard_hook_proc_4f9930d6 -->|calls| rust_windows_host_src_main_switch_to_local_edf722af
+    rust_windows_host_src_main_keyboard_hook_proc_4f9930d6 -->|calls| rust_windows_host_src_vk_map_translate_vk_7d47532a
+    rust_windows_host_src_main_keyboard_hook_proc_4f9930d6 -->|calls| rust_windows_host_src_main_send_payload_9d2c6efd
+    rust_windows_host_src_main_mouse_hook_proc_fd6f0c48 -->|calls| rust_windows_host_src_main_switch_to_remote_7434905e
+    rust_windows_host_src_main_mouse_hook_proc_fd6f0c48 -->|calls| rust_windows_host_src_main_send_payload_9d2c6efd
+    rust_windows_host_src_main_start_clipboard_sync_9f84f0ae -->|calls| rust_windows_host_src_main_send_payload_9d2c6efd
+    %% Omitted for readability: 11 nodes, 0 edges
+    class rust_windows_host_src_main_keyboard_hook_proc_4f9930d6 ui;
+    class rust_windows_host_src_main_mouse_hook_proc_fd6f0c48 ui;
+    class rust_windows_host_src_main_start_clipboard_sync_9f84f0ae entry;
+    class rust_windows_host_src_main_switch_to_local_edf722af function;
+    class rust_windows_host_src_main_send_payload_9d2c6efd function;
+    class rust_windows_host_src_main_switch_to_remote_7434905e function;
+    class rust_windows_host_src_main_hostmessage_clipboard_7c828e0d entry;
+    class rust_windows_host_src_main_hostmessage_77651c52 klass;
+    class rust_linux_receiver_src_main_incomingmessage_cli_51ac64aa entry;
+    class rust_linux_receiver_src_main_incomingmessage_fcb9d552 klass;
+    class rust_linux_receiver_src_main_incomingmessage_key_6006abf2 klass;
+    class rust_linux_receiver_src_main_incomingmessage_mou_645a40a2 entry;
+    class rust_linux_receiver_src_main_incomingmessage_mou_374c121b klass;
+    class rust_linux_receiver_src_main_incomingmessage_mou_b1a1d7bd klass;
+    class lparam_c77e3ad0 klass;
+    class lresult_38a909cb klass;
+    class wparam_99f6356b klass;
+    class rust_windows_host_src_vk_map_translate_vk_7d47532a function;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>LPARAM</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>LPARAM node in project.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>LRESULT</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>LRESULT node in project.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>keyboard_hook_proc()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>send_payload()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small><br><code>switch_to_local()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small><br><code>translate_vk()</code><br><small style="color:var(--muted)">windows-host/src/vk_map.rs</small></td>
+  <td>keyboard_hook_proc() node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>mouse_hook_proc()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>send_payload()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small><br><code>switch_to_remote()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>mouse_hook_proc() node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>send_payload()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>keyboard_hook_proc()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small><br><code>mouse_hook_proc()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small><br><code>start_clipboard_sync()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>send_payload() node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>start_clipboard_sync()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-cmd">Entry</span></td>
+  <td><code>main()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><code>send_payload()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>start_clipboard_sync() node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>switch_to_local()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>keyboard_hook_proc()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small><br><code>start_receiver_listener()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>switch_to_local() node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>switch_to_remote()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>mouse_hook_proc()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>switch_to_remote() node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>vk_map.rs</code><br><small style="color:var(--muted)">windows-host/src/vk_map.rs</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>vk_map.rs node in windows-host/src/vk_map.rs.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>translate_vk()</code><br><small style="color:var(--muted)">windows-host/src/vk_map.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>keyboard_hook_proc()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>translate_vk() node in windows-host/src/vk_map.rs.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>WPARAM</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>WPARAM node in project.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>HostMessage</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>HostMessage node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>Clipboard</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-cmd">Entry</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Clipboard node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>Key</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Key node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>MouseClick</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-cmd">Entry</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>MouseClick node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>MouseMove</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>MouseMove node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>MouseScroll</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>MouseScroll node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>IncomingMessage</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>IncomingMessage node in linux-receiver/src/main.rs.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>Clipboard</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td><span class="tag tag-cmd">Entry</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Clipboard node in linux-receiver/src/main.rs.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>Key</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Key node in linux-receiver/src/main.rs.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>MouseClick</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td><span class="tag tag-cmd">Entry</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>MouseClick node in linux-receiver/src/main.rs.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>MouseMove</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>MouseMove node in linux-receiver/src/main.rs.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>MouseScroll</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>MouseScroll node in linux-receiver/src/main.rs.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>rust/README.md</code><br><small style="color:var(--muted)">rust/README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing rust/README.md.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>Architecture</code><br><small style="color:var(--muted)">rust/README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing Architecture.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>Building &amp; Running</code><br><small style="color:var(--muted)">rust/README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing Building &amp; Running.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>Linux Receiver (`linux-receiver`)</code><br><small style="color:var(--muted)">rust/README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing Linux Receiver (`linux-receiver`).</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>Tailscale KVM (Rust Edition)</code><br><small style="color:var(--muted)">rust/README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing Tailscale KVM (Rust Edition).</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>Windows Host (`windows-host`)</code><br><small style="color:var(--muted)">rust/README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing Windows Host (`windows-host`).</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>windows-host/src/main.rs</code></td><td>12 nodes</td></tr>
+<tr><td><code>rust/README.md</code></td><td>6 nodes</td></tr>
+<tr><td><code>linux-receiver/src/main.rs</code></td><td>6 nodes</td></tr>
+<tr><td><code>windows-host/src/vk_map.rs</code></td><td>2 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: case of x10, references x7, calls x6, contains x6. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 3. Graph Build ====== -->
+<h2 id="build-graph">3. Graph Build</h2>
 <p>Graph Build groups implementation around readmemd, setup, omarchy, hyprland, mostly in README.md. This section covers 10 nodes and 9 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -296,45 +625,73 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 3. Kvm Clientpy Linux ====== -->
-<h2 id="kvm-clientpy-linux">3. Kvm Clientpy Linux</h2>
-<p>Kvm Clientpy Linux groups implementation around kvm, clientpy, linux, handle, mostly in linux/kvm_client.py. This section covers 9 nodes and 12 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<!-- ====== 4. CLI & Skill Installers ====== -->
+<h2 id="cli-skills">4. CLI &amp; Skill Installers</h2>
+<p>CLI &amp; Skill Installers groups implementation around mainrs, rust, windows, host, mostly in windows-host/src/main.rs, linux-receiver/src/main.rs. This section covers 54 nodes and 68 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Kvm Clientpy Linux (9 nodes, 12 edges)
-    subgraph kvm_clientpy_linux_External_generated_faea0d87["External / generated"]
-        json_05d97e6e("json")
-        subprocess_d2d1e1c0("subprocess")
-        asyncio_4f5a0f01("asyncio")
-        os_999a3419("os")
-        sys_b4c56ee8("sys")
-        evdev_59c81b91("evdev")
+    %% Section: CLI &amp; Skill Installers (54 nodes, 68 edges)
+    subgraph cli_skills_External_generated_0c226fa1["External / generated"]
+        thread_c283e375("thread")
+        duration_5d3f344b("duration")
+        foundation_ec9624c8("foundation")
+        keyboardandmouse_a5f25282("keyboardandmouse")
+        windowsandmessaging_f2e4b40c("windowsandmessaging")
+        deserialize_59df4159("deserialize")
+        serialize_8b98a923("serialize")
+        env_920f8f58("env")
+        fs_3f4bb586("fs")
     end
-    subgraph kvm_clientpy_linux_linux_kvm_client_py_98e06281["linux/kvm_client.py"]
-        linux_kvm_client_31ae4fdf("kvm_client.py")
-        linux_kvm_client_handle_client_2f6754fd("handle_client()<br/><small>linux/kvm_client.py</small>")
-        linux_kvm_client_main_7f3e52a5("main()<br/><small>linux/kvm_client.py</small>")
+    subgraph cli_skills_linux_receiver_src_main_rs_51402838["linux-receiver/src/main.rs"]
+        rust_linux_receiver_src_main_fed6ac4c("main.rs")
+        rust_linux_receiver_src_main_main_a4a0b182("main()<br/><small>linux-receiver/src/main.rs</small>")
+        rust_linux_receiver_src_main_handle_connection_4d993d8b("handle_connection()<br/><small>linux-receiver/src/main.rs</small>")
+        rust_linux_receiver_src_main_get_cursor_x_5364522c("get_cursor_x()<br/><small>linux-receiver/src/main.rs</small>")
+        rust_linux_receiver_src_main_get_hyprland_left_b_95550d49("get_hyprland_left_bound()<br/><small>linux-receiver/src/main.rs</small>")
     end
-    linux_kvm_client_handle_client_2f6754fd -->|calls| json_05d97e6e
-    linux_kvm_client_handle_client_2f6754fd -->|calls| subprocess_d2d1e1c0
-    linux_kvm_client_main_7f3e52a5 -->|calls| asyncio_4f5a0f01
-    linux_kvm_client_31ae4fdf -->|imports| asyncio_4f5a0f01
-    linux_kvm_client_31ae4fdf -->|imports| json_05d97e6e
-    linux_kvm_client_31ae4fdf -->|imports| subprocess_d2d1e1c0
-    linux_kvm_client_31ae4fdf -->|imports| os_999a3419
-    linux_kvm_client_31ae4fdf -->|imports| sys_b4c56ee8
-    linux_kvm_client_31ae4fdf -->|imports| evdev_59c81b91
-    class json_05d97e6e function;
-    class subprocess_d2d1e1c0 function;
-    class asyncio_4f5a0f01 async;
-    class os_999a3419 function;
-    class sys_b4c56ee8 function;
-    class evdev_59c81b91 function;
-    class linux_kvm_client_31ae4fdf entry;
-    class linux_kvm_client_handle_client_2f6754fd entry;
-    class linux_kvm_client_main_7f3e52a5 function;
+    subgraph cli_skills_windows_host_src_main_rs_45a5b51b["windows-host/src/main.rs"]
+        rust_windows_host_src_main_78da2b9e("main.rs")
+        rust_windows_host_src_main_main_358da386("main()<br/><small>windows-host/src/main.rs</small>")
+        rust_windows_host_src_main_get_config_ip_4d8e971e("get_config_ip()<br/><small>windows-host/src/main.rs</small>")
+        rust_windows_host_src_main_start_receiver_listen_499898b0("start_receiver_listener()<br/><small>windows-host/src/main.rs</small>")
+    end
+    rust_windows_host_src_main_main_358da386 -->|calls| rust_windows_host_src_main_get_config_ip_4d8e971e
+    rust_windows_host_src_main_main_358da386 -->|calls| rust_windows_host_src_main_start_receiver_listen_499898b0
+    rust_linux_receiver_src_main_handle_connection_4d993d8b -->|calls| rust_linux_receiver_src_main_get_cursor_x_5364522c
+    rust_linux_receiver_src_main_main_a4a0b182 -->|calls| rust_linux_receiver_src_main_get_hyprland_left_b_95550d49
+    rust_linux_receiver_src_main_main_a4a0b182 -->|calls| rust_linux_receiver_src_main_handle_connection_4d993d8b
+    rust_windows_host_src_main_78da2b9e -->|imports| thread_c283e375
+    rust_windows_host_src_main_78da2b9e -->|imports| duration_5d3f344b
+    rust_windows_host_src_main_78da2b9e -->|imports| foundation_ec9624c8
+    rust_windows_host_src_main_78da2b9e -->|imports| keyboardandmouse_a5f25282
+    rust_windows_host_src_main_78da2b9e -->|imports| windowsandmessaging_f2e4b40c
+    rust_windows_host_src_main_78da2b9e -->|imports| deserialize_59df4159
+    rust_windows_host_src_main_78da2b9e -->|imports| serialize_8b98a923
+    rust_windows_host_src_main_78da2b9e -->|imports| env_920f8f58
+    rust_windows_host_src_main_78da2b9e -->|imports| fs_3f4bb586
+    rust_linux_receiver_src_main_fed6ac4c -->|imports| deserialize_59df4159
+    rust_linux_receiver_src_main_fed6ac4c -->|imports| serialize_8b98a923
+    %% Omitted for readability: 36 nodes, 0 edges
+    class thread_c283e375 function;
+    class duration_5d3f344b function;
+    class foundation_ec9624c8 function;
+    class keyboardandmouse_a5f25282 function;
+    class windowsandmessaging_f2e4b40c function;
+    class deserialize_59df4159 function;
+    class serialize_8b98a923 function;
+    class env_920f8f58 function;
+    class fs_3f4bb586 function;
+    class rust_linux_receiver_src_main_fed6ac4c module;
+    class rust_linux_receiver_src_main_main_a4a0b182 function;
+    class rust_linux_receiver_src_main_handle_connection_4d993d8b function;
+    class rust_linux_receiver_src_main_get_cursor_x_5364522c function;
+    class rust_linux_receiver_src_main_get_hyprland_left_b_95550d49 function;
+    class rust_windows_host_src_main_78da2b9e module;
+    class rust_windows_host_src_main_main_358da386 function;
+    class rust_windows_host_src_main_get_config_ip_4d8e971e function;
+    class rust_windows_host_src_main_start_receiver_listen_499898b0 function;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -358,75 +715,243 @@ flowchart LR
 </tr>
 <tr>
   <td>1</td>
-  <td><code>handle_client()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
-  <td><span class="tag tag-cmd">Entry</span></td>
-  <td><code>main()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
-  <td><code>json</code><br><code>subprocess</code></td>
-  <td>handle_client() node in linux/kvm_client.py.</td>
+  <td><code>ReceiverMessage</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>ReceiverMessage node in windows-host/src/main.rs.</td>
 </tr>
 <tr>
   <td>2</td>
-  <td><code>main()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>asyncio</code><br><code>handle_client()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
-  <td>main() node in linux/kvm_client.py.</td>
+  <td><code>AtomicBool</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>AtomicBool node in project.</td>
 </tr>
 <tr>
   <td>3</td>
-  <td><code>kvm_client.py</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
-  <td><span class="tag tag-cmd">Entry</span></td>
+  <td><code>HHOOK</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-hook">UI</span></td>
   <td>External entry / no inbound edge</td>
-  <td><code>asyncio</code><br><code>evdev</code><br><code>json</code><br>+3 more</td>
-  <td>Module file in linux/kvm_client.py.</td>
+  <td>No direct outbound edge</td>
+  <td>HHOOK node in project.</td>
 </tr>
 <tr>
   <td>4</td>
-  <td><code>asyncio</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-async">Async</span></td>
-  <td><code>kvm_client.py</code><br><small style="color:var(--muted)">linux/kvm_client.py</small><br><code>main()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
-  <td>No direct outbound edge</td>
-  <td>asyncio node in project.</td>
+  <td><code>windows-host/src/main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>AtomicBool</code><br><code>bufread</code><br><code>bufreader</code><br>+13 more</td>
+  <td>windows-host/src/main.rs node in windows-host/src/main.rs.</td>
 </tr>
 <tr>
   <td>5</td>
-  <td><code>evdev</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>kvm_client.py</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
+  <td><code>CENTER_X</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>evdev node in project.</td>
+  <td>CENTER_X node in windows-host/src/main.rs.</td>
 </tr>
 <tr>
   <td>6</td>
-  <td><code>json</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>handle_client()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small><br><code>kvm_client.py</code><br><small style="color:var(--muted)">linux/kvm_client.py</small><br><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td><code>CENTER_Y</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>json node in project.</td>
+  <td>CENTER_Y node in windows-host/src/main.rs.</td>
 </tr>
 <tr>
   <td>7</td>
-  <td><code>os</code><br><small style="color:var(--muted)"></small></td>
+  <td><code>get_config_ip()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
-  <td><code>kvm_client.py</code><br><small style="color:var(--muted)">linux/kvm_client.py</small><br><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td><code>main()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>os node in project.</td>
+  <td>Reads, resolves, or persists project configuration.</td>
 </tr>
 <tr>
   <td>8</td>
-  <td><code>subprocess</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>handle_client()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small><br><code>kvm_client.py</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
+  <td><code>IGNORE_NEXT_WARP</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>subprocess node in project.</td>
+  <td>IGNORE_NEXT_WARP node in windows-host/src/main.rs.</td>
 </tr>
 <tr>
   <td>9</td>
-  <td><code>sys</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>kvm_client.py</code><br><small style="color:var(--muted)">linux/kvm_client.py</small><br><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td><code>IS_REMOTE</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>sys node in project.</td>
+  <td>IS_REMOTE node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>KEYBOARD_HOOK</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>KEYBOARD_HOOK node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>main()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>get_config_ip()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small><br><code>start_clipboard_sync()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small><br><code>start_receiver_listener()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>main() node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>MOUSE_HOOK</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>MOUSE_HOOK node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>SwitchToLocal</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>SwitchToLocal node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>Mutex</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>Mutex node in project.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>TcpStream</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>TcpStream node in project.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>SCREEN_HEIGHT</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>SCREEN_HEIGHT node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>SCREEN_WIDTH</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>SCREEN_WIDTH node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>start_receiver_listener()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><code>switch_to_local()</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>start_receiver_listener() node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>STREAM_SENDER</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>STREAM_SENDER node in windows-host/src/main.rs.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>bufread</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>bufread node in project.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>deserialize</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small><br><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>deserialize node in project.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>duration</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>duration node in project.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>env</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>env node in project.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>foundation</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>foundation node in project.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>fs</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>fs node in project.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>keyboardandmouse</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>keyboardandmouse node in project.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>ordering</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>ordering node in project.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>serialize</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small><br><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>serialize node in project.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>thread</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>thread node in project.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>windowsandmessaging</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>windowsandmessaging node in project.</td>
 </tr>
 </table>
 
@@ -435,25 +960,38 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>linux/kvm_client.py</code></td><td>3 nodes</td></tr>
+      <tr><td><code>windows-host/src/main.rs</code></td><td>15 nodes</td></tr>
+<tr><td><code>linux-receiver/src/main.rs</code></td><td>7 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: imports x5, calls x3, contains x2, indirect call x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: imports x33, contains x18, references x10, calls x5. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
 
-<!-- ====== 4. Kvm Hostpy Windows ====== -->
-<h2 id="kvm-hostpy-windows">4. Kvm Hostpy Windows</h2>
-<p>Kvm Hostpy Windows groups implementation around kvm, hostpy, windows, get, mostly in windows/kvm_host.py. This section covers 8 nodes and 7 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<!-- ====== 5. Windows Kvm Hostpy ====== -->
+<h2 id="windows-kvm-hostpy">5. Windows Kvm Hostpy</h2>
+<p>Windows Kvm Hostpy groups implementation around windows, kvm, hostpy, omarchy, mostly in windows/kvm_host.py, windows/vk_to_evdev.py. This section covers 19 nodes and 28 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Kvm Hostpy Windows (8 nodes, 7 edges)
-    subgraph kvm_hostpy_windows_External_generated_87988506["External / generated"]
+    %% Section: Windows Kvm Hostpy (19 nodes, 28 edges)
+    subgraph windows_kvm_hostpy_windows_kvm_host_py_db8a0e8a["windows/kvm_host.py"]
+        windows_kvm_host_1fcaa606("kvm_host.py")
+        windows_kvm_host_win32_keyboard_filter_67b0154b("win32_keyboard_filter()<br/><small>windows/kvm_host.py</small>")
+        windows_kvm_host_win32_mouse_filter_faca2bba("win32_mouse_filter()<br/><small>windows/kvm_host.py</small>")
+        windows_kvm_host_clipboard_monitor_29db2b3b("clipboard_monitor()<br/><small>windows/kvm_host.py</small>")
+        windows_kvm_host_listen_to_receiver_560f9534("listen_to_receiver()<br/><small>windows/kvm_host.py</small>")
+        windows_kvm_host_send_msg_ec383f4d("send_msg()<br/><small>windows/kvm_host.py</small>")
+        windows_kvm_host_switch_to_local_e83fd8cf("switch_to_local()<br/><small>windows/kvm_host.py</small>")
+        windows_kvm_host_switch_to_remote_39387692("switch_to_remote()<br/><small>windows/kvm_host.py</small>")
+        windows_kvm_host_connect_to_omarchy_e6b5bce7("connect_to_omarchy()<br/><small>windows/kvm_host.py</small>")
+        windows_kvm_host_get_target_ip_577e9c24("get_target_ip()<br/><small>windows/kvm_host.py</small>")
+    end
+    subgraph windows_kvm_hostpy_External_generated_f38b2689["External / generated"]
         socket_897d2105("socket")
         time_714eea0f("time")
         threading_c3015aa7("threading")
@@ -461,148 +999,45 @@ flowchart LR
         pynput_72f75cc3("pynput")
         ctypes_0d8768fe("ctypes")
     end
-    subgraph kvm_hostpy_windows_windows_kvm_host_py_2dc776de["windows/kvm_host.py"]
-        windows_kvm_host_1fcaa606("kvm_host.py")
-        windows_kvm_host_get_target_ip_577e9c24("get_target_ip()<br/><small>windows/kvm_host.py</small>")
+    subgraph windows_kvm_hostpy_windows_vk_to_evdev_py_1e3fc0a6["windows/vk_to_evdev.py"]
+        windows_vk_to_evdev_translate_vk_05d8afb7("translate_vk()<br/><small>windows/vk_to_evdev.py</small>")
+        windows_vk_to_evdev_883c2d73("vk_to_evdev.py")
     end
+    windows_kvm_host_clipboard_monitor_29db2b3b -->|calls| windows_kvm_host_send_msg_ec383f4d
+    windows_kvm_host_listen_to_receiver_560f9534 -->|calls| windows_kvm_host_switch_to_local_e83fd8cf
+    windows_kvm_host_send_msg_ec383f4d -->|calls| windows_kvm_host_switch_to_local_e83fd8cf
+    windows_kvm_host_win32_keyboard_filter_67b0154b -->|calls| windows_kvm_host_switch_to_local_e83fd8cf
+    windows_kvm_host_win32_keyboard_filter_67b0154b -->|calls| windows_vk_to_evdev_translate_vk_05d8afb7
+    windows_kvm_host_win32_keyboard_filter_67b0154b -->|calls| windows_kvm_host_send_msg_ec383f4d
+    windows_kvm_host_win32_mouse_filter_faca2bba -->|calls| windows_kvm_host_switch_to_remote_39387692
+    windows_kvm_host_win32_mouse_filter_faca2bba -->|calls| windows_kvm_host_send_msg_ec383f4d
     windows_kvm_host_1fcaa606 -->|imports| socket_897d2105
+    windows_kvm_host_1fcaa606 -->|imports| windows_vk_to_evdev_translate_vk_05d8afb7
     windows_kvm_host_1fcaa606 -->|imports| time_714eea0f
     windows_kvm_host_1fcaa606 -->|imports| threading_c3015aa7
     windows_kvm_host_1fcaa606 -->|imports| pyperclip_6ee2b56b
     windows_kvm_host_1fcaa606 -->|imports| pynput_72f75cc3
+    windows_kvm_host_1fcaa606 -->|imports| windows_vk_to_evdev_883c2d73
     windows_kvm_host_1fcaa606 -->|imports| ctypes_0d8768fe
+    %% Omitted for readability: 1 nodes, 0 edges
+    class windows_kvm_host_1fcaa606 module;
+    class windows_kvm_host_win32_keyboard_filter_67b0154b function;
+    class windows_kvm_host_win32_mouse_filter_faca2bba function;
+    class windows_kvm_host_clipboard_monitor_29db2b3b entry;
+    class windows_kvm_host_listen_to_receiver_560f9534 function;
+    class windows_kvm_host_send_msg_ec383f4d function;
+    class windows_kvm_host_switch_to_local_e83fd8cf function;
+    class windows_kvm_host_switch_to_remote_39387692 function;
+    class windows_kvm_host_connect_to_omarchy_e6b5bce7 function;
+    class windows_kvm_host_get_target_ip_577e9c24 function;
     class socket_897d2105 function;
     class time_714eea0f function;
     class threading_c3015aa7 function;
     class pyperclip_6ee2b56b entry;
     class pynput_72f75cc3 function;
     class ctypes_0d8768fe function;
-    class windows_kvm_host_1fcaa606 module;
-    class windows_kvm_host_get_target_ip_577e9c24 function;
-    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
-    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
-    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
-    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
-    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
-    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
-    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
-    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
-    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
-</div>
-
-<h3>Call Details</h3>
-<table class="call-table">
-<tr>
-  <th style="width:5%">#</th>
-  <th style="width:28%">Node</th>
-  <th style="width:10%">Type</th>
-  <th style="width:17%">Caller</th>
-  <th style="width:20%">Callees</th>
-  <th style="width:20%">Description</th>
-</tr>
-<tr>
-  <td>1</td>
-  <td><code>get_target_ip()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>get_target_ip() node in windows/kvm_host.py.</td>
-</tr>
-<tr>
-  <td>2</td>
-  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
-  <td><span class="tag tag-class">Module</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>ctypes</code><br><code>json</code><br><code>os</code><br>+8 more</td>
-  <td>Module file in windows/kvm_host.py.</td>
-</tr>
-<tr>
-  <td>3</td>
-  <td><code>ctypes</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
-  <td>No direct outbound edge</td>
-  <td>ctypes node in project.</td>
-</tr>
-<tr>
-  <td>4</td>
-  <td><code>pynput</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
-  <td>No direct outbound edge</td>
-  <td>pynput node in project.</td>
-</tr>
-<tr>
-  <td>5</td>
-  <td><code>pyperclip</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-cmd">Entry</span></td>
-  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
-  <td>No direct outbound edge</td>
-  <td>pyperclip node in project.</td>
-</tr>
-<tr>
-  <td>6</td>
-  <td><code>socket</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
-  <td>No direct outbound edge</td>
-  <td>socket node in project.</td>
-</tr>
-<tr>
-  <td>7</td>
-  <td><code>threading</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
-  <td>No direct outbound edge</td>
-  <td>threading node in project.</td>
-</tr>
-<tr>
-  <td>8</td>
-  <td><code>time</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
-  <td>No direct outbound edge</td>
-  <td>time node in project.</td>
-</tr>
-</table>
-
-<div class="grid">
-  <div class="card">
-    <h4>Key Files</h4>
-    <table style="width:100%;font-size:0.85rem;">
-      <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>windows/kvm_host.py</code></td><td>2 nodes</td></tr>
-    </table>
-  </div>
-  <div class="card">
-    <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: imports x4, imports x2, contains x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
-  </div>
-</div>
-<hr>
-
-<!-- ====== 5. Windows Kvm Hostpy ====== -->
-<h2 id="windows-kvm-hostpy">5. Windows Kvm Hostpy</h2>
-<p>Windows Kvm Hostpy groups implementation around windows, kvm, hostpy, clipboard, mostly in windows/kvm_host.py. This section covers 5 nodes and 5 internal edges; the diagram shows only representative relationships to stay readable.</p>
-
-<div class="mermaid">
-%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
-flowchart LR
-    %% Section: Windows Kvm Hostpy (5 nodes, 5 edges)
-    windows_kvm_host_win32_keyboard_filter_67b0154b("win32_keyboard_filter()<br/><small>windows/kvm_host.py</small>")
-    windows_kvm_host_clipboard_monitor_29db2b3b("clipboard_monitor()<br/><small>windows/kvm_host.py</small>")
-    windows_kvm_host_send_msg_ec383f4d("send_msg()<br/><small>windows/kvm_host.py</small>")
-    windows_kvm_host_switch_to_local_e83fd8cf("switch_to_local()<br/><small>windows/kvm_host.py</small>")
-    windows_kvm_host_connect_to_omarchy_e6b5bce7("connect_to_omarchy()<br/><small>windows/kvm_host.py</small>")
-    windows_kvm_host_clipboard_monitor_29db2b3b -->|calls| windows_kvm_host_send_msg_ec383f4d
-    windows_kvm_host_send_msg_ec383f4d -->|calls| windows_kvm_host_switch_to_local_e83fd8cf
-    windows_kvm_host_win32_keyboard_filter_67b0154b -->|calls| windows_kvm_host_switch_to_local_e83fd8cf
-    windows_kvm_host_win32_keyboard_filter_67b0154b -->|calls| windows_kvm_host_send_msg_ec383f4d
-    class windows_kvm_host_win32_keyboard_filter_67b0154b function;
-    class windows_kvm_host_clipboard_monitor_29db2b3b entry;
-    class windows_kvm_host_send_msg_ec383f4d function;
-    class windows_kvm_host_switch_to_local_e83fd8cf function;
-    class windows_kvm_host_connect_to_omarchy_e6b5bce7 function;
+    class windows_vk_to_evdev_translate_vk_05d8afb7 function;
+    class windows_vk_to_evdev_883c2d73 module;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -642,6 +1077,22 @@ flowchart LR
 </tr>
 <tr>
   <td>3</td>
+  <td><code>get_target_ip()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>get_target_ip() node in windows/kvm_host.py.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>listen_to_receiver()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>switch_to_local()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td>listen_to_receiver() node in windows/kvm_host.py.</td>
+</tr>
+<tr>
+  <td>5</td>
   <td><code>send_msg()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>clipboard_monitor()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small><br><code>win32_keyboard_filter()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small><br><code>win32_mouse_filter()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
@@ -649,20 +1100,116 @@ flowchart LR
   <td>send_msg() node in windows/kvm_host.py.</td>
 </tr>
 <tr>
-  <td>4</td>
+  <td>6</td>
   <td><code>switch_to_local()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
-  <td><code>send_msg()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small><br><code>win32_keyboard_filter()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td><code>listen_to_receiver()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small><br><code>send_msg()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small><br><code>win32_keyboard_filter()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
   <td>No direct outbound edge</td>
   <td>switch_to_local() node in windows/kvm_host.py.</td>
 </tr>
 <tr>
-  <td>5</td>
+  <td>7</td>
+  <td><code>switch_to_remote()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>win32_mouse_filter()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>switch_to_remote() node in windows/kvm_host.py.</td>
+</tr>
+<tr>
+  <td>8</td>
   <td><code>win32_keyboard_filter()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
   <td><code>send_msg()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small><br><code>switch_to_local()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small><br><code>translate_vk()</code><br><small style="color:var(--muted)">windows/vk_to_evdev.py</small></td>
   <td>win32_keyboard_filter() node in windows/kvm_host.py.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>win32_mouse_filter()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>send_msg()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small><br><code>switch_to_remote()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td>win32_mouse_filter() node in windows/kvm_host.py.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>translate_vk()</code><br><small style="color:var(--muted)">windows/vk_to_evdev.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small><br><code>win32_keyboard_filter()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>translate_vk() node in windows/vk_to_evdev.py.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>ctypes</code><br><code>json</code><br><code>os</code><br>+8 more</td>
+  <td>Module file in windows/kvm_host.py.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>vk_to_evdev.py</code><br><small style="color:var(--muted)">windows/vk_to_evdev.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>Module file in windows/vk_to_evdev.py.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>Listens for commands from Omarchy (e.g. mouse hitting the left edge of Omarchy…</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Design note for Listens for commands from Omarchy (e.g. mouse hitting the left edge of Omarchy….</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>ctypes</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>ctypes node in project.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>pynput</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>pynput node in project.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>pyperclip</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-cmd">Entry</span></td>
+  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>pyperclip node in project.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>socket</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>socket node in project.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>threading</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>threading node in project.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>time</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>time node in project.</td>
 </tr>
 </table>
 
@@ -671,29 +1218,59 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>windows/kvm_host.py</code></td><td>5 nodes</td></tr>
+      <tr><td><code>windows/kvm_host.py</code></td><td>11 nodes</td></tr>
+<tr><td><code>windows/vk_to_evdev.py</code></td><td>2 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: calls x4, indirect call x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x10, calls x8, imports x5, imports x3. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
 
-<!-- ====== 6. Evdevpy Windows Translate ====== -->
-<h2 id="evdevpy-windows-translate">6. Evdevpy Windows Translate</h2>
-<p>Evdevpy Windows Translate groups implementation around evdevpy, windows, translate, mostly in windows/vk_to_evdev.py. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<!-- ====== 6. Kvm Clientpy Linux ====== -->
+<h2 id="kvm-clientpy-linux">6. Kvm Clientpy Linux</h2>
+<p>Kvm Clientpy Linux groups implementation around kvm, clientpy, linux, get, mostly in linux/kvm_client.py. This section covers 11 nodes and 13 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Evdevpy Windows Translate (2 nodes, 1 edges)
-    windows_vk_to_evdev_883c2d73("vk_to_evdev.py")
-    windows_vk_to_evdev_translate_vk_05d8afb7("translate_vk()<br/><small>windows/vk_to_evdev.py</small>")
-    windows_vk_to_evdev_883c2d73 -->|contains| windows_vk_to_evdev_translate_vk_05d8afb7
-    class windows_vk_to_evdev_883c2d73 module;
-    class windows_vk_to_evdev_translate_vk_05d8afb7 function;
+    %% Section: Kvm Clientpy Linux (11 nodes, 13 edges)
+    subgraph kvm_clientpy_linux_External_generated_faea0d87["External / generated"]
+        asyncio_4f5a0f01("asyncio")
+        json_05d97e6e("json")
+        subprocess_d2d1e1c0("subprocess")
+        os_999a3419("os")
+        sys_b4c56ee8("sys")
+        evdev_59c81b91("evdev")
+    end
+    subgraph kvm_clientpy_linux_linux_kvm_client_py_98e06281["linux/kvm_client.py"]
+        linux_kvm_client_31ae4fdf("kvm_client.py")
+        linux_kvm_client_handle_client_2f6754fd("handle_client()<br/><small>linux/kvm_client.py</small>")
+        linux_kvm_client_get_hyprland_left_bound_eaf7edbc("get_hyprland_left_bound()<br/><small>linux/kvm_client.py</small>")
+        linux_kvm_client_get_cursor_x_490e6406("get_cursor_x()<br/><small>linux/kvm_client.py</small>")
+        linux_kvm_client_main_7f3e52a5("main()<br/><small>linux/kvm_client.py</small>")
+    end
+    linux_kvm_client_handle_client_2f6754fd -->|calls| linux_kvm_client_get_hyprland_left_bound_eaf7edbc
+    linux_kvm_client_handle_client_2f6754fd -->|calls| linux_kvm_client_get_cursor_x_490e6406
+    linux_kvm_client_31ae4fdf -->|imports| asyncio_4f5a0f01
+    linux_kvm_client_31ae4fdf -->|imports| json_05d97e6e
+    linux_kvm_client_31ae4fdf -->|imports| subprocess_d2d1e1c0
+    linux_kvm_client_31ae4fdf -->|imports| os_999a3419
+    linux_kvm_client_31ae4fdf -->|imports| sys_b4c56ee8
+    linux_kvm_client_31ae4fdf -->|imports| evdev_59c81b91
+    class asyncio_4f5a0f01 async;
+    class json_05d97e6e function;
+    class subprocess_d2d1e1c0 function;
+    class os_999a3419 function;
+    class sys_b4c56ee8 function;
+    class evdev_59c81b91 function;
+    class linux_kvm_client_31ae4fdf entry;
+    class linux_kvm_client_handle_client_2f6754fd entry;
+    class linux_kvm_client_get_hyprland_left_bound_eaf7edbc function;
+    class linux_kvm_client_get_cursor_x_490e6406 function;
+    class linux_kvm_client_main_7f3e52a5 function;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -717,19 +1294,91 @@ flowchart LR
 </tr>
 <tr>
   <td>1</td>
-  <td><code>translate_vk()</code><br><small style="color:var(--muted)">windows/vk_to_evdev.py</small></td>
+  <td><code>get_cursor_x()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
-  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small><br><code>win32_keyboard_filter()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td><code>handle_client()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
   <td>No direct outbound edge</td>
-  <td>translate_vk() node in windows/vk_to_evdev.py.</td>
+  <td>get_cursor_x() node in linux/kvm_client.py.</td>
 </tr>
 <tr>
   <td>2</td>
-  <td><code>vk_to_evdev.py</code><br><small style="color:var(--muted)">windows/vk_to_evdev.py</small></td>
-  <td><span class="tag tag-class">Module</span></td>
-  <td><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td><code>get_hyprland_left_bound()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>handle_client()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
   <td>No direct outbound edge</td>
-  <td>Module file in windows/vk_to_evdev.py.</td>
+  <td>get_hyprland_left_bound() node in linux/kvm_client.py.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>handle_client()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
+  <td><span class="tag tag-cmd">Entry</span></td>
+  <td><code>main()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
+  <td><code>get_cursor_x()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small><br><code>get_hyprland_left_bound()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
+  <td>handle_client() node in linux/kvm_client.py.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>main()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>handle_client()</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
+  <td>main() node in linux/kvm_client.py.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>kvm_client.py</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
+  <td><span class="tag tag-cmd">Entry</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>asyncio</code><br><code>evdev</code><br><code>json</code><br>+3 more</td>
+  <td>Module file in linux/kvm_client.py.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>asyncio</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td><code>kvm_client.py</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>asyncio node in project.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>evdev</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>kvm_client.py</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>evdev node in project.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>json</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>kvm_client.py</code><br><small style="color:var(--muted)">linux/kvm_client.py</small><br><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>json node in project.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>os</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>kvm_client.py</code><br><small style="color:var(--muted)">linux/kvm_client.py</small><br><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>os node in project.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>subprocess</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>kvm_client.py</code><br><small style="color:var(--muted)">linux/kvm_client.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>subprocess node in project.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>sys</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>kvm_client.py</code><br><small style="color:var(--muted)">linux/kvm_client.py</small><br><code>kvm_host.py</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>sys node in project.</td>
 </tr>
 </table>
 
@@ -738,12 +1387,12 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>windows/vk_to_evdev.py</code></td><td>2 nodes</td></tr>
+      <tr><td><code>linux/kvm_client.py</code></td><td>5 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: contains x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: imports x5, contains x4, calls x2, indirect call x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
@@ -882,19 +1531,16 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 9. Windows Kvm Hostpy ====== -->
-<h2 id="windows-kvm-hostpy-542c59">9. Windows Kvm Hostpy</h2>
-<p>Windows Kvm Hostpy groups implementation around windows, kvm, hostpy, switch, mostly in windows/kvm_host.py. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<!-- ====== 9. Host Tailscale Kvm ====== -->
+<h2 id="host-tailscale-kvm">9. Host Tailscale Kvm</h2>
+<p>Host Tailscale Kvm groups implementation around host, tailscale, kvm, rust, mostly in rust/windows-host/Cargo.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Windows Kvm Hostpy (2 nodes, 1 edges)
-    windows_kvm_host_win32_mouse_filter_faca2bba("win32_mouse_filter()<br/><small>windows/kvm_host.py</small>")
-    windows_kvm_host_switch_to_remote_39387692("switch_to_remote()<br/><small>windows/kvm_host.py</small>")
-    windows_kvm_host_win32_mouse_filter_faca2bba -->|calls| windows_kvm_host_switch_to_remote_39387692
-    class windows_kvm_host_win32_mouse_filter_faca2bba function;
-    class windows_kvm_host_switch_to_remote_39387692 function;
+    %% Section: Host Tailscale Kvm (1 nodes, 0 edges)
+    pkg_tailscale_kvm_host_ec970567("tailscale-kvm-host<br/><small>rust/windows-host/Cargo.toml</small>")
+    class pkg_tailscale_kvm_host_ec970567 module;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -918,19 +1564,11 @@ flowchart LR
 </tr>
 <tr>
   <td>1</td>
-  <td><code>switch_to_remote()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>win32_mouse_filter()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
-  <td>No direct outbound edge</td>
-  <td>switch_to_remote() node in windows/kvm_host.py.</td>
-</tr>
-<tr>
-  <td>2</td>
-  <td><code>win32_mouse_filter()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
-  <td><span class="tag tag-func">Function</span></td>
+  <td><code>tailscale-kvm-host</code><br><small style="color:var(--muted)">rust/windows-host/Cargo.toml</small></td>
+  <td><span class="tag tag-class">Module</span></td>
   <td>External entry / no inbound edge</td>
-  <td><code>send_msg()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small><br><code>switch_to_remote()</code><br><small style="color:var(--muted)">windows/kvm_host.py</small></td>
-  <td>win32_mouse_filter() node in windows/kvm_host.py.</td>
+  <td>No direct outbound edge</td>
+  <td>tailscale-kvm-host node in rust/windows-host/Cargo.toml.</td>
 </tr>
 </table>
 
@@ -939,12 +1577,68 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>windows/kvm_host.py</code></td><td>2 nodes</td></tr>
+      <tr><td><code>rust/windows-host/Cargo.toml</code></td><td>1 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: calls x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: No high-confidence call edges detected. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 10. Receiver Tailscale Kvm ====== -->
+<h2 id="receiver-tailscale-kvm">10. Receiver Tailscale Kvm</h2>
+<p>Receiver Tailscale Kvm groups implementation around receiver, tailscale, kvm, rust, mostly in rust/linux-receiver/Cargo.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Receiver Tailscale Kvm (1 nodes, 0 edges)
+    pkg_tailscale_kvm_receiver_da7f65e8("tailscale-kvm-receiver<br/><small>rust/linux-receiver/Cargo.toml</small>")
+    class pkg_tailscale_kvm_receiver_da7f65e8 module;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>tailscale-kvm-receiver</code><br><small style="color:var(--muted)">rust/linux-receiver/Cargo.toml</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>tailscale-kvm-receiver node in rust/linux-receiver/Cargo.toml.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>rust/linux-receiver/Cargo.toml</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: No high-confidence call edges detected. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
@@ -955,17 +1649,17 @@ flowchart LR
   <div class="card">
     <h4>Graph</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>Nodes</td><td>40</td></tr>
-      <tr><td>Edges</td><td>51</td></tr>
+      <tr><td>Nodes</td><td>129</td></tr>
+      <tr><td>Edges</td><td>162</td></tr>
       <tr><td>Hyperedges</td><td>0</td></tr>
-      <tr><td>Communities</td><td>8</td></tr>
-      <tr><td>Documented Sections</td><td>8</td></tr>
+      <tr><td>Communities</td><td>13</td></tr>
+      <tr><td>Documented Sections</td><td>9</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Edge Confidence</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>EXTRACTED</td><td>49</td></tr>
+      <tr><td>EXTRACTED</td><td>160</td></tr>
       <tr><td>INFERRED</td><td>2</td></tr>
       <tr><td>AMBIGUOUS</td><td>0</td></tr>
     </table>
@@ -974,7 +1668,7 @@ flowchart LR
 
 <div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
   <p>tailscale-kvm — Architecture Documentation</p>
-  <p>Generated: 2026-11-06 23:49 UTC · graphify callflow-html</p>
+  <p>Generated: 2026-11-06 23:57 UTC · graphify callflow-html</p>
 </div>
 
 </div><!-- .container -->

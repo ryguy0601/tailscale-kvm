@@ -1,13 +1,14 @@
 # ⚡ Tailscale Software KVM: Windows Host to Omarchy / Hyprland
 
-A lightweight, zero-latency software KVM switch bridging Windows workstations to Omarchy Linux (Hyprland / Wayland) over an encrypted Tailscale mesh network with kernel-level `/dev/uinput` synthetic event injection.
+A lightweight, zero-latency cross-platform software KVM switch bridging Windows workstations to Omarchy Linux (Hyprland / Wayland) over an encrypted Tailscale mesh network with kernel-level `/dev/uinput` synthetic event injection. **Available in both high-performance Rust and portable Python implementations.**
 
 <div align="center">
 
+![Rust](https://img.shields.io/badge/Rust-2021%20Edition-DEA584?style=for-the-badge&logo=rust&logoColor=black)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Tailscale](https://img.shields.io/badge/Tailscale-Mesh%20VPN-4F46E5?style=for-the-badge&logo=tailscale&logoColor=white)
 ![Wayland](https://img.shields.io/badge/Wayland-Hyprland%20%2F%20Omarchy-0A84FF?style=for-the-badge&logo=linux&logoColor=white)
-![Graphify](https://img.shields.io/badge/Graphify-Knowledge%20Graph-00C7B7?style=for-the-badge&logo=diagram-next&logoColor=white)
+![Graphify](https://img.shields.io/badge/Graphify-129%20Nodes-00C7B7?style=for-the-badge&logo=diagram-next&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green.style=for-the-badge)
 
 </div>
@@ -16,12 +17,15 @@ A lightweight, zero-latency software KVM switch bridging Windows workstations to
 
 ## 🌟 Key Features
 
-- **Kernel-Level Input Injection (`/dev/uinput`):** Uses **`python-evdev`** to emit hardware-level mouse movements, relative scrolls, clicks, and scancodes directly into the Linux input subsystem, seamlessly bypassing Wayland security boundaries and compositor synthetic event blocking.
-- **Low-Latency Encrypted Mesh Transport:** Communicates via a dedicated TCP stream with **`TCP_NODELAY`** enabled over a private **Tailscale** peer-to-peer mesh VPN, guaranteeing sub-millisecond edge input transmission without public exposure or port forwarding.
-- **Auto-Reconnecting Resilient Connection:** Background health worker automatically retries socket reconnection if either peer reboots or restarts networking.
-- **Seamless Edge-Triggered Boundary Transition:** Captures Windows cursor positioning with Win32 **`ClipCursor`** API locks at the physical monitor edge, redirecting inputs until hotkey release (**`F12`**) returns focus to the local desktop.
-- **Bidirectional Clipboard & File Streaming:** Automates background clipboard synchronization via **`wl-clipboard`** (`wl-copy`/`wl-paste`) and Win32 clipboard APIs, paired with high-throughput binary chunk file transfer straight into `~/Downloads` with desktop notifications.
-- **Automated Windows Startup & Zero-Click Install:** Single-click installer sets up dependencies, writes configuration, and creates a background startup shortcut in `shell:startup` powered by `pythonw.exe`.
+- **Blazing Fast Native Rust & Python Engines:** Includes a full native **Rust workspace** (`tokio` async networking, `windows-sys` Win32 hooks, `evdev::uinput` injection) alongside our zero-dependency Python implementation.
+- **Kernel-Level Input Injection (`/dev/uinput`):** Uses **`evdev`** / **`python-evdev`** to emit hardware-level mouse movements, relative scrolls, clicks, and scancodes directly into the Linux input subsystem, completely bypassing Wayland security boundaries and compositor synthetic event blocking.
+- **Low-Latency Encrypted Mesh Transport:** Communicates via dedicated TCP streams with **`TCP_NODELAY`** enabled over a private **Tailscale** peer-to-peer mesh VPN, guaranteeing sub-millisecond edge input transmission without public exposure or port forwarding.
+- **Bi-Directional Seamless Monitor Edge Transitions:** 
+  - Move cursor past the **right edge of Windows** $\rightarrow$ Seamlessly enters Omarchy.
+  - Move cursor past the **left edge of Omarchy** $\rightarrow$ Automatically returns to Windows without pressing any hotkeys!
+- **Complete Event Suppression (No Ghost Clicks):** Uses low-level Win32 hooks (`WH_MOUSE_LL` and `WH_KEYBOARD_LL`) to swallow inputs on Windows while in remote mode, eliminating duplicate clicks and phantom keystrokes.
+- **Comprehensive Keycode & Hotkey Support:** Full translation table for Hyprland hotkeys (`Super / Windows Key`, `Alt`, `Shift`, `Backspace`, function keys, and symbols).
+- **Clipboard Synchronization:** Background monitor keeps clipboards in sync between Windows and Omarchy using `arboard` (Rust) and `wl-clipboard` / Win32 APIs (Python).
 - **Graphify Code Graph Integration:** Features automated AST structural code analysis, call flow mapping, and visual knowledge graphs generated via **Graphify**.
 
 ---
@@ -31,9 +35,9 @@ A lightweight, zero-latency software KVM switch bridging Windows workstations to
 ```text
 +-----------------------------------------------------------------------------------+
 |                            WINDOWS HOST CONTROLLER                                |
-|  Win32 User32 API (ClipCursor / GetSystemMetrics) + pynput (Mouse & Keyboard Hooks)|
-|  Pyperclip Clipboard Monitor  +  File Streaming Protocol                          |
-|  Auto-Reconnect Loop  +  Silent Startup Daemon (pythonw.exe)                      |
+|  Raw Win32 Hooks (WH_MOUSE_LL / WH_KEYBOARD_LL) via windows-sys & pynput          |
+|  Event Suppression Engine  +  Relative Center-Warp Delta Tracker                  |
+|  Bidirectional Clipboard Engine (arboard / pyperclip)                             |
 +------------------------------------------+----------------------------------------+
                                            |
                                   TCP Stream (TCP_NODELAY)
@@ -42,22 +46,18 @@ A lightweight, zero-latency software KVM switch bridging Windows workstations to
                                            v
 +-----------------------------------------------------------------------------------+
 |                        OMARCHY / HYPRLAND CLIENT RECEIVER                         |
-|  AsyncIO Socket Server (Port 9876)  -->  JSON Packet & Binary Chunk Dispatcher    |
+|  Async Tokio / AsyncIO Socket Server (Port 9876)                                  |
 |                                          |                                        |
 |             +----------------------------+----------------------------+           |
 |             v                                                         v           |
-|  Kernel /dev/uinput (python-evdev)                           wl-clipboard & notify|
-|  [Virtual Hardware Mouse / Keyboard]                         [Clipboard & Files]  |
+|  Kernel /dev/uinput (evdev / python-evdev)                   Wayland wl-clipboard |
+|  [Virtual Mouse & Keyboard Device]                           [Clipboard & Notify] |
 |             |                                                         |           |
 |             v                                                         v           |
 |  Wayland Compositor (Hyprland Core)                          Omarchy Desktop UI   |
+|  [Dynamic Left Edge Boundary Monitor (hyprctl)]              [Screen Sync]        |
 +-----------------------------------------------------------------------------------+
 ```
-
-- **Host (Windows):** Python 3 (`pythonw.exe`), `pynput`, `pyperclip`, Win32 API (`ctypes`), Virtual Keycode (`VK`) scancode translation table, PowerShell & Batch automated installers.
-- **Client (Omarchy / Hyprland Linux):** Python 3 `asyncio`, `python-evdev` (`/dev/uinput`), `wl-clipboard`, `libnotify`, `systemd` user daemon.
-- **Networking:** Tailscale Mesh VPN, WireGuard overlay routing, low-latency raw TCP sockets with disabled Nagle algorithm (`TCP_NODELAY`).
-- **Code Intelligence & Graphing:** Graphify AST semantic engine, interactive D3 graph (`graph.html`), and Mermaid call flow mapping (`tailscale-kvm-callflow.html`).
 
 ---
 
@@ -67,7 +67,7 @@ Visual demonstration assets and AST dependency graphs generated for this reposit
 
 <div align="center">
 
-| Architecture Knowledge Graph (`graphify`) | Call Flow & Component Sequence |
+| Architecture Knowledge Graph (`graphify` - 129 Nodes) | Call Flow & Component Sequence |
 | :---: | :---: |
 | ![Architecture Graph](demoPics/01-architecture-graph.png) | ![Call Flow Diagram](demoPics/02-callflow-diagram.png) |
 
@@ -75,57 +75,48 @@ Visual demonstration assets and AST dependency graphs generated for this reposit
 
 ---
 
-## 🚀 Setup & Installation
+## 🚀 Setup & Usage
 
-### 1. Linux Receiver Setup (Omarchy / Hyprland)
+### Option A: High-Performance Rust Implementation
 
-Clone the repository and run the automated receiver setup script:
-
+#### 1. Linux Receiver (Omarchy)
 ```bash
-git clone https://github.com/ryguy0601/tailscale-kvm.git
-cd tailscale-kvm/linux
-
-# Run automated dependency installation & udev rule setup
-./setup_receiver.sh
-
-# Apply input group membership immediately without rebooting
-newgrp input
-
-# Enable and start the systemd user service
-systemctl --user enable --now kvm-client.service
-
-# Check receiver service status
-systemctl --user status kvm-client.service
+cd rust/linux-receiver
+cargo build --release
+./target/release/tailscale-kvm-receiver
 ```
 
-### 2. Windows Host Setup (`not-a-gabe-cube`)
-
-On the Windows workstation:
-
+#### 2. Windows Host (`not-a-gabe-cube`)
 ```powershell
-git clone https://github.com/ryguy0601/tailscale-kvm.git
-cd tailscale-kvm\windows
+cd rust\windows-host
+cargo build --release
+.\target\release\tailscale-kvm-host.exe 100.99.142.70
+```
 
-# Run automated setup (installs pynput/pyperclip & sets up Windows startup)
+---
+
+### Option B: Python Implementation (With Miniconda Support)
+
+#### 1. Linux Receiver (Omarchy)
+```bash
+cd linux
+./setup_receiver.sh
+systemctl --user enable --now kvm-client.service
+```
+
+#### 2. Windows Host (`not-a-gabe-cube`)
+```powershell
+cd windows
 .\setup_windows.bat
 ```
 
-Or run directly from PowerShell:
+---
 
-```powershell
-.\setup_windows.ps1 -OmarchyIP "100.99.142.70"
-```
+## 🎮 How to Control
 
-> **What the Windows Setup does:**
-> - Verifies Python installation.
-> - Installs `pynput` and `pyperclip`.
-> - Saves target IP (`100.99.142.70`) to `windows/config.txt`.
-> - Creates a background startup shortcut (`TailscaleKVMHost.lnk`) in your Windows Startup directory (`shell:startup`) using `pythonw.exe`, so it starts automatically whenever you log in.
-
-> **Usage:**
-> - Move your mouse cursor against the **right edge of your Windows display** to engage remote control on Omarchy.
-> - Press **`F12`** anytime to release the cursor back to Windows.
-> - Any text copied to the clipboard will automatically synchronize across machines.
+- **Switch to Omarchy:** Move your mouse cursor against the **right edge of your Windows display**.
+- **Switch back to Windows:** Move your mouse cursor against the **left edge of your Omarchy display**.
+- **Emergency Release Hotkeys:** Press **`F12`**, **`Pause / Break`**, or **`Scroll Lock`** anytime to instantly release the cursor.
 
 ---
 
