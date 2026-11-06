@@ -9,7 +9,7 @@ import pyperclip
 from pynput import mouse, keyboard
 from vk_to_evdev import translate_vk
 
-# TARGET CONFIGURATION: CLI arg > Environment variable > config.txt > prompt
+# TARGET CONFIGURATION
 CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.txt")
 
 def get_target_ip():
@@ -53,6 +53,9 @@ sock = None
 sock_lock = threading.Lock()
 running = True
 
+mouse_listener = None
+keyboard_listener = None
+
 def connect_to_omarchy():
     global sock
     while running:
@@ -89,29 +92,6 @@ def send_msg(payload):
                 switch_to_local()
             threading.Thread(target=connect_to_omarchy, daemon=True).start()
 
-def send_file(filepath):
-    if not os.path.isfile(filepath):
-        print(f"[!] Invalid file path: {filepath}")
-        return
-    filename = os.path.basename(filepath)
-    filesize = os.path.getsize(filepath)
-    
-    header = {"type": "file_transfer", "name": filename, "size": filesize}
-    send_msg(header)
-    
-    with sock_lock:
-        if sock is None:
-            return
-        try:
-            ack = sock.recv(1024).decode().strip()
-            if ack == "READY":
-                with open(filepath, "rb") as f:
-                    while chunk := f.read(65536):
-                        sock.sendall(chunk)
-                print(f"[+] Successfully sent {filename}")
-        except Exception as ex:
-            print(f"[!] File transfer failed: {ex}")
-
 def clipboard_monitor():
     global last_clipboard_text
     while running:
@@ -130,6 +110,7 @@ def switch_to_remote():
         return
     is_remote = True
     print("[*] Control shifted -> Omarchy (Hyprland)")
+    # Pin cursor to the rightmost boundary edge so it stays active
     rect = (ctypes.c_long * 4)(screen_width - 1, 0, screen_width, screen_height)
     user32.ClipCursor(ctypes.byref(rect))
 
@@ -138,53 +119,110 @@ def switch_to_local():
     is_remote = False
     print("[*] Control shifted -> Windows Local")
     user32.ClipCursor(None)
-    user32.SetCursorPos(screen_width - 50, screen_height // 2)
+    user32.SetCursorPos(screen_width - 60, screen_height // 2)
 
-def on_move(x, y):
+# --- Win32 Low-Level Event Interceptors (Suppresses Local Windows Duplication) ---
+
+# Windows Message IDs
+WM_MOUSEMOVE   = 0x0200
+WM_LBUTTONDOWN = 0x0201
+WM_LBUTTONUP   = 0x0202
+WM_RBUTTONDOWN = 0x0204
+WM_RBUTTONUP   = 0x0205
+WM_MBUTTONDOWN = 0x0207
+WM_MBUTTONUP   = 0x0208
+WM_MOUSEWHEEL  = 0x020A
+WM_MOUSEHWHEEL = 0x020E
+
+WM_KEYDOWN     = 0x0100
+WM_KEYUP       = 0x0101
+WM_SYSKEYDOWN  = 0x0104
+WM_SYSKEYUP    = 0x0105
+
+VK_F12         = 0x7B
+
+def win32_mouse_filter(msg, data):
     global is_remote, last_mouse_pos
-    if not is_remote and x >= screen_width - 2:
-        last_mouse_pos = (x, y)
-        switch_to_remote()
-        return
 
-    if is_remote:
-        if last_mouse_pos:
+    x = data.pt.x
+    y = data.pt.y
+
+    # Check for crossing to remote boundary
+    if not is_remote:
+        if x >= screen_width - 2:
+            last_mouse_pos = (x, y)
+            switch_to_remote()
+            if mouse_listener:
+                mouse_listener.suppress_event()
+            return False
+        return True
+
+    # When in remote mode:
+    # 1. Dispatch mouse moves
+    if msg == WM_MOUSEMOVE:
+        if last_mouse_pos is not None:
             dx = x - last_mouse_pos[0]
             dy = y - last_mouse_pos[1]
             if dx != 0 or dy != 0:
                 send_msg({"type": "mouse_move", "dx": dx, "dy": dy})
         last_mouse_pos = (x, y)
+        return True
 
-def on_click(x, y, button, pressed):
-    if is_remote:
-        btn_name = "left" if button == mouse.Button.left else "right" if button == mouse.Button.right else "middle"
-        action = "down" if pressed else "up"
-        send_msg({"type": "mouse_click", "button": btn_name, "action": action})
+    # 2. Dispatch clicks and SUPPRESS them locally so Windows doesn't click
+    if msg in (WM_LBUTTONDOWN, WM_RBUTTONDOWN, WM_MBUTTONDOWN):
+        btn = "left" if msg == WM_LBUTTONDOWN else ("right" if msg == WM_RBUTTONDOWN else "middle")
+        send_msg({"type": "mouse_click", "button": btn, "action": "down"})
+        if mouse_listener:
+            mouse_listener.suppress_event()
+        return False
 
-def on_scroll(x, y, dx, dy):
-    if is_remote:
-        send_msg({"type": "mouse_scroll", "dx": int(dx), "dy": int(dy)})
+    if msg in (WM_LBUTTONUP, WM_RBUTTONUP, WM_MBUTTONUP):
+        btn = "left" if msg == WM_LBUTTONUP else ("right" if msg == WM_RBUTTONUP else "middle")
+        send_msg({"type": "mouse_click", "button": btn, "action": "up"})
+        if mouse_listener:
+            mouse_listener.suppress_event()
+        return False
 
-def on_press(key):
-    if key == keyboard.Key.f12:
-        if is_remote:
+    # 3. Dispatch scrolls and SUPPRESS them locally
+    if msg == WM_MOUSEWHEEL:
+        # High word of mouseData contains wheel delta (standard increment is 120)
+        wheel_delta = ctypes.c_short(data.mouseData >> 16).value
+        scroll_units = 1 if wheel_delta > 0 else -1
+        send_msg({"type": "mouse_scroll", "dx": 0, "dy": scroll_units})
+        if mouse_listener:
+            mouse_listener.suppress_event()
+        return False
+
+    return True
+
+def win32_keyboard_filter(msg, data):
+    global is_remote
+
+    vk = data.vkCode
+
+    # Hotkey F12 toggles focus back to Windows
+    if vk == VK_F12:
+        if is_remote and msg in (WM_KEYDOWN, WM_SYSKEYDOWN):
             switch_to_local()
-        return
+        if keyboard_listener:
+            keyboard_listener.suppress_event()
+        return False
 
-    if is_remote:
-        vk = getattr(key, 'vk', None)
-        if vk is not None:
-            evdev_code = translate_vk(vk)
-            if evdev_code:
-                send_msg({"type": "key", "code": evdev_code, "action": "down"})
+    # If local, let all keystrokes pass through untouched
+    if not is_remote:
+        return True
 
-def on_release(key):
-    if is_remote:
-        vk = getattr(key, 'vk', None)
-        if vk is not None:
-            evdev_code = translate_vk(vk)
-            if evdev_code:
-                send_msg({"type": "key", "code": evdev_code, "action": "up"})
+    # If remote, map scancode, send to Omarchy, and SUPPRESS on Windows
+    evdev_code = translate_vk(vk)
+    action = "down" if msg in (WM_KEYDOWN, WM_SYSKEYDOWN) else "up"
+
+    if evdev_code is not None:
+        send_msg({"type": "key", "code": evdev_code, "action": action})
+
+    # SUPPRESS keystroke so Windows doesn't execute hotkeys, type letters, or backspace locally
+    if keyboard_listener:
+        keyboard_listener.suppress_event()
+    return False
 
 if __name__ == "__main__":
     print(f"[*] Starting Windows KVM Host for Omarchy ({OMARCHY_TAILSCALE_IP}:{PORT})...")
@@ -192,8 +230,8 @@ if __name__ == "__main__":
     
     threading.Thread(target=clipboard_monitor, daemon=True).start()
 
-    mouse_listener = mouse.Listener(on_move=on_move, on_click=on_click, on_scroll=on_scroll)
-    keyboard_listener = keyboard.Listener(on_press=on_press, on_release=on_release)
+    mouse_listener = mouse.Listener(win32_event_filter=win32_mouse_filter)
+    keyboard_listener = keyboard.Listener(win32_event_filter=win32_keyboard_filter)
 
     mouse_listener.start()
     keyboard_listener.start()
