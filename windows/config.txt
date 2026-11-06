@@ -1,4 +1,0 @@
-# Omarchy KVM Configuration
-# Replace with your Omarchy Tailscale IP if changed
-OMARCHY_IP=100.99.142.70
-PORT=9876

@@ -1,104 +1,56 @@
 {
-  "linux/kvm_client.py": {
-    "mtime": 1794009159.480876,
-    "seen": 1794009186.5680163,
-    "ast_hash": "dfc8a3212969f2a266de9b200112ec30",
-    "semantic_hash": ""
-  },
-  "linux/setup_receiver.sh": {
-    "mtime": 1793709221.7049413,
-    "seen": 1794004056.100947,
-    "ast_hash": "b9b56248165966240cb62b6b767da594",
-    "semantic_hash": ""
-  },
-  "windows/kvm_host.py": {
-    "mtime": 1794009182.5975373,
-    "seen": 1794009186.568031,
-    "ast_hash": "558615f53669f537331f855745b38d14",
-    "semantic_hash": ""
-  },
-  "windows/vk_to_evdev.py": {
-    "mtime": 1794007903.743657,
-    "seen": 1794007907.2298412,
-    "ast_hash": "369735231635211c64c3439346210ea0",
-    "semantic_hash": ""
-  },
-  "windows/README.txt": {
-    "mtime": 1794005194.2573957,
-    "seen": 1794005197.3627565,
-    "ast_hash": "2c90249829e69f6f96c0150a513f4e47",
-    "semantic_hash": ""
-  },
-  "windows/setup_windows.ps1": {
-    "mtime": 1794006062.6547153,
-    "seen": 1794006065.8627827,
-    "ast_hash": "8a9cf1b4d421c8793e8134874f41552d",
-    "semantic_hash": ""
-  },
   "README.md": {
-    "mtime": 1794005217.7061973,
-    "seen": 1794005221.491525,
-    "ast_hash": "a444c421bd15830175bad9d417ffba4c",
-    "semantic_hash": ""
-  },
-  "windows/config.txt": {
-    "mtime": 1794005172.9246254,
-    "seen": 1794005197.3627596,
-    "ast_hash": "38c77d950e12172191e98faf97e74ef1",
+    "mtime": 1794009439.4302251,
+    "seen": 1794009546.4433982,
+    "ast_hash": "d156e92048425a38156200a6a9aab89b",
     "semantic_hash": ""
   },
   "demoPics/01-architecture-graph.png": {
-    "mtime": 1794005202.142323,
-    "seen": 1794005221.4915369,
-    "ast_hash": "a77a8151be96a0301b178cf2eff68ab9",
+    "mtime": 1794009449.0351145,
+    "seen": 1794009469.592318,
+    "ast_hash": "d7104746ed45d3c7e3d39a7a2c3ab8f4",
     "semantic_hash": ""
   },
   "demoPics/02-callflow-diagram.png": {
-    "mtime": 1794005204.8262997,
-    "seen": 1794005221.4915402,
-    "ast_hash": "cddb08dd1ba873bf539f60d5fe1ac926",
+    "mtime": 1794009452.4580753,
+    "seen": 1794009469.5923214,
+    "ast_hash": "c861b1fe7b3fa0f45584df109210bbe2",
     "semantic_hash": ""
   },
-  "rust/Cargo.toml": {
+  "Cargo.toml": {
     "mtime": 1794009350.6422877,
-    "seen": 1794009442.8482153,
+    "seen": 1794009546.4433742,
     "ast_hash": "7333efd4f0a54860881db44890596546",
     "semantic_hash": ""
   },
-  "rust/linux-receiver/Cargo.toml": {
+  "linux-receiver/Cargo.toml": {
     "mtime": 1794009354.741237,
-    "seen": 1794009442.8482249,
+    "seen": 1794009546.4433823,
     "ast_hash": "d397a817c62a9fc0a5e8f47676de68dc",
     "semantic_hash": ""
   },
-  "rust/linux-receiver/src/main.rs": {
+  "linux-receiver/src/main.rs": {
     "mtime": 1794009433.7012913,
-    "seen": 1794009442.8482304,
+    "seen": 1794009546.4433858,
     "ast_hash": "3c6050272fe0079955d793ae45034ea7",
     "semantic_hash": ""
   },
-  "rust/windows-host/Cargo.toml": {
+  "windows-host/Cargo.toml": {
     "mtime": 1794009382.221901,
-    "seen": 1794009442.8482363,
+    "seen": 1794009546.443389,
     "ast_hash": "b956d5eeb4d6a08d075f2c0c32da65c0",
     "semantic_hash": ""
   },
-  "rust/windows-host/src/main.rs": {
+  "windows-host/src/main.rs": {
     "mtime": 1794009414.7065134,
-    "seen": 1794009442.8482416,
+    "seen": 1794009546.4433916,
     "ast_hash": "b480ddf3e0df256e4852407c27046917",
     "semantic_hash": ""
   },
-  "rust/windows-host/src/vk_map.rs": {
+  "windows-host/src/vk_map.rs": {
     "mtime": 1794009394.4097545,
-    "seen": 1794009442.8482468,
+    "seen": 1794009546.4433935,
     "ast_hash": "ff2b2da06cff7f5090cb60aa70be156d",
-    "semantic_hash": ""
-  },
-  "rust/README.md": {
-    "mtime": 1794009439.4302251,
-    "seen": 1794009442.8482797,
-    "ast_hash": "d156e92048425a38156200a6a9aab89b",
     "semantic_hash": ""
   }
 }
