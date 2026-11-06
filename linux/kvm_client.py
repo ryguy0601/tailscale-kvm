@@ -30,16 +30,38 @@ try:
     uinput_device = UInput(capabilities, name="Virtual-Tailscale-KVM")
 except PermissionError:
     print("[!] Permission denied accessing /dev/uinput.")
-    print("    Ensure your user is in the 'input' group and udev rules are loaded.")
-    print("    See setup_receiver.sh for setup instructions.")
     sys.exit(1)
 
 DOWNLOAD_DIR = os.path.expanduser("~/Downloads")
 
+def get_hyprland_left_bound():
+    try:
+        proc = subprocess.run(['hyprctl', 'monitors', '-j'], stdout=subprocess.PIPE, text=True, check=True)
+        monitors = json.loads(proc.stdout)
+        leftmost = min(m['x'] for m in monitors)
+        return leftmost
+    except Exception:
+        return 0
+
+LEFT_BOUND = get_hyprland_left_bound()
+
+def get_cursor_x():
+    try:
+        proc = subprocess.run(['hyprctl', 'cursorpos'], stdout=subprocess.PIPE, text=True, check=True)
+        # Output format: "6451, 443"
+        parts = proc.stdout.strip().split(',')
+        return int(parts[0].strip())
+    except Exception:
+        return None
+
 async def handle_client(reader, writer):
+    global LEFT_BOUND
     peer = writer.get_extra_info('peername')
     print(f"[+] Active connection from {peer}")
+    LEFT_BOUND = get_hyprland_left_bound()
     
+    check_counter = 0
+
     while True:
         line = await reader.readline()
         if not line:
@@ -50,9 +72,21 @@ async def handle_client(reader, writer):
             msg_type = msg.get("type")
             
             if msg_type == "mouse_move":
-                uinput_device.write(e.EV_REL, e.REL_X, msg["dx"])
-                uinput_device.write(e.EV_REL, e.REL_Y, msg["dy"])
+                dx = msg.get("dx", 0)
+                dy = msg.get("dy", 0)
+                uinput_device.write(e.EV_REL, e.REL_X, dx)
+                uinput_device.write(e.EV_REL, e.REL_Y, dy)
                 uinput_device.syn()
+
+                # If moving towards the left, check if the cursor has reached the left edge
+                if dx < 0:
+                    check_counter += 1
+                    if check_counter % 3 == 0:
+                        cur_x = get_cursor_x()
+                        if cur_x is not None and cur_x <= LEFT_BOUND + 2:
+                            # Notify Windows host that mouse has hit the left edge and should return!
+                            writer.write(b'{"type":"switch_to_local"}\n')
+                            await writer.drain()
 
             elif msg_type == "mouse_click":
                 btn = {

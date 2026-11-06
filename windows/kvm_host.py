@@ -59,6 +59,53 @@ running = True
 mouse_listener = None
 keyboard_listener = None
 
+def switch_to_remote():
+    global is_remote, ignore_next_warp
+    if sock is None:
+        return
+    is_remote = True
+    print("[*] Control shifted -> Omarchy (Hyprland)")
+    # Warp cursor to center of screen for full relative mouse movement
+    ignore_next_warp = True
+    user32.SetCursorPos(center_x, center_y)
+
+def switch_to_local():
+    global is_remote, ignore_next_warp
+    is_remote = False
+    print("[*] Control shifted -> Windows Local")
+    user32.ClipCursor(None)
+    ignore_next_warp = True
+    # Place cursor back on the right side of Windows screen
+    user32.SetCursorPos(screen_width - 80, center_y)
+
+def listen_to_receiver():
+    """Listens for commands from Omarchy (e.g. mouse hitting the left edge of Omarchy screen)."""
+    global is_remote, sock
+    while running:
+        current_sock = None
+        with sock_lock:
+            current_sock = sock
+        if current_sock is None:
+            time.sleep(1)
+            continue
+        try:
+            line = current_sock.recv(1024)
+            if not line:
+                time.sleep(0.5)
+                continue
+            for msg_str in line.decode('utf-8', errors='ignore').splitlines():
+                if not msg_str.strip():
+                    continue
+                try:
+                    data = json.loads(msg_str.strip())
+                    if data.get("type") == "switch_to_local":
+                        print("[*] Mouse reached Omarchy left edge -> Returning to Windows!")
+                        switch_to_local()
+                except Exception:
+                    pass
+        except Exception:
+            time.sleep(1)
+
 def connect_to_omarchy():
     global sock
     while running:
@@ -107,25 +154,6 @@ def clipboard_monitor():
             pass
         time.sleep(0.5)
 
-def switch_to_remote():
-    global is_remote, ignore_next_warp
-    if sock is None:
-        return
-    is_remote = True
-    print("[*] Control shifted -> Omarchy (Hyprland)")
-    # Warp cursor to center of screen for full 360-degree relative mouse movement
-    ignore_next_warp = True
-    user32.SetCursorPos(center_x, center_y)
-
-def switch_to_local():
-    global is_remote, ignore_next_warp
-    is_remote = False
-    print("[*] Control shifted -> Windows Local")
-    user32.ClipCursor(None)
-    ignore_next_warp = True
-    # Place cursor just inside the right edge of Windows
-    user32.SetCursorPos(screen_width - 80, center_y)
-
 # Windows Message IDs
 WM_MOUSEMOVE   = 0x0200
 WM_LBUTTONDOWN = 0x0201
@@ -143,6 +171,8 @@ WM_SYSKEYDOWN  = 0x0104
 WM_SYSKEYUP    = 0x0105
 
 VK_F12         = 0x7B
+VK_PAUSE       = 0x13
+VK_SCROLL      = 0x91
 
 def win32_mouse_filter(msg, data):
     global is_remote, ignore_next_warp
@@ -171,7 +201,7 @@ def win32_mouse_filter(msg, data):
 
         if dx != 0 or dy != 0:
             send_msg({"type": "mouse_move", "dx": dx, "dy": dy})
-            # Snap cursor back to center to allow infinite free movement in all directions (X & Y)
+            # Snap cursor back to center to allow relative movement
             ignore_next_warp = True
             user32.SetCursorPos(center_x, center_y)
 
@@ -210,8 +240,8 @@ def win32_keyboard_filter(msg, data):
 
     vk = data.vkCode
 
-    # Hotkey F12 toggles focus back to Windows
-    if vk == VK_F12:
+    # Hotkey emergency escape: F12 or Pause/Break or ScrollLock will immediately release cursor
+    if vk in (VK_F12, VK_PAUSE, VK_SCROLL):
         if is_remote and msg in (WM_KEYDOWN, WM_SYSKEYDOWN):
             switch_to_local()
         if keyboard_listener:
@@ -238,6 +268,7 @@ if __name__ == "__main__":
     connect_to_omarchy()
     
     threading.Thread(target=clipboard_monitor, daemon=True).start()
+    threading.Thread(target=listen_to_receiver, daemon=True).start()
 
     mouse_listener = mouse.Listener(win32_event_filter=win32_mouse_filter)
     keyboard_listener = keyboard.Listener(win32_event_filter=win32_keyboard_filter)
@@ -247,7 +278,8 @@ if __name__ == "__main__":
 
     print("[*] Windows KVM Host active.")
     print("    - Hit right screen edge to enter Omarchy.")
-    print("    - Press F12 to return control to Windows.")
+    print("    - Hit Omarchy LEFT screen edge to automatically return to Windows!")
+    print("    - Press F12 or Pause/Break anytime to return control to Windows.")
     
     try:
         mouse_listener.join()
