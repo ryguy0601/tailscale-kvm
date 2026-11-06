@@ -12,9 +12,9 @@
     "semantic_hash": ""
   },
   "windows/kvm_host.py": {
-    "mtime": 1793709239.0717266,
-    "seen": 1794004056.1009707,
-    "ast_hash": "8a54e696d5b368e6814ae7a5de763327",
+    "mtime": 1794005170.480655,
+    "seen": 1794005197.3627377,
+    "ast_hash": "1dd33b06efb133bf7d934497a80dd207",
     "semantic_hash": ""
   },
   "windows/vk_to_evdev.py": {
@@ -24,9 +24,39 @@
     "semantic_hash": ""
   },
   "windows/README.txt": {
-    "mtime": 1793709242.0676897,
-    "seen": 1794004056.1009831,
-    "ast_hash": "11f3f545f563c799836b927b72bb8971",
+    "mtime": 1794005194.2573957,
+    "seen": 1794005197.3627565,
+    "ast_hash": "2c90249829e69f6f96c0150a513f4e47",
+    "semantic_hash": ""
+  },
+  "windows/setup_windows.ps1": {
+    "mtime": 1794005186.5754728,
+    "seen": 1794005197.362742,
+    "ast_hash": "6c437c0c3d14c43574bc3cdb3e0a1531",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1794004104.7241938,
+    "seen": 1794005197.3627522,
+    "ast_hash": "a68ed9082cb39381f60b9b244ced2b6f",
+    "semantic_hash": ""
+  },
+  "windows/config.txt": {
+    "mtime": 1794005172.9246254,
+    "seen": 1794005197.3627596,
+    "ast_hash": "38c77d950e12172191e98faf97e74ef1",
+    "semantic_hash": ""
+  },
+  "demoPics/01-architecture-graph.png": {
+    "mtime": 1794004075.246593,
+    "seen": 1794005197.3627644,
+    "ast_hash": "25a466901c61afb0abc3ef1eccf8d950",
+    "semantic_hash": ""
+  },
+  "demoPics/02-callflow-diagram.png": {
+    "mtime": 1794004080.304678,
+    "seen": 1794005197.3627684,
+    "ast_hash": "7f0fae05c1239f95aff021e03a978dfa",
     "semantic_hash": ""
   }
 }
