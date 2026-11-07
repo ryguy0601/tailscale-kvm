@@ -1,39 +1,15 @@
 use evdev::uinput::VirtualDeviceBuilder;
-use evdev::{AttributeSet, EventType, InputEvent, Key, RelativeAxisCode};
-use notify_rust::Notification;
-use serde::{Deserialize, Serialize};
+use evdev::{AttributeSet, EventType, InputEvent, Key, RelativeAxisType};
+use std::env;
 use std::process::Command;
+use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::net::{TcpListener, TcpStream};
+use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
+use tokio::net::{TcpListener, TcpStream, UnixStream};
 use tokio::sync::Mutex;
+use tokio::time::{sleep, Duration};
 
-#[derive(Deserialize, Debug)]
-#[serde(tag = "type")]
-enum IncomingMessage {
-    #[serde(rename = "mouse_move")]
-    MouseMove { dx: i32, dy: i32 },
-    #[serde(rename = "mouse_click")]
-    MouseClick { button: String, action: String },
-    #[serde(rename = "mouse_scroll")]
-    MouseScroll {
-        #[serde(default)]
-        dx: i32,
-        #[serde(default)]
-        dy: i32,
-    },
-    #[serde(rename = "key")]
-    Key { code: u16, action: String },
-    #[serde(rename = "clipboard")]
-    Clipboard { text: String },
-}
-
-#[derive(Serialize, Debug)]
-#[serde(tag = "type")]
-enum OutgoingMessage {
-    #[serde(rename = "switch_to_local")]
-    SwitchToLocal,
-}
+static CURSOR_X: AtomicI32 = AtomicI32::new(6000);
 
 fn get_hyprland_left_bound() -> i32 {
     let output = Command::new("hyprctl")
@@ -58,18 +34,38 @@ fn get_hyprland_left_bound() -> i32 {
     0
 }
 
-fn get_cursor_x() -> Option<i32> {
-    let output = Command::new("hyprctl").arg("cursorpos").output().ok()?;
-    let text = String::from_utf8_lossy(&output.stdout);
-    let parts: Vec<&str> = text.trim().split(',').collect();
-    if !parts.is_empty() {
-        return parts[0].trim().parse::<i32>().ok();
-    }
-    None
+fn start_cursorpos_worker() {
+    tokio::spawn(async {
+        let xdg = env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/run/user/1000".to_string());
+        let sig = env::var("HYPRLAND_INSTANCE_SIGNATURE").unwrap_or_default();
+        if sig.is_empty() {
+            return;
+        }
+        let sock_path = format!("{}/hypr/{}/.socket.sock", xdg, sig);
+
+        let mut buf = [0u8; 128];
+        loop {
+            if let Ok(mut stream) = UnixStream::connect(&sock_path).await {
+                if stream.write_all(b"cursorpos").await.is_ok() {
+                    if let Ok(n) = stream.read(&mut buf).await {
+                        if n > 0 {
+                            let s = String::from_utf8_lossy(&buf[..n]);
+                            if let Some(x_str) = s.split(',').next() {
+                                if let Ok(x) = x_str.trim().parse::<i32>() {
+                                    CURSOR_X.store(x, Ordering::Relaxed);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            sleep(Duration::from_millis(15)).await;
+        }
+    });
 }
 
 async fn handle_connection(
-    mut stream: TcpStream,
+    stream: TcpStream,
     device: Arc<Mutex<evdev::uinput::VirtualDevice>>,
     left_bound: i32,
 ) {
@@ -78,77 +74,110 @@ async fn handle_connection(
 
     let (reader, mut writer) = stream.into_split();
     let mut lines = BufReader::new(reader).lines();
-    let mut check_counter = 0;
 
     while let Ok(Some(line)) = lines.next_line().await {
-        if let Ok(msg) = serde_json::from_str::<IncomingMessage>(&line) {
-            match msg {
-                IncomingMessage::MouseMove { dx, dy } => {
-                    let mut dev = device.lock().await;
-                    let ev_x = InputEvent::new(EventType::RELATIVE, RelativeAxisCode::REL_X.0, dx);
-                    let ev_y = InputEvent::new(EventType::RELATIVE, RelativeAxisCode::REL_Y.0, dy);
-                    let syn = InputEvent::new(EventType::SYNCHRONIZATION, 0, 0);
-                    let _ = dev.emit(&[ev_x, ev_y, syn]);
+        let bytes = line.as_bytes();
+        if bytes.is_empty() {
+            continue;
+        }
 
-                    // Seamless left-edge monitor boundary detection
-                    if dx < 0 {
-                        check_counter += 1;
-                        if check_counter % 3 == 0 {
-                            if let Some(cur_x) = get_cursor_x() {
-                                if cur_x <= left_bound + 2 {
-                                    let packet = serde_json::to_string(&OutgoingMessage::SwitchToLocal).unwrap();
-                                    let _ = writer.write_all(format!("{}\n", packet).as_bytes()).await;
-                                }
+        // Fast zero-copy token parser
+        match bytes[0] {
+            // "M dx dy" -> Mouse Move
+            b'M' => {
+                let mut parts = line[2..].split_whitespace();
+                if let (Some(dx_s), Some(dy_s)) = (parts.next(), parts.next()) {
+                    if let (Ok(dx), Ok(dy)) = (dx_s.parse::<i32>(), dy_s.parse::<i32>()) {
+                        let mut dev = device.lock().await;
+                        let ev_x = InputEvent::new(EventType::RELATIVE, RelativeAxisType::REL_X.0, dx);
+                        let ev_y = InputEvent::new(EventType::RELATIVE, RelativeAxisType::REL_Y.0, dy);
+                        let syn = InputEvent::new(EventType::SYNCHRONIZATION, 0, 0);
+                        let _ = dev.emit(&[ev_x, ev_y, syn]);
+
+                        if dx < 0 {
+                            let cur_x = CURSOR_X.load(Ordering::Relaxed);
+                            if cur_x <= left_bound + 2 {
+                                let _ = writer.write_all(b"switch_to_local\n").await;
                             }
                         }
                     }
                 }
-                IncomingMessage::MouseClick { button, action } => {
-                    let btn_code = match button.as_str() {
+            }
+
+            // "C left/right down/up" -> Click
+            b'C' => {
+                let mut parts = line[2..].split_whitespace();
+                if let (Some(btn), Some(act)) = (parts.next(), parts.next()) {
+                    let btn_code = match btn {
                         "right" => Key::BTN_RIGHT.code(),
                         "middle" => Key::BTN_MIDDLE.code(),
                         _ => Key::BTN_LEFT.code(),
                     };
-                    let act_val = if action == "down" { 1 } else { 0 };
+                    let act_val = if act == "down" { 1 } else { 0 };
                     let mut dev = device.lock().await;
                     let ev = InputEvent::new(EventType::KEY, btn_code, act_val);
                     let syn = InputEvent::new(EventType::SYNCHRONIZATION, 0, 0);
                     let _ = dev.emit(&[ev, syn]);
                 }
-                IncomingMessage::MouseScroll { dx, dy } => {
-                    let mut dev = device.lock().await;
-                    let mut events = Vec::new();
-                    if dy != 0 {
-                        events.push(InputEvent::new(EventType::RELATIVE, RelativeAxisCode::REL_WHEEL.0, dy));
-                    }
-                    if dx != 0 {
-                        events.push(InputEvent::new(EventType::RELATIVE, RelativeAxisCode::REL_HWHEEL.0, dx));
-                    }
-                    if !events.is_empty() {
-                        events.push(InputEvent::new(EventType::SYNCHRONIZATION, 0, 0));
-                        let _ = dev.emit(&events);
-                    }
-                }
-                IncomingMessage::Key { code, action } => {
-                    let act_val = if action == "down" { 1 } else { 0 };
-                    let mut dev = device.lock().await;
-                    let ev = InputEvent::new(EventType::KEY, code, act_val);
-                    let syn = InputEvent::new(EventType::SYNCHRONIZATION, 0, 0);
-                    let _ = dev.emit(&[ev, syn]);
-                }
-                IncomingMessage::Clipboard { text } => {
-                    tokio::spawn(async move {
-                        if let Ok(mut child) = tokio::process::Command::new("wl-copy")
-                            .stdin(std::process::Stdio::piped())
-                            .spawn()
-                        {
-                            if let Some(mut stdin) = child.stdin.take() {
-                                let _ = stdin.write_all(text.as_bytes()).await;
-                            }
+            }
+
+            // "S dx dy" -> Scroll
+            b'S' => {
+                let mut parts = line[2..].split_whitespace();
+                if let (Some(dx_s), Some(dy_s)) = (parts.next(), parts.next()) {
+                    if let (Ok(dx), Ok(dy)) = (dx_s.parse::<i32>(), dy_s.parse::<i32>()) {
+                        let mut dev = device.lock().await;
+                        let mut events = Vec::with_capacity(3);
+                        if dy != 0 {
+                            events.push(InputEvent::new(EventType::RELATIVE, RelativeAxisType::REL_WHEEL.0, dy));
                         }
-                    });
+                        if dx != 0 {
+                            events.push(InputEvent::new(EventType::RELATIVE, RelativeAxisType::REL_HWHEEL.0, dx));
+                        }
+                        if !events.is_empty() {
+                            events.push(InputEvent::new(EventType::SYNCHRONIZATION, 0, 0));
+                            let _ = dev.emit(&events);
+                        }
+                    }
                 }
             }
+
+            // "K code down/up" -> Key
+            b'K' => {
+                let mut parts = line[2..].split_whitespace();
+                if let (Some(code_s), Some(act)) = (parts.next(), parts.next()) {
+                    if let Ok(code) = code_s.parse::<u16>() {
+                        let act_val = if act == "down" { 1 } else { 0 };
+                        let mut dev = device.lock().await;
+                        let ev = InputEvent::new(EventType::KEY, code, act_val);
+                        let syn = InputEvent::new(EventType::SYNCHRONIZATION, 0, 0);
+                        let _ = dev.emit(&[ev, syn]);
+                    }
+                }
+            }
+
+            // JSON fallback for clipboard
+            b'{' => {
+                if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&line) {
+                    if json_val["type"] == "clipboard" {
+                        if let Some(text) = json_val["text"].as_str() {
+                            let text_owned = text.to_string();
+                            tokio::spawn(async move {
+                                if let Ok(mut child) = tokio::process::Command::new("wl-copy")
+                                    .stdin(std::process::Stdio::piped())
+                                    .spawn()
+                                {
+                                    if let Some(mut stdin) = child.stdin.take() {
+                                        let _ = stdin.write_all(text_owned.as_bytes()).await;
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+
+            _ => {}
         }
     }
 
@@ -157,7 +186,7 @@ async fn handle_connection(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("=== Tailscale KVM Rust Receiver Daemon ===");
+    println!("=== Tailscale KVM Rust Receiver Daemon (High-Speed Engine) ===");
 
     // Initialize virtual keyboard keys
     let mut key_set = AttributeSet::<Key>::new();
@@ -170,12 +199,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     key_set.insert(Key::BTN_SIDE);
     key_set.insert(Key::BTN_EXTRA);
 
-    // Initialize relative axes (mouse movement and scrolling)
-    let mut rel_set = AttributeSet::<RelativeAxisCode>::new();
-    rel_set.insert(RelativeAxisCode::REL_X);
-    rel_set.insert(RelativeAxisCode::REL_Y);
-    rel_set.insert(RelativeAxisCode::REL_WHEEL);
-    rel_set.insert(RelativeAxisCode::REL_HWHEEL);
+    // Initialize relative axes
+    let mut rel_set = AttributeSet::<RelativeAxisType>::new();
+    rel_set.insert(RelativeAxisType::REL_X);
+    rel_set.insert(RelativeAxisType::REL_Y);
+    rel_set.insert(RelativeAxisType::REL_WHEEL);
+    rel_set.insert(RelativeAxisType::REL_HWHEEL);
 
     let virtual_device = VirtualDeviceBuilder::new()?
         .name("Tailscale-KVM-Rust-Device")
@@ -186,6 +215,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let device = Arc::new(Mutex::new(virtual_device));
     let left_bound = get_hyprland_left_bound();
     println!("[*] Detected Hyprland leftmost coordinate: {}", left_bound);
+
+    start_cursorpos_worker();
 
     let listener = TcpListener::bind("0.0.0.0:9876").await?;
     println!("[*] Rust Receiver listening on port 9876...");

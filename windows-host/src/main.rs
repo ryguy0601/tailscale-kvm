@@ -1,6 +1,5 @@
 mod vk_map;
 
-use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::io::{BufRead, BufReader, Write};
@@ -15,30 +14,8 @@ use windows_sys::Win32::Foundation::*;
 #[cfg(windows)]
 use windows_sys::Win32::UI::WindowsAndMessaging::*;
 
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(tag = "type")]
-enum HostMessage {
-    #[serde(rename = "mouse_move")]
-    MouseMove { dx: i32, dy: i32 },
-    #[serde(rename = "mouse_click")]
-    MouseClick { button: String, action: String },
-    #[serde(rename = "mouse_scroll")]
-    MouseScroll { dx: i32, dy: i32 },
-    #[serde(rename = "key")]
-    Key { code: u16, action: String },
-    #[serde(rename = "clipboard")]
-    Clipboard { text: String },
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(tag = "type")]
-enum ReceiverMessage {
-    #[serde(rename = "switch_to_local")]
-    SwitchToLocal,
-}
-
 static IS_REMOTE: AtomicBool = AtomicBool::new(false);
-static IGNORE_NEXT_WARP: AtomicBool = AtomicBool::new(false);
+static IGNORE_WARP: AtomicBool = AtomicBool::new(false);
 static STREAM_SENDER: Mutex<Option<TcpStream>> = Mutex::new(None);
 
 static mut SCREEN_WIDTH: i32 = 1920;
@@ -78,13 +55,11 @@ fn get_config_ip() -> String {
     "100.99.142.70".to_string()
 }
 
-fn send_payload(msg: &HostMessage) {
+#[inline(always)]
+fn send_fast_bytes(bytes: &[u8]) {
     if let Ok(mut lock) = STREAM_SENDER.lock() {
         if let Some(stream) = lock.as_mut() {
-            if let Ok(json_str) = serde_json::to_string(msg) {
-                let packet = format!("{}\n", json_str);
-                let _ = stream.write_all(packet.as_bytes());
-            }
+            let _ = stream.write_all(bytes);
         }
     }
 }
@@ -92,7 +67,7 @@ fn send_payload(msg: &HostMessage) {
 pub fn switch_to_remote() {
     IS_REMOTE.store(true, Ordering::SeqCst);
     println!("[*] Control shifted -> Omarchy (Hyprland)");
-    IGNORE_NEXT_WARP.store(true, Ordering::SeqCst);
+    IGNORE_WARP.store(true, Ordering::SeqCst);
     #[cfg(windows)]
     unsafe {
         SetCursorPos(CENTER_X, CENTER_Y);
@@ -102,7 +77,7 @@ pub fn switch_to_remote() {
 pub fn switch_to_local() {
     IS_REMOTE.store(false, Ordering::SeqCst);
     println!("[*] Control shifted -> Windows Local");
-    IGNORE_NEXT_WARP.store(true, Ordering::SeqCst);
+    IGNORE_WARP.store(true, Ordering::SeqCst);
     #[cfg(windows)]
     unsafe {
         ClipCursor(std::ptr::null());
@@ -124,14 +99,14 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
         if !remote {
             if x >= SCREEN_WIDTH - 2 {
                 switch_to_remote();
-                return 1; // Swallow event
+                return 1;
             }
             return CallNextHookEx(MOUSE_HOOK, code, wparam, lparam);
         }
 
         // In Remote Mode:
         if msg == WM_MOUSEMOVE {
-            if IGNORE_NEXT_WARP.swap(false, Ordering::SeqCst) {
+            if IGNORE_WARP.swap(false, Ordering::SeqCst) {
                 return 1;
             }
 
@@ -139,8 +114,11 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
             let dy = y - CENTER_Y;
 
             if dx != 0 || dy != 0 {
-                send_payload(&HostMessage::MouseMove { dx, dy });
-                IGNORE_NEXT_WARP.store(true, Ordering::SeqCst);
+                // Ultra-compact binary-like wire format: "M dx dy\n"
+                let pkt = format!("M {} {}\n", dx, dy);
+                send_fast_bytes(pkt.as_bytes());
+
+                IGNORE_WARP.store(true, Ordering::SeqCst);
                 SetCursorPos(CENTER_X, CENTER_Y);
             }
             return 1;
@@ -148,28 +126,24 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
 
         // Clicks
         if msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN {
-            let button = match msg {
+            let btn = match msg {
                 WM_LBUTTONDOWN => "left",
                 WM_RBUTTONDOWN => "right",
                 _ => "middle",
             };
-            send_payload(&HostMessage::MouseClick {
-                button: button.to_string(),
-                action: "down".to_string(),
-            });
+            let pkt = format!("C {} down\n", btn);
+            send_fast_bytes(pkt.as_bytes());
             return 1;
         }
 
         if msg == WM_LBUTTONUP || msg == WM_RBUTTONUP || msg == WM_MBUTTONUP {
-            let button = match msg {
+            let btn = match msg {
                 WM_LBUTTONUP => "left",
                 WM_RBUTTONUP => "right",
                 _ => "middle",
             };
-            send_payload(&HostMessage::MouseClick {
-                button: button.to_string(),
-                action: "up".to_string(),
-            });
+            let pkt = format!("C {} up\n", btn);
+            send_fast_bytes(pkt.as_bytes());
             return 1;
         }
 
@@ -177,10 +151,8 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
         if msg == WM_MOUSEWHEEL {
             let delta = (mouse_data.mouseData >> 16) as i16;
             let scroll_units = if delta > 0 { 1 } else { -1 };
-            send_payload(&HostMessage::MouseScroll {
-                dx: 0,
-                dy: scroll_units,
-            });
+            let pkt = format!("S 0 {}\n", scroll_units);
+            send_fast_bytes(pkt.as_bytes());
             return 1;
         }
     }
@@ -214,10 +186,8 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
             } else {
                 "up"
             };
-            send_payload(&HostMessage::Key {
-                code: evdev_code,
-                action: action.to_string(),
-            });
+            let pkt = format!("K {} {}\n", evdev_code, action);
+            send_fast_bytes(pkt.as_bytes());
         }
         return 1;
     }
@@ -235,7 +205,13 @@ fn start_clipboard_sync() {
                 if let Ok(text) = clip.get_text() {
                     if !text.is_empty() && text != last_text {
                         last_text = text.clone();
-                        send_payload(&HostMessage::Clipboard { text });
+                        // Base64 or single-line JSON only for clipboard
+                        let json = serde_json::json!({
+                            "type": "clipboard",
+                            "text": text
+                        });
+                        let pkt = format!("{}\n", json);
+                        send_fast_bytes(pkt.as_bytes());
                     }
                 }
             }
@@ -249,13 +225,10 @@ fn start_receiver_listener(stream: TcpStream) {
         let reader = BufReader::new(stream);
         for line in reader.lines() {
             if let Ok(line_str) = line {
-                if let Ok(msg) = serde_json::from_str::<ReceiverMessage>(&line_str) {
-                    match msg {
-                        ReceiverMessage::SwitchToLocal => {
-                            println!("[*] Received SwitchToLocal from Omarchy boundary!");
-                            switch_to_local();
-                        }
-                    }
+                let trimmed = line_str.trim();
+                if trimmed == "switch_to_local" || trimmed == "{\"type\":\"switch_to_local\"}" {
+                    println!("[*] Received SwitchToLocal from Omarchy boundary!");
+                    switch_to_local();
                 }
             }
         }
@@ -264,7 +237,7 @@ fn start_receiver_listener(stream: TcpStream) {
 
 fn main() {
     let target_ip = get_config_ip();
-    println!("=== Tailscale KVM Rust Host Controller ===");
+    println!("=== Tailscale KVM Rust Host Controller (High-Speed Engine) ===");
     println!("[*] Target Omarchy Machine: {}:9876", target_ip);
 
     #[cfg(windows)]
