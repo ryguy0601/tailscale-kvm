@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 mod vk_map;
 
 use std::env;
@@ -66,7 +68,6 @@ fn send_fast_bytes(bytes: &[u8]) {
 
 pub fn switch_to_remote() {
     IS_REMOTE.store(true, Ordering::SeqCst);
-    println!("[*] Control shifted -> Omarchy (Hyprland)");
     IGNORE_WARP.store(true, Ordering::SeqCst);
     #[cfg(windows)]
     unsafe {
@@ -76,7 +77,6 @@ pub fn switch_to_remote() {
 
 pub fn switch_to_local() {
     IS_REMOTE.store(false, Ordering::SeqCst);
-    println!("[*] Control shifted -> Windows Local");
     IGNORE_WARP.store(true, Ordering::SeqCst);
     #[cfg(windows)]
     unsafe {
@@ -114,7 +114,6 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
             let dy = y - CENTER_Y;
 
             if dx != 0 || dy != 0 {
-                // Ultra-compact binary-like wire format: "M dx dy\n"
                 let pkt = format!("M {} {}\n", dx, dy);
                 send_fast_bytes(pkt.as_bytes());
 
@@ -205,7 +204,6 @@ fn start_clipboard_sync() {
                 if let Ok(text) = clip.get_text() {
                     if !text.is_empty() && text != last_text {
                         last_text = text.clone();
-                        // Base64 or single-line JSON only for clipboard
                         let json = serde_json::json!({
                             "type": "clipboard",
                             "text": text
@@ -227,7 +225,6 @@ fn start_receiver_listener(stream: TcpStream) {
             if let Ok(line_str) = line {
                 let trimmed = line_str.trim();
                 if trimmed == "switch_to_local" || trimmed == "{\"type\":\"switch_to_local\"}" {
-                    println!("[*] Received SwitchToLocal from Omarchy boundary!");
                     switch_to_local();
                 }
             }
@@ -237,8 +234,6 @@ fn start_receiver_listener(stream: TcpStream) {
 
 fn main() {
     let target_ip = get_config_ip();
-    println!("=== Tailscale KVM Rust Host Controller (High-Speed Engine) ===");
-    println!("[*] Target Omarchy Machine: {}:9876", target_ip);
 
     #[cfg(windows)]
     unsafe {
@@ -246,15 +241,13 @@ fn main() {
         SCREEN_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
         CENTER_X = SCREEN_WIDTH / 2;
         CENTER_Y = SCREEN_HEIGHT / 2;
-        println!("[*] Windows Screen Metrics: {}x{}", SCREEN_WIDTH, SCREEN_HEIGHT);
     }
 
-    // Connect to Omarchy over Tailscale
+    // Connect to Omarchy over Tailscale with auto-reconnect
     loop {
         match TcpStream::connect(format!("{}:9876", target_ip)) {
             Ok(stream) => {
                 let _ = stream.set_nodelay(true);
-                println!("[+] Connected to Omarchy!");
 
                 let stream_clone = stream.try_clone().expect("Failed to clone TCP stream");
                 start_receiver_listener(stream_clone);
@@ -264,9 +257,8 @@ fn main() {
                 }
                 break;
             }
-            Err(e) => {
-                eprintln!("[!] Connection failed: {}. Retrying in 4 seconds...", e);
-                thread::sleep(Duration::from_secs(4));
+            Err(_) => {
+                thread::sleep(Duration::from_secs(3));
             }
         }
     }
@@ -277,11 +269,6 @@ fn main() {
     unsafe {
         MOUSE_HOOK = SetWindowsHookExW(WH_MOUSE_LL, Some(mouse_hook_proc), 0, 0);
         KEYBOARD_HOOK = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_hook_proc), 0, 0);
-
-        println!("[*] Windows Win32 Low-Level Hooks Active!");
-        println!("    - Move cursor past right edge -> Enter Omarchy");
-        println!("    - Move cursor past Omarchy left edge -> Seamless return to Windows");
-        println!("    - Press F12, Pause, or ScrollLock -> Emergency Release");
 
         let mut msg: MSG = std::mem::zeroed();
         while GetMessageW(&mut msg, 0, 0, 0) > 0 {

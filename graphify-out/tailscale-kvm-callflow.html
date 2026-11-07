@@ -60,13 +60,15 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 <div class="container">
 
 <h1>tailscale-kvm — Complete Call Flow &amp; Architecture Documentation</h1>
-<p class="subtitle">Generated from graphify knowledge graph: 91 nodes, 110 edges, 18 communities. Commit: a8fd65b</p>
+<p class="subtitle">Generated from graphify knowledge graph: 77 nodes, 97 edges, 16 communities. Commit: 90f49b3</p>
 
 <div class="nav">
     <a href="#overview">Architecture Overview</a>
     <a href="#build-graph">Graph Build</a>
     <a href="#cli-skills">CLI &amp; Skill Installers</a>
+    <a href="#serve-api">Serving API</a>
     <a href="#mutex-tcpstream-stream">Mutex Tcpstream Stream</a>
+    <a href="#atomici32-cursor-linux">Atomici32 Cursor Linux</a>
     <a href="#maprs-windows-host">Maprs Windows Host</a>
     <a href="#host-tailscale-kvm">Host Tailscale Kvm</a>
     <a href="#receiver-tailscale-kvm">Receiver Tailscale Kvm</a>
@@ -83,10 +85,14 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 flowchart LR
     BUILD_GRAPH_321CBB04("Graph Build<br/><small>11 nodes</small>")
     class BUILD_GRAPH_321CBB04 module;
-    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>71 nodes</small>")
+    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>51 nodes</small>")
     class CLI_SKILLS_9964CBB8 module;
+    SERVE_API_35EC8E86("Serving API<br/><small>4 nodes</small>")
+    class SERVE_API_35EC8E86 module;
     MUTEX_TCPSTREAM_STREAM_9426569D("Mutex Tcpstream Stream<br/><small>3 nodes</small>")
     class MUTEX_TCPSTREAM_STREAM_9426569D module;
+    ATOMICI32_CURSOR_LINUX_94EEB9D4("Atomici32 Cursor Linux<br/><small>2 nodes</small>")
+    class ATOMICI32_CURSOR_LINUX_94EEB9D4 module;
     MAPRS_WINDOWS_HOST_3F46C29E("Maprs Windows Host<br/><small>2 nodes</small>")
     class MAPRS_WINDOWS_HOST_3F46C29E module;
     HOST_TAILSCALE_KVM_5F916E6E("Host Tailscale Kvm<br/><small>1 nodes</small>")
@@ -98,6 +104,8 @@ flowchart LR
     TCPSTREAM_5FAF0D74("Tcpstream<br/><small>1 nodes</small>")
     class TCPSTREAM_5FAF0D74 module;
     CLI_SKILLS_9964CBB8 -->|imports x4| MUTEX_TCPSTREAM_STREAM_9426569D
+    CLI_SKILLS_9964CBB8 -->|imports x4| SERVE_API_35EC8E86
+    CLI_SKILLS_9964CBB8 -->|imports x2| ATOMICI32_CURSOR_LINUX_94EEB9D4
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -114,24 +122,24 @@ flowchart LR
     <h4>Architecture Layers</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>Layer</th><th>Nodes</th><th>Communities</th></tr>
-      <tr><td>Graph Build</td><td>11</td><td><code>5</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>71</td><td><code>3, 2, 7, 0, 1, 4, 8, 9, 13, 14, 15</code></td></tr><tr><td>Mutex Tcpstream Stream</td><td>3</td><td><code>10</code></td></tr><tr><td>Maprs Windows Host</td><td>2</td><td><code>6</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr><tr><td>Mutex</td><td>1</td><td><code>16</code></td></tr><tr><td>Tcpstream</td><td>1</td><td><code>17</code></td></tr>
+      <tr><td>Graph Build</td><td>11</td><td><code>5</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>51</td><td><code>3, 2, 7, 0, 13, 8, 9</code></td></tr><tr><td>Serving API</td><td>4</td><td><code>4</code></td></tr><tr><td>Mutex Tcpstream Stream</td><td>3</td><td><code>10</code></td></tr><tr><td>Atomici32 Cursor Linux</td><td>2</td><td><code>1</code></td></tr><tr><td>Maprs Windows Host</td><td>2</td><td><code>6</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr><tr><td>Mutex</td><td>1</td><td><code>14</code></td></tr><tr><td>Tcpstream</td><td>1</td><td><code>15</code></td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Core Flow</h4>
-    <div class="arrow-chain">Graph Build -&gt; CLI &amp; Skill Installers -&gt; Mutex Tcpstream Stream -&gt; Maprs Windows Host -&gt; Host Tailscale Kvm -&gt; Receiver Tailscale Kvm -&gt; Mutex</div>
+    <div class="arrow-chain">Graph Build -&gt; CLI &amp; Skill Installers -&gt; Serving API -&gt; Mutex Tcpstream Stream -&gt; Atomici32 Cursor Linux -&gt; Maprs Windows Host -&gt; Host Tailscale Kvm</div>
   </div>
 </div>
 <div class="grid">
   <div class="card">
     <h4>Graph Report Highlights</h4>
     <ul>
-      <li>91 nodes · 110 edges · 18 communities (5 shown, 13 thin omitted)</li>
+      <li>77 nodes · 97 edges · 16 communities (5 shown, 11 thin omitted)</li>
       <li>Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS</li>
       <li>Token cost: 0 input · 0 output</li>
       <li>1. `⚡ Tailscale Software KVM: Windows Host to Omarchy / Hyprland (Pure Rust)` - 8 edges</li>
-      <li>2. `HostMessage` - 7 edges</li>
-      <li>3. `mouse_hook_proc()` - 6 edges</li>
+      <li>2. `mouse_hook_proc()` - 6 edges</li>
+      <li>3. `keyboard_hook_proc()` - 6 edges</li>
     </ul>
   </div>
 </div>
@@ -304,70 +312,72 @@ flowchart LR
 
 <!-- ====== 3. CLI & Skill Installers ====== -->
 <h2 id="cli-skills">3. CLI &amp; Skill Installers</h2>
-<p>CLI &amp; Skill Installers groups implementation around mainrs, windows, host, receiver, mostly in windows-host/src/main.rs, linux-receiver/src/main.rs. This section covers 71 nodes and 93 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>CLI &amp; Skill Installers groups implementation around mainrs, windows, host, receiver, mostly in windows-host/src/main.rs, linux-receiver/src/main.rs. This section covers 51 nodes and 70 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: CLI &amp; Skill Installers (71 nodes, 93 edges)
+    %% Section: CLI &amp; Skill Installers (51 nodes, 70 edges)
     subgraph cli_skills_windows_host_src_main_rs_45a5b51b["windows-host/src/main.rs"]
         windows_host_src_main_5f198ad8("main.rs")
         windows_host_src_main_main_f9a7d188("main()<br/><small>windows-host/src/main.rs</small>")
         windows_host_src_main_keyboard_hook_proc_485fd7e8("keyboard_hook_proc()<br/><small>windows-host/src/main.rs</small>")
         windows_host_src_main_mouse_hook_proc_3bc28e06("mouse_hook_proc()<br/><small>windows-host/src/main.rs</small>")
-        windows_host_src_main_switch_to_local_98e73cfd("switch_to_local()<br/><small>windows-host/src/main.rs</small>")
-        windows_host_src_main_send_payload_1db3c60b("send_payload()<br/><small>windows-host/src/main.rs</small>")
         windows_host_src_main_get_config_ip_22ee6934("get_config_ip()<br/><small>windows-host/src/main.rs</small>")
         windows_host_src_main_start_receiver_listener_bee97bc3("start_receiver_listener()<br/><small>windows-host/src/main.rs</small>")
         windows_host_src_main_start_clipboard_sync_a5478cad("start_clipboard_sync()<br/><small>windows-host/src/main.rs</small>")
+        windows_host_src_main_switch_to_local_98e73cfd("switch_to_local()<br/><small>windows-host/src/main.rs</small>")
+        windows_host_src_main_send_fast_bytes_3d1d1452("send_fast_bytes()<br/><small>windows-host/src/main.rs</small>")
         windows_host_src_main_switch_to_remote_5fe72f8e("switch_to_remote()<br/><small>windows-host/src/main.rs</small>")
+    end
+    subgraph cli_skills_External_generated_0c226fa1["External / generated"]
+        duration_5d3f344b("duration")
+        foundation_ec9624c8("foundation")
+        windowsandmessaging_f2e4b40c("windowsandmessaging")
+        env_920f8f58("env")
     end
     subgraph cli_skills_linux_receiver_src_main_rs_51402838["linux-receiver/src/main.rs"]
         linux_receiver_src_main_375adb53("main.rs")
         linux_receiver_src_main_main_33397fdb("main()<br/><small>linux-receiver/src/main.rs</small>")
         linux_receiver_src_main_get_hyprland_left_bound_b3ccaa57("get_hyprland_left_bound()<br/><small>linux-receiver/src/main.rs</small>")
-        linux_receiver_src_main_handle_connection_36d5c981("handle_connection()<br/><small>linux-receiver/src/main.rs</small>")
-        linux_receiver_src_main_get_cursor_x_765dcab1("get_cursor_x()<br/><small>linux-receiver/src/main.rs</small>")
+        linux_receiver_src_main_start_cursorpos_worker_33231571("start_cursorpos_worker()<br/><small>linux-receiver/src/main.rs</small>")
     end
-    subgraph cli_skills_External_generated_0c226fa1["External / generated"]
-        thread_c283e375("thread")
-        duration_5d3f344b("duration")
-        foundation_ec9624c8("foundation")
-    end
-    linux_receiver_src_main_main_33397fdb -->|calls| linux_receiver_src_main_get_hyprland_left_bound_b3ccaa57
-    linux_receiver_src_main_main_33397fdb -->|calls| linux_receiver_src_main_handle_connection_36d5c981
-    linux_receiver_src_main_handle_connection_36d5c981 -->|calls| linux_receiver_src_main_get_cursor_x_765dcab1
-    windows_host_src_main_keyboard_hook_proc_485fd7e8 -->|calls| windows_host_src_main_switch_to_local_98e73cfd
-    windows_host_src_main_keyboard_hook_proc_485fd7e8 -->|calls| windows_host_src_main_send_payload_1db3c60b
     windows_host_src_main_main_f9a7d188 -->|calls| windows_host_src_main_get_config_ip_22ee6934
     windows_host_src_main_main_f9a7d188 -->|calls| windows_host_src_main_start_receiver_listener_bee97bc3
     windows_host_src_main_main_f9a7d188 -->|calls| windows_host_src_main_start_clipboard_sync_a5478cad
-    windows_host_src_main_mouse_hook_proc_3bc28e06 -->|calls| windows_host_src_main_switch_to_remote_5fe72f8e
-    windows_host_src_main_mouse_hook_proc_3bc28e06 -->|calls| windows_host_src_main_send_payload_1db3c60b
-    windows_host_src_main_start_clipboard_sync_a5478cad -->|calls| windows_host_src_main_send_payload_1db3c60b
     windows_host_src_main_start_receiver_listener_bee97bc3 -->|calls| windows_host_src_main_switch_to_local_98e73cfd
-    windows_host_src_main_5f198ad8 -->|imports| thread_c283e375
+    linux_receiver_src_main_main_33397fdb -->|calls| linux_receiver_src_main_get_hyprland_left_bound_b3ccaa57
+    linux_receiver_src_main_main_33397fdb -->|calls| linux_receiver_src_main_start_cursorpos_worker_33231571
+    windows_host_src_main_keyboard_hook_proc_485fd7e8 -->|calls| windows_host_src_main_switch_to_local_98e73cfd
+    windows_host_src_main_keyboard_hook_proc_485fd7e8 -->|calls| windows_host_src_main_send_fast_bytes_3d1d1452
+    windows_host_src_main_mouse_hook_proc_3bc28e06 -->|calls| windows_host_src_main_switch_to_remote_5fe72f8e
+    windows_host_src_main_mouse_hook_proc_3bc28e06 -->|calls| windows_host_src_main_send_fast_bytes_3d1d1452
+    windows_host_src_main_start_clipboard_sync_a5478cad -->|calls| windows_host_src_main_send_fast_bytes_3d1d1452
     windows_host_src_main_5f198ad8 -->|imports| duration_5d3f344b
     windows_host_src_main_5f198ad8 -->|imports| foundation_ec9624c8
-    %% Omitted for readability: 53 nodes, 0 edges
+    windows_host_src_main_5f198ad8 -->|imports| windowsandmessaging_f2e4b40c
+    windows_host_src_main_5f198ad8 -->|imports| env_920f8f58
+    linux_receiver_src_main_375adb53 -->|imports| duration_5d3f344b
+    linux_receiver_src_main_375adb53 -->|imports| env_920f8f58
+    %% Omitted for readability: 33 nodes, 0 edges
     class windows_host_src_main_5f198ad8 module;
     class windows_host_src_main_main_f9a7d188 function;
     class windows_host_src_main_keyboard_hook_proc_485fd7e8 ui;
     class windows_host_src_main_mouse_hook_proc_3bc28e06 ui;
-    class windows_host_src_main_switch_to_local_98e73cfd function;
-    class windows_host_src_main_send_payload_1db3c60b function;
     class windows_host_src_main_get_config_ip_22ee6934 function;
     class windows_host_src_main_start_receiver_listener_bee97bc3 function;
     class windows_host_src_main_start_clipboard_sync_a5478cad entry;
+    class windows_host_src_main_switch_to_local_98e73cfd function;
+    class windows_host_src_main_send_fast_bytes_3d1d1452 function;
     class windows_host_src_main_switch_to_remote_5fe72f8e function;
+    class duration_5d3f344b function;
+    class foundation_ec9624c8 function;
+    class windowsandmessaging_f2e4b40c function;
+    class env_920f8f58 function;
     class linux_receiver_src_main_375adb53 module;
     class linux_receiver_src_main_main_33397fdb function;
     class linux_receiver_src_main_get_hyprland_left_bound_b3ccaa57 function;
-    class linux_receiver_src_main_handle_connection_36d5c981 function;
-    class linux_receiver_src_main_get_cursor_x_765dcab1 function;
-    class thread_c283e375 function;
-    class duration_5d3f344b function;
-    class foundation_ec9624c8 function;
+    class linux_receiver_src_main_start_cursorpos_worker_33231571 function;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -394,7 +404,7 @@ flowchart LR
   <td><code>linux-receiver/src/main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
   <td><span class="tag tag-class">Module</span></td>
   <td>External entry / no inbound edge</td>
-  <td><code>arc</code><br><code>asyncbufreadext</code><br><code>asyncwriteext</code><br>+14 more</td>
+  <td><code>arc</code><br><code>asyncbufreadext</code><br><code>asyncreadext</code><br>+18 more</td>
   <td>linux-receiver/src/main.rs node in linux-receiver/src/main.rs.</td>
 </tr>
 <tr>
@@ -415,6 +425,14 @@ flowchart LR
 </tr>
 <tr>
   <td>4</td>
+  <td><code>asyncreadext</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>asyncreadext node in project.</td>
+</tr>
+<tr>
+  <td>5</td>
   <td><code>asyncwriteext</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-async">Async</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
@@ -422,7 +440,7 @@ flowchart LR
   <td>asyncwriteext node in project.</td>
 </tr>
 <tr>
-  <td>5</td>
+  <td>6</td>
   <td><code>attributeset</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
@@ -430,7 +448,7 @@ flowchart LR
   <td>attributeset node in project.</td>
 </tr>
 <tr>
-  <td>6</td>
+  <td>7</td>
   <td><code>bufreader</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small><br><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
@@ -438,7 +456,7 @@ flowchart LR
   <td>bufreader node in project.</td>
 </tr>
 <tr>
-  <td>7</td>
+  <td>8</td>
   <td><code>command</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-cmd">Entry</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
@@ -446,15 +464,23 @@ flowchart LR
   <td>command node in project.</td>
 </tr>
 <tr>
-  <td>8</td>
-  <td><code>deserialize</code><br><small style="color:var(--muted)"></small></td>
+  <td>9</td>
+  <td><code>duration</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small><br><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>deserialize node in project.</td>
+  <td>duration node in project.</td>
 </tr>
 <tr>
-  <td>9</td>
+  <td>10</td>
+  <td><code>env</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small><br><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>env node in project.</td>
+</tr>
+<tr>
+  <td>11</td>
   <td><code>eventtype</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
@@ -462,7 +488,7 @@ flowchart LR
   <td>eventtype node in project.</td>
 </tr>
 <tr>
-  <td>10</td>
+  <td>12</td>
   <td><code>inputevent</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
@@ -470,7 +496,7 @@ flowchart LR
   <td>inputevent node in project.</td>
 </tr>
 <tr>
-  <td>11</td>
+  <td>13</td>
   <td><code>key</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
@@ -478,31 +504,31 @@ flowchart LR
   <td>key node in project.</td>
 </tr>
 <tr>
-  <td>12</td>
-  <td><code>notification</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>notification node in project.</td>
-</tr>
-<tr>
-  <td>13</td>
-  <td><code>relativeaxiscode</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>relativeaxiscode node in project.</td>
-</tr>
-<tr>
   <td>14</td>
-  <td><code>serialize</code><br><small style="color:var(--muted)"></small></td>
+  <td><code>ordering</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small><br><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>serialize node in project.</td>
+  <td>ordering node in project.</td>
 </tr>
 <tr>
   <td>15</td>
+  <td><code>relativeaxistype</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>relativeaxistype node in project.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>sleep</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>sleep node in project.</td>
+</tr>
+<tr>
+  <td>17</td>
   <td><code>tcplistener</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
@@ -510,7 +536,15 @@ flowchart LR
   <td>tcplistener node in project.</td>
 </tr>
 <tr>
-  <td>16</td>
+  <td>18</td>
+  <td><code>unixstream</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>unixstream node in project.</td>
+</tr>
+<tr>
+  <td>19</td>
   <td><code>virtualdevicebuilder</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
@@ -518,15 +552,15 @@ flowchart LR
   <td>virtualdevicebuilder node in project.</td>
 </tr>
 <tr>
-  <td>17</td>
+  <td>20</td>
   <td><code>windows-host/src/main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
   <td><span class="tag tag-class">Module</span></td>
   <td>External entry / no inbound edge</td>
-  <td><code>AtomicBool</code><br><code>bufread</code><br><code>bufreader</code><br>+12 more</td>
+  <td><code>AtomicBool</code><br><code>bufread</code><br><code>bufreader</code><br>+10 more</td>
   <td>windows-host/src/main.rs node in windows-host/src/main.rs.</td>
 </tr>
 <tr>
-  <td>18</td>
+  <td>21</td>
   <td><code>CENTER_X</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -534,7 +568,7 @@ flowchart LR
   <td>CENTER_X node in windows-host/src/main.rs.</td>
 </tr>
 <tr>
-  <td>19</td>
+  <td>22</td>
   <td><code>CENTER_Y</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -542,7 +576,7 @@ flowchart LR
   <td>CENTER_Y node in windows-host/src/main.rs.</td>
 </tr>
 <tr>
-  <td>20</td>
+  <td>23</td>
   <td><code>SCREEN_HEIGHT</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -550,7 +584,7 @@ flowchart LR
   <td>SCREEN_HEIGHT node in windows-host/src/main.rs.</td>
 </tr>
 <tr>
-  <td>21</td>
+  <td>24</td>
   <td><code>SCREEN_WIDTH</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -558,7 +592,7 @@ flowchart LR
   <td>SCREEN_WIDTH node in windows-host/src/main.rs.</td>
 </tr>
 <tr>
-  <td>22</td>
+  <td>25</td>
   <td><code>bufread</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
@@ -566,23 +600,7 @@ flowchart LR
   <td>bufread node in project.</td>
 </tr>
 <tr>
-  <td>23</td>
-  <td><code>duration</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>duration node in project.</td>
-</tr>
-<tr>
-  <td>24</td>
-  <td><code>env</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>env node in project.</td>
-</tr>
-<tr>
-  <td>25</td>
+  <td>26</td>
   <td><code>foundation</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
@@ -590,20 +608,12 @@ flowchart LR
   <td>foundation node in project.</td>
 </tr>
 <tr>
-  <td>26</td>
+  <td>27</td>
   <td><code>fs</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
   <td>No direct outbound edge</td>
   <td>fs node in project.</td>
-</tr>
-<tr>
-  <td>27</td>
-  <td><code>ordering</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">windows-host/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>ordering node in project.</td>
 </tr>
 <tr>
   <td>28</td>
@@ -636,19 +646,110 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>windows-host/src/main.rs</code></td><td>26 nodes</td></tr>
-<tr><td><code>linux-receiver/src/main.rs</code></td><td>13 nodes</td></tr>
+      <tr><td><code>windows-host/src/main.rs</code></td><td>18 nodes</td></tr>
+<tr><td><code>linux-receiver/src/main.rs</code></td><td>4 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: imports x30, contains x25, references x14, case of x12. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: imports x29, contains x20, calls x11, references x10. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
 
-<!-- ====== 4. Mutex Tcpstream Stream ====== -->
-<h2 id="mutex-tcpstream-stream">4. Mutex Tcpstream Stream</h2>
+<!-- ====== 4. Serving API ====== -->
+<h2 id="serve-api">4. Serving API</h2>
+<p>Serving API groups implementation around handle, connection, linux, receiver, mostly in linux-receiver/src/main.rs. This section covers 4 nodes and 3 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Serving API (4 nodes, 3 edges)
+    subgraph serve_api_External_generated_a71e9f44["External / generated"]
+        linux_receiver_src_main_rs_mutex_64aa4c36("Mutex")
+        virtualdevice_502b93eb("VirtualDevice")
+        linux_receiver_src_main_rs_tcpstream_1a5eee9d("TcpStream")
+    end
+    linux_receiver_src_main_handle_connection_36d5c981("handle_connection()<br/><small>linux-receiver/src/main.rs</small>")
+    linux_receiver_src_main_handle_connection_36d5c981 -->|references| linux_receiver_src_main_rs_mutex_64aa4c36
+    linux_receiver_src_main_handle_connection_36d5c981 -->|references| virtualdevice_502b93eb
+    linux_receiver_src_main_handle_connection_36d5c981 -->|references| linux_receiver_src_main_rs_tcpstream_1a5eee9d
+    class linux_receiver_src_main_rs_mutex_64aa4c36 klass;
+    class virtualdevice_502b93eb klass;
+    class linux_receiver_src_main_rs_tcpstream_1a5eee9d async;
+    class linux_receiver_src_main_handle_connection_36d5c981 function;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>handle_connection()</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main()</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>handle_connection() node in linux-receiver/src/main.rs.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>Mutex</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>Mutex node in project.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>TcpStream</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>TcpStream node in project.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>VirtualDevice</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>VirtualDevice node in project.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>linux-receiver/src/main.rs</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: references x3. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 5. Mutex Tcpstream Stream ====== -->
+<h2 id="mutex-tcpstream-stream">5. Mutex Tcpstream Stream</h2>
 <p>Mutex Tcpstream Stream groups implementation around mutex, tcpstream, stream, sender, mostly in windows-host/src/main.rs. This section covers 3 nodes and 2 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -656,14 +757,14 @@ flowchart LR
 flowchart LR
     %% Section: Mutex Tcpstream Stream (3 nodes, 2 edges)
     subgraph mutex_tcpstream_stream_External_generated_86517fc4["External / generated"]
-        mutex_72829939("Mutex")
-        tcpstream_5faf0d74("TcpStream")
+        windows_host_src_main_rs_mutex_97d35347("Mutex")
+        windows_host_src_main_rs_tcpstream_a0f1d7db("TcpStream")
     end
     windows_host_src_main_stream_sender_31184d82("STREAM_SENDER<br/><small>windows-host/src/main.rs</small>")
-    windows_host_src_main_stream_sender_31184d82 -->|references| mutex_72829939
-    windows_host_src_main_stream_sender_31184d82 -->|references| tcpstream_5faf0d74
-    class mutex_72829939 klass;
-    class tcpstream_5faf0d74 async;
+    windows_host_src_main_stream_sender_31184d82 -->|references| windows_host_src_main_rs_mutex_97d35347
+    windows_host_src_main_stream_sender_31184d82 -->|references| windows_host_src_main_rs_tcpstream_a0f1d7db
+    class windows_host_src_main_rs_mutex_97d35347 klass;
+    class windows_host_src_main_rs_tcpstream_a0f1d7db async;
     class windows_host_src_main_stream_sender_31184d82 async;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
@@ -727,8 +828,75 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 5. Maprs Windows Host ====== -->
-<h2 id="maprs-windows-host">5. Maprs Windows Host</h2>
+<!-- ====== 6. Atomici32 Cursor Linux ====== -->
+<h2 id="atomici32-cursor-linux">6. Atomici32 Cursor Linux</h2>
+<p>Atomici32 Cursor Linux groups implementation around atomici32, cursor, linux, receiver, mostly in linux-receiver/src/main.rs. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Atomici32 Cursor Linux (2 nodes, 1 edges)
+    atomici32_0beaf92d("AtomicI32")
+    linux_receiver_src_main_cursor_x_ba54eecd("CURSOR_X<br/><small>linux-receiver/src/main.rs</small>")
+    linux_receiver_src_main_cursor_x_ba54eecd -->|references| atomici32_0beaf92d
+    class atomici32_0beaf92d klass;
+    class linux_receiver_src_main_cursor_x_ba54eecd klass;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>AtomicI32</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>AtomicI32 node in project.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>CURSOR_X</code><br><small style="color:var(--muted)">linux-receiver/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>CURSOR_X node in linux-receiver/src/main.rs.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>linux-receiver/src/main.rs</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: references x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 7. Maprs Windows Host ====== -->
+<h2 id="maprs-windows-host">7. Maprs Windows Host</h2>
 <p>Maprs Windows Host groups implementation around maprs, windows, host, translate, mostly in windows-host/src/vk_map.rs. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -794,8 +962,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 6. Host Tailscale Kvm ====== -->
-<h2 id="host-tailscale-kvm">6. Host Tailscale Kvm</h2>
+<!-- ====== 8. Host Tailscale Kvm ====== -->
+<h2 id="host-tailscale-kvm">8. Host Tailscale Kvm</h2>
 <p>Host Tailscale Kvm groups implementation around host, tailscale, kvm, windows, mostly in windows-host/Cargo.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -850,8 +1018,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 7. Receiver Tailscale Kvm ====== -->
-<h2 id="receiver-tailscale-kvm">7. Receiver Tailscale Kvm</h2>
+<!-- ====== 9. Receiver Tailscale Kvm ====== -->
+<h2 id="receiver-tailscale-kvm">9. Receiver Tailscale Kvm</h2>
 <p>Receiver Tailscale Kvm groups implementation around receiver, tailscale, kvm, linux, mostly in linux-receiver/Cargo.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -906,16 +1074,16 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 8. Mutex ====== -->
-<h2 id="mutex">8. Mutex</h2>
+<!-- ====== 10. Mutex ====== -->
+<h2 id="mutex">10. Mutex</h2>
 <p>Mutex groups implementation around mutex, mostly in unmapped files. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
     %% Section: Mutex (1 nodes, 0 edges)
-    windows_host_src_main_rs_mutex_97d35347("Mutex")
-    class windows_host_src_main_rs_mutex_97d35347 klass;
+    mutex_72829939("Mutex")
+    class mutex_72829939 klass;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -962,16 +1130,16 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 9. Tcpstream ====== -->
-<h2 id="tcpstream">9. Tcpstream</h2>
+<!-- ====== 11. Tcpstream ====== -->
+<h2 id="tcpstream">11. Tcpstream</h2>
 <p>Tcpstream groups implementation around tcpstream, mostly in unmapped files. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
     %% Section: Tcpstream (1 nodes, 0 edges)
-    windows_host_src_main_rs_tcpstream_a0f1d7db("TcpStream")
-    class windows_host_src_main_rs_tcpstream_a0f1d7db async;
+    tcpstream_5faf0d74("TcpStream")
+    class tcpstream_5faf0d74 async;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -1024,17 +1192,17 @@ flowchart LR
   <div class="card">
     <h4>Graph</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>Nodes</td><td>91</td></tr>
-      <tr><td>Edges</td><td>110</td></tr>
+      <tr><td>Nodes</td><td>77</td></tr>
+      <tr><td>Edges</td><td>97</td></tr>
       <tr><td>Hyperedges</td><td>0</td></tr>
-      <tr><td>Communities</td><td>18</td></tr>
-      <tr><td>Documented Sections</td><td>8</td></tr>
+      <tr><td>Communities</td><td>16</td></tr>
+      <tr><td>Documented Sections</td><td>10</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Edge Confidence</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>EXTRACTED</td><td>110</td></tr>
+      <tr><td>EXTRACTED</td><td>97</td></tr>
       <tr><td>INFERRED</td><td>0</td></tr>
       <tr><td>AMBIGUOUS</td><td>0</td></tr>
     </table>
@@ -1043,7 +1211,7 @@ flowchart LR
 
 <div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
   <p>tailscale-kvm — Architecture Documentation</p>
-  <p>Generated: 2026-11-07 00:22 UTC · graphify callflow-html</p>
+  <p>Generated: 2026-11-07 00:31 UTC · graphify callflow-html</p>
 </div>
 
 </div><!-- .container -->
