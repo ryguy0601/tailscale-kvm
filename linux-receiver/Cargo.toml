@@ -6,8 +6,6 @@ authors = ["Ryan Cuccurullo <ryguy0601@gmail.com>"]
 description = "High-performance Rust receiver daemon for Tailscale KVM with /dev/uinput injection on Wayland/Hyprland"
 
 [dependencies]
-tokio = { version = "1.38", features = ["full"] }
-serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1.38", features = ["rt-multi-thread", "macros", "net", "io-util", "process", "sync", "time", "fs"] }
 serde_json = "1.0"
 evdev = { version = "0.12", features = ["tokio"] }
-notify-rust = "4.11"

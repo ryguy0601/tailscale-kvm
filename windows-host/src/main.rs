@@ -1,22 +1,33 @@
 #![windows_subsystem = "windows"]
+#![cfg_attr(not(windows), allow(dead_code, unused_imports, unused_variables))]
 
 mod vk_map;
 
 use std::env;
 use std::fs;
-use std::io::{BufRead, BufReader, Write};
-use std::net::TcpStream;
+use std::io::{BufRead, BufReader, Cursor, Read, Write};
+use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
+#[cfg(windows)]
 use std::os::windows::ffi::OsStringExt;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicIsize, AtomicU32, Ordering};
+use std::sync::{Mutex, OnceLock};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 #[cfg(windows)]
 use windows_sys::Win32::Foundation::*;
 #[cfg(windows)]
-use windows_sys::Win32::System::DataExchange::{CloseClipboard, GetClipboardData, IsClipboardFormatAvailable, OpenClipboard};
+use windows_sys::Win32::System::DataExchange::{
+    CloseClipboard, GetClipboardData, GetClipboardSequenceNumber, IsClipboardFormatAvailable,
+    OpenClipboard,
+};
+#[cfg(windows)]
+use windows_sys::Win32::System::Memory::{GlobalLock, GlobalSize, GlobalUnlock};
+#[cfg(windows)]
+use windows_sys::Win32::System::Threading::{
+    OpenProcess, QueryFullProcessImageNameW, PROCESS_QUERY_LIMITED_INFORMATION,
+};
 #[cfg(windows)]
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::*;
 #[cfg(windows)]
@@ -24,26 +35,48 @@ use windows_sys::Win32::UI::Shell::DragQueryFileW;
 #[cfg(windows)]
 use windows_sys::Win32::UI::WindowsAndMessaging::*;
 
+static IS_CONNECTED: AtomicBool = AtomicBool::new(false);
 static IS_REMOTE: AtomicBool = AtomicBool::new(false);
 static IGNORE_WARP: AtomicBool = AtomicBool::new(false);
-static STREAM_SENDER: Mutex<Option<TcpStream>> = Mutex::new(None);
+static HANDOFF_BUSY: AtomicBool = AtomicBool::new(false);
+static SUPPRESS_CLIPBOARD_SYNC: AtomicBool = AtomicBool::new(false);
+static LAST_CLIP_SEQ: AtomicU32 = AtomicU32::new(0);
 
-static mut SCREEN_WIDTH: i32 = 1920;
-static mut SCREEN_HEIGHT: i32 = 1080;
-static mut CENTER_X: i32 = 960;
-static mut CENTER_Y: i32 = 540;
+static STREAM_SENDER: Mutex<Option<TcpStream>> = Mutex::new(None);
+static TARGET_IP: OnceLock<String> = OnceLock::new();
+
+static SCREEN_WIDTH: AtomicI32 = AtomicI32::new(1920);
+static SCREEN_HEIGHT: AtomicI32 = AtomicI32::new(1080);
+static CENTER_X: AtomicI32 = AtomicI32::new(960);
+static CENTER_Y: AtomicI32 = AtomicI32::new(540);
+
+static LBUTTON_DOWN: AtomicBool = AtomicBool::new(false);
+static DRAG_START_X: AtomicI32 = AtomicI32::new(0);
+static DRAG_START_Y: AtomicI32 = AtomicI32::new(0);
+static DRAG_CLICK_HWND: AtomicIsize = AtomicIsize::new(0);
+
+static CTRL_DOWN: AtomicBool = AtomicBool::new(false);
+static ALT_DOWN: AtomicBool = AtomicBool::new(false);
+static WIN_DOWN: AtomicBool = AtomicBool::new(false);
 
 #[cfg(windows)]
 static mut MOUSE_HOOK: HHOOK = 0;
 #[cfg(windows)]
 static mut KEYBOARD_HOOK: HHOOK = 0;
 
-static LBUTTON_DOWN: AtomicBool = AtomicBool::new(false);
-static CTRL_DOWN: AtomicBool = AtomicBool::new(false);
-static ALT_DOWN: AtomicBool = AtomicBool::new(false);
-static WIN_DOWN: AtomicBool = AtomicBool::new(false);
+#[cfg(windows)]
+const CF_UNICODETEXT_FMT: u32 = 13;
+#[cfg(windows)]
+const CF_HDROP_FMT: u32 = 15;
+const MAX_CLIPBOARD_TEXT_BYTES: usize = 1_048_576; // 1 MB cap for text clipboard sync
+const FILE_CHUNK_SIZE: usize = 65_536; // 64 KB streaming chunk buffer
 
-const CF_HDROP_FORMAT: u32 = 15;
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum DragKind {
+    Browser,
+    Explorer,
+    Other,
+}
 
 fn get_config_ip() -> String {
     let args: Vec<String> = env::args().collect();
@@ -60,10 +93,9 @@ fn get_config_ip() -> String {
     if let Ok(content) = fs::read_to_string("config.txt") {
         for line in content.lines() {
             let line = line.trim();
-            if line.starts_with("OMARCHY_IP=") {
-                let parts: Vec<&str> = line.split('=').collect();
-                if parts.len() > 1 && !parts[1].trim().is_empty() {
-                    return parts[1].trim().to_string();
+            if let Some(rest) = line.strip_prefix("OMARCHY_IP=") {
+                if !rest.trim().is_empty() {
+                    return rest.trim().to_string();
                 }
             }
         }
@@ -74,71 +106,247 @@ fn get_config_ip() -> String {
 
 #[inline(always)]
 fn send_fast_bytes(bytes: &[u8]) {
+    let mut disconnected = false;
     if let Ok(mut lock) = STREAM_SENDER.lock() {
         if let Some(stream) = lock.as_mut() {
-            let _ = stream.write_all(bytes);
+            if stream.write_all(bytes).is_err() {
+                *lock = None;
+                disconnected = true;
+            }
+        }
+    }
+    if disconnected {
+        IS_CONNECTED.store(false, Ordering::SeqCst);
+        if IS_REMOTE.load(Ordering::SeqCst) {
+            switch_to_local();
         }
     }
 }
 
-fn encode_base64(input: &[u8]) -> String {
-    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut result = String::with_capacity((input.len() + 2) / 3 * 4);
-
-    for chunk in input.chunks(3) {
-        let b0 = chunk[0] as usize;
-        let b1 = *chunk.get(1).unwrap_or(&0) as usize;
-        let b2 = *chunk.get(2).unwrap_or(&0) as usize;
-
-        let triple = (b0 << 16) | (b1 << 8) | b2;
-
-        let i0 = (triple >> 18) & 0x3F;
-        let i1 = (triple >> 12) & 0x3F;
-        let i2 = (triple >> 6) & 0x3F;
-        let i3 = triple & 0x3F;
-
-        result.push(TABLE[i0] as char);
-        result.push(TABLE[i1] as char);
-
-        if chunk.len() > 1 {
-            result.push(TABLE[i2] as char);
-        } else {
-            result.push('=');
-        }
-
-        if chunk.len() > 2 {
-            result.push(TABLE[i3] as char);
-        } else {
-            result.push('=');
-        }
+#[cfg(windows)]
+unsafe fn make_key_input(vk: u16, key_up: bool) -> INPUT {
+    INPUT {
+        r#type: INPUT_KEYBOARD,
+        Anonymous: INPUT_0 {
+            ki: KEYBDINPUT {
+                wVk: vk,
+                wScan: 0,
+                dwFlags: if key_up { KEYEVENTF_KEYUP } else { 0 },
+                time: 0,
+                dwExtraInfo: 0,
+            },
+        },
     }
-
-    result
 }
 
-/// Retrieve file paths from clipboard if CF_HDROP is present
-fn get_clipboard_files() -> Vec<PathBuf> {
-    #[cfg(windows)]
+#[cfg(windows)]
+unsafe fn send_inputs(inputs: &[INPUT]) {
+    if !inputs.is_empty() {
+        let _ = SendInput(
+            inputs.len() as u32,
+            inputs.as_ptr(),
+            std::mem::size_of::<INPUT>() as i32,
+        );
+    }
+}
+
+#[cfg(windows)]
+unsafe fn tap_key(vk: u16) {
+    let seq = [make_key_input(vk, false), make_key_input(vk, true)];
+    send_inputs(&seq);
+}
+
+#[cfg(windows)]
+unsafe fn tap_chord(modifier_vk: u16, key_vk: u16) {
+    let seq = [
+        make_key_input(modifier_vk, false),
+        make_key_input(key_vk, false),
+        make_key_input(key_vk, true),
+        make_key_input(modifier_vk, true),
+    ];
+    send_inputs(&seq);
+}
+
+#[cfg(windows)]
+unsafe fn cancel_active_drag_and_release_mouse() {
+    // 1. Escape cancels Win32 modal window move, Aero Snap, Firefox tab tear-off, and Explorer OLE drag
+    tap_key(VK_ESCAPE);
+    thread::sleep(Duration::from_millis(20));
+
+    // 2. Release left mouse button via SendInput so Windows exits drag state cleanly
+    let up = [INPUT {
+        r#type: INPUT_MOUSE,
+        Anonymous: INPUT_0 {
+            mi: MOUSEINPUT {
+                dx: 0,
+                dy: 0,
+                mouseData: 0,
+                dwFlags: MOUSEEVENTF_LEFTUP,
+                time: 0,
+                dwExtraInfo: 0,
+            },
+        },
+    }];
+    send_inputs(&up);
+    thread::sleep(Duration::from_millis(35));
+}
+
+#[cfg(windows)]
+unsafe fn classify_window(hwnd: HWND) -> (HWND, DragKind) {
+    if hwnd == 0 {
+        return (0, DragKind::Other);
+    }
+
+    let root = GetAncestor(hwnd, GA_ROOT);
+    let target = if root != 0 { root } else { hwnd };
+
+    let mut class_buf = [0u16; 128];
+    let class_len = GetClassNameW(target, class_buf.as_mut_ptr(), class_buf.len() as i32);
+    let class_name = if class_len > 0 {
+        String::from_utf16_lossy(&class_buf[..class_len as usize])
+    } else {
+        String::new()
+    };
+
+    let mut pid: u32 = 0;
+    GetWindowThreadProcessId(target, &mut pid);
+    if pid == 0 {
+        return (target, DragKind::Other);
+    }
+
+    let h_proc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
+    if h_proc == 0 {
+        return (target, DragKind::Other);
+    }
+
+    let mut exe_buf = [0u16; 512];
+    let mut exe_len = exe_buf.len() as u32;
+    let ok = QueryFullProcessImageNameW(h_proc, 0, exe_buf.as_mut_ptr(), &mut exe_len);
+    let _ = CloseHandle(h_proc);
+
+    if ok == 0 || exe_len == 0 {
+        return (target, DragKind::Other);
+    }
+
+    let full_path = String::from_utf16_lossy(&exe_buf[..exe_len as usize]);
+    let exe_name = full_path
+        .rsplit(['\\', '/'])
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase();
+
+    match exe_name.as_str() {
+        "firefox.exe" | "zen.exe" | "waterfox.exe" | "librewolf.exe" | "floorp.exe"
+        | "chrome.exe" | "msedge.exe" | "brave.exe" | "vivaldi.exe" | "opera.exe" | "arc.exe"
+        | "chromium.exe" | "thorium.exe" => (target, DragKind::Browser),
+
+        "explorer.exe" => {
+            if matches!(
+                class_name.as_str(),
+                "CabinetWClass" | "ExploreWClass" | "Progman" | "WorkerW"
+            ) {
+                (target, DragKind::Explorer)
+            } else {
+                (target, DragKind::Other)
+            }
+        }
+
+        "files.exe" | "onecommander.exe" | "totalcmd64.exe" | "xyplorer.exe" => {
+            (target, DragKind::Explorer)
+        }
+
+        _ => (target, DragKind::Other),
+    }
+}
+
+#[cfg(windows)]
+fn wait_for_clipboard_change(seq_before: u32, timeout_ms: u64) -> bool {
+    let deadline = Instant::now() + Duration::from_millis(timeout_ms);
+    while Instant::now() < deadline {
+        let cur = unsafe { GetClipboardSequenceNumber() };
+        if cur != seq_before {
+            return true;
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
+    false
+}
+
+#[cfg(windows)]
+fn read_clipboard_unicode_text() -> Option<String> {
     unsafe {
-        if IsClipboardFormatAvailable(CF_HDROP_FORMAT) == 0 {
+        if IsClipboardFormatAvailable(CF_UNICODETEXT_FMT) == 0 {
+            return None;
+        }
+
+        let mut opened = false;
+        for _ in 0..4 {
+            if OpenClipboard(0) != 0 {
+                opened = true;
+                break;
+            }
+            thread::sleep(Duration::from_millis(10));
+        }
+        if !opened {
+            return None;
+        }
+
+        let mut result = None;
+        let h_data = GetClipboardData(CF_UNICODETEXT_FMT);
+        if h_data != 0 {
+            let h_global = h_data as HGLOBAL;
+            let byte_size = GlobalSize(h_global);
+            if byte_size > 0 && byte_size <= MAX_CLIPBOARD_TEXT_BYTES {
+                let ptr = GlobalLock(h_global) as *const u16;
+                if !ptr.is_null() {
+                    let max_chars = byte_size / 2;
+                    let mut len = 0usize;
+                    while len < max_chars && *ptr.add(len) != 0 {
+                        len += 1;
+                    }
+                    let slice = std::slice::from_raw_parts(ptr, len);
+                    result = Some(String::from_utf16_lossy(slice));
+                    let _ = GlobalUnlock(h_global);
+                }
+            }
+        }
+
+        let _ = CloseClipboard();
+        result
+    }
+}
+
+#[cfg(windows)]
+fn read_clipboard_files() -> Vec<PathBuf> {
+    unsafe {
+        if IsClipboardFormatAvailable(CF_HDROP_FMT) == 0 {
             return Vec::new();
         }
 
-        if OpenClipboard(0) == 0 {
+        let mut opened = false;
+        for _ in 0..4 {
+            if OpenClipboard(0) != 0 {
+                opened = true;
+                break;
+            }
+            thread::sleep(Duration::from_millis(10));
+        }
+        if !opened {
             return Vec::new();
         }
 
         let mut paths = Vec::new();
-        let h_drop = GetClipboardData(CF_HDROP_FORMAT);
+        let h_drop = GetClipboardData(CF_HDROP_FMT);
         if h_drop != 0 {
-            let file_count = DragQueryFileW(h_drop as _, 0xFFFFFFFF, std::ptr::null_mut(), 0);
-            for i in 0..file_count {
+            let file_count = DragQueryFileW(h_drop as _, 0xFFFF_FFFF, std::ptr::null_mut(), 0);
+            for i in 0..file_count.min(500) {
                 let char_len = DragQueryFileW(h_drop as _, i, std::ptr::null_mut(), 0);
                 if char_len == 0 {
                     continue;
                 }
                 let mut buffer: Vec<u16> = vec![0; (char_len + 1) as usize];
-                let copied = DragQueryFileW(h_drop as _, i, buffer.as_mut_ptr(), buffer.len() as u32);
+                let copied =
+                    DragQueryFileW(h_drop as _, i, buffer.as_mut_ptr(), buffer.len() as u32);
                 if copied > 0 {
                     buffer.truncate(copied as usize);
                     let os_str = std::ffi::OsString::from_wide(&buffer);
@@ -146,134 +354,307 @@ fn get_clipboard_files() -> Vec<PathBuf> {
                 }
             }
         }
-        CloseClipboard();
+
+        let _ = CloseClipboard();
         paths
     }
-    #[cfg(not(windows))]
-    Vec::new()
 }
 
-/// Send files to Omarchy Linux ~/Downloads folder
-fn send_files_to_omarchy(paths: Vec<PathBuf>) {
+fn collect_transfer_entries(
+    base: &Path,
+    current: &Path,
+    depth: usize,
+    out: &mut Vec<(PathBuf, String)>,
+) {
+    if depth > 6 || out.len() >= 500 {
+        return;
+    }
+
+    if current.is_file() {
+        let rel = if base == current {
+            current
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("transferred_file")
+                .to_string()
+        } else {
+            let parent_name = base
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("folder");
+            let sub = current
+                .strip_prefix(base)
+                .ok()
+                .and_then(|p| p.to_str())
+                .unwrap_or("file");
+            format!("{}/{}", parent_name, sub.replace('\\', "/"))
+        };
+        let clean_rel: String = rel.chars().filter(|&c| c != '\r' && c != '\n').collect();
+        if !clean_rel.is_empty() {
+            out.push((current.to_path_buf(), clean_rel));
+        }
+    } else if current.is_dir() {
+        if let Ok(entries) = fs::read_dir(current) {
+            for entry in entries.flatten() {
+                collect_transfer_entries(base, &entry.path(), depth + 1, out);
+            }
+        }
+    }
+}
+
+fn resolve_target_addr(target_ip: &str) -> Option<SocketAddr> {
+    let addr_str = format!("{}:9876", target_ip);
+    addr_str.to_socket_addrs().ok()?.next()
+}
+
+/// Streams files over a dedicated secondary TCP connection using a constant 64 KB stack buffer.
+/// Uses < 128 KB RAM even for multi-gigabyte files and never blocks the 1000Hz mouse/keyboard socket.
+fn stream_files_to_omarchy(paths: Vec<PathBuf>) {
+    let Some(target_ip) = TARGET_IP.get() else {
+        return;
+    };
+
+    let mut entries = Vec::new();
+    for p in &paths {
+        collect_transfer_entries(p, p, 0, &mut entries);
+    }
+    if entries.is_empty() {
+        return;
+    }
+
+    let Some(addr) = resolve_target_addr(target_ip) else {
+        return;
+    };
+
+    let Ok(mut tx) = TcpStream::connect_timeout(&addr, Duration::from_secs(4)) else {
+        return;
+    };
+    let _ = tx.set_nodelay(true);
+    let _ = tx.set_write_timeout(Some(Duration::from_secs(60)));
+
+    let mut chunk_buf = [0u8; FILE_CHUNK_SIZE];
+
+    for (full_path, rel_path) in entries {
+        let Ok(mut file) = fs::File::open(&full_path) else {
+            continue;
+        };
+        let Ok(meta) = file.metadata() else {
+            continue;
+        };
+        let total_size = meta.len();
+
+        let header = format!("B {} {}\n", total_size, rel_path);
+        if tx.write_all(header.as_bytes()).is_err() {
+            break;
+        }
+
+        let mut remaining = total_size;
+        let mut write_failed = false;
+        while remaining > 0 {
+            let to_read = FILE_CHUNK_SIZE.min(remaining as usize);
+            match file.read(&mut chunk_buf[..to_read]) {
+                Ok(0) => {
+                    // File truncated mid-transfer; pad remaining bytes so framing stays intact
+                    let zeros = [0u8; 4096];
+                    while remaining > 0 {
+                        let pad = zeros.len().min(remaining as usize);
+                        if tx.write_all(&zeros[..pad]).is_err() {
+                            write_failed = true;
+                            break;
+                        }
+                        remaining -= pad as u64;
+                    }
+                    break;
+                }
+                Ok(n) => {
+                    if tx.write_all(&chunk_buf[..n]).is_err() {
+                        write_failed = true;
+                        break;
+                    }
+                    remaining -= n as u64;
+                }
+                Err(_) => {
+                    write_failed = true;
+                    break;
+                }
+            }
+        }
+
+        if write_failed {
+            break;
+        }
+    }
+
+    let _ = tx.flush();
+}
+
+fn looks_like_url(s: &str) -> bool {
+    let t = s.trim();
+    if t.len() < 4 || t.chars().any(char::is_whitespace) {
+        return false;
+    }
+    t.starts_with("http://")
+        || t.starts_with("https://")
+        || t.starts_with("about:")
+        || t.starts_with("file://")
+        || t.starts_with("www.")
+        || t.contains('.')
+        || t.starts_with("localhost:")
+}
+
+#[cfg(windows)]
+fn execute_handoff(source_hwnd: HWND, fallback_hwnd: HWND, from_drag: bool) {
+    if HANDOFF_BUSY
+        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+        .is_err()
+    {
+        return;
+    }
+
     thread::spawn(move || {
-        for path in paths {
-            if path.is_file() {
-                if let Ok(bytes) = fs::read(&path) {
-                    if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
-                        let clean_filename = filename.replace(' ', "_");
-                        let b64 = encode_base64(&bytes);
-                        let pkt = format!("F {} {}\n", clean_filename, b64);
-                        send_fast_bytes(pkt.as_bytes());
+        unsafe {
+            if from_drag {
+                cancel_active_drag_and_release_mouse();
+            } else {
+                // Wait briefly for user to release Win/Ctrl/Alt hotkey modifiers so Ctrl+L/Ctrl+C are clean
+                let deadline = Instant::now() + Duration::from_millis(600);
+                while Instant::now() < deadline {
+                    if !WIN_DOWN.load(Ordering::Relaxed)
+                        && !CTRL_DOWN.load(Ordering::Relaxed)
+                        && !ALT_DOWN.load(Ordering::Relaxed)
+                    {
+                        break;
+                    }
+                    thread::sleep(Duration::from_millis(12));
+                }
+                thread::sleep(Duration::from_millis(20));
+            }
+
+            let (mut target_hwnd, mut kind) = classify_window(source_hwnd);
+            if kind == DragKind::Other && fallback_hwnd != 0 && fallback_hwnd != source_hwnd {
+                let (fb_hwnd, fb_kind) = classify_window(fallback_hwnd);
+                if fb_kind != DragKind::Other {
+                    target_hwnd = fb_hwnd;
+                    kind = fb_kind;
+                }
+            }
+
+            match kind {
+                DragKind::Browser => {
+                    if GetForegroundWindow() != target_hwnd {
+                        let _ = SetForegroundWindow(target_hwnd);
+                        thread::sleep(Duration::from_millis(30));
+                    }
+
+                    SUPPRESS_CLIPBOARD_SYNC.store(true, Ordering::SeqCst);
+                    let seq_before = GetClipboardSequenceNumber();
+
+                    // Focus URL bar via Ctrl+L and copy via Ctrl+C
+                    tap_chord(VK_CONTROL, b'L' as u16);
+                    thread::sleep(Duration::from_millis(45));
+                    tap_chord(VK_CONTROL, b'C' as u16);
+
+                    let mut changed = wait_for_clipboard_change(seq_before, 240);
+                    if !changed {
+                        // Fallback: Alt+D then Ctrl+C
+                        tap_chord(VK_MENU, b'D' as u16);
+                        thread::sleep(Duration::from_millis(45));
+                        tap_chord(VK_CONTROL, b'C' as u16);
+                        changed = wait_for_clipboard_change(seq_before, 200);
+                    }
+
+                    let copied_url = if changed {
+                        read_clipboard_unicode_text()
+                    } else {
+                        None
+                    };
+
+                    LAST_CLIP_SEQ.store(GetClipboardSequenceNumber(), Ordering::SeqCst);
+                    SUPPRESS_CLIPBOARD_SYNC.store(false, Ordering::SeqCst);
+
+                    // Close the address bar dropdown cleanly on Windows
+                    tap_key(VK_ESCAPE);
+
+                    let final_url = copied_url
+                        .as_deref()
+                        .map(str::trim)
+                        .filter(|u| looks_like_url(u))
+                        .unwrap_or("about:newtab");
+
+                    let pkt = format!("U {}\n", final_url);
+                    send_fast_bytes(pkt.as_bytes());
+                }
+
+                DragKind::Explorer => {
+                    if GetForegroundWindow() != target_hwnd {
+                        let _ = SetForegroundWindow(target_hwnd);
+                        thread::sleep(Duration::from_millis(30));
+                    }
+
+                    SUPPRESS_CLIPBOARD_SYNC.store(true, Ordering::SeqCst);
+                    let seq_before = GetClipboardSequenceNumber();
+
+                    tap_chord(VK_CONTROL, b'C' as u16);
+                    let mut changed = wait_for_clipboard_change(seq_before, 250);
+                    if !changed {
+                        thread::sleep(Duration::from_millis(35));
+                        tap_chord(VK_CONTROL, b'C' as u16);
+                        changed = wait_for_clipboard_change(seq_before, 250);
+                    }
+
+                    // On mouse drag, require clipboard sequence update so an empty desktop marquee doesn't resend old files.
+                    // On explicit hotkey, allow sending already-copied clipboard files if present.
+                    let files = if changed || !from_drag {
+                        read_clipboard_files()
+                    } else {
+                        Vec::new()
+                    };
+
+                    LAST_CLIP_SEQ.store(GetClipboardSequenceNumber(), Ordering::SeqCst);
+                    SUPPRESS_CLIPBOARD_SYNC.store(false, Ordering::SeqCst);
+
+                    if !files.is_empty() {
+                        stream_files_to_omarchy(files);
+                    }
+                }
+
+                DragKind::Other => {
+                    // If triggered explicitly by hotkey (not drag) and files are in clipboard, transfer them
+                    if !from_drag {
+                        let files = read_clipboard_files();
+                        if !files.is_empty() {
+                            stream_files_to_omarchy(files);
+                        }
                     }
                 }
             }
         }
+
+        HANDOFF_BUSY.store(false, Ordering::SeqCst);
     });
 }
 
-/// Grabs the active browser URL using address bar selection keystrokes
-fn try_get_active_browser_url() -> Option<String> {
+pub fn switch_to_remote(was_dragging: bool) {
     #[cfg(windows)]
-    unsafe {
-        // If left mouse button was being held (dragging title bar / tab), release it cleanly
-        if LBUTTON_DOWN.load(Ordering::SeqCst) {
-            keybd_event(VK_LBUTTON as u8, 0, KEYEVENTF_KEYUP, 0);
-            thread::sleep(Duration::from_millis(30));
-        }
+    let fg_hwnd = unsafe { GetForegroundWindow() };
+    #[cfg(windows)]
+    let click_hwnd = DRAG_CLICK_HWND.load(Ordering::Relaxed);
 
-        let mut pt: POINT = std::mem::zeroed();
-        GetCursorPos(&mut pt);
-        let mut target_hwnd = WindowFromPoint(pt);
-
-        if target_hwnd == 0 {
-            target_hwnd = GetForegroundWindow();
-        } else {
-            let ancestor = GetAncestor(target_hwnd, GA_ROOT);
-            if ancestor != 0 {
-                target_hwnd = ancestor;
-            }
-            SetForegroundWindow(target_hwnd);
-        }
-
-        if target_hwnd == 0 {
-            return None;
-        }
-
-        thread::sleep(Duration::from_millis(40));
-
-        // 1. Try Alt + D (works universally across Firefox, Chrome, Edge to highlight URL)
-        keybd_event(VK_MENU as u8, 0, 0, 0);
-        keybd_event(b'D', 0, 0, 0);
-        keybd_event(b'D', 0, KEYEVENTF_KEYUP, 0);
-        keybd_event(VK_MENU as u8, 0, KEYEVENTF_KEYUP, 0);
-
-        thread::sleep(Duration::from_millis(50));
-
-        // 2. Also send Ctrl + L as backup
-        keybd_event(VK_CONTROL as u8, 0, 0, 0);
-        keybd_event(b'L', 0, 0, 0);
-        keybd_event(b'L', 0, KEYEVENTF_KEYUP, 0);
-        keybd_event(VK_CONTROL as u8, 0, KEYEVENTF_KEYUP, 0);
-
-        thread::sleep(Duration::from_millis(60));
-
-        // 3. Send Ctrl + C (Copy URL to clipboard)
-        keybd_event(VK_CONTROL as u8, 0, 0, 0);
-        keybd_event(b'C', 0, 0, 0);
-        keybd_event(b'C', 0, KEYEVENTF_KEYUP, 0);
-        keybd_event(VK_CONTROL as u8, 0, KEYEVENTF_KEYUP, 0);
-
-        thread::sleep(Duration::from_millis(70));
-
-        // Read URL from clipboard
-        if let Ok(mut clip) = arboard::Clipboard::new() {
-            if let Ok(text) = clip.get_text() {
-                let trimmed = text.trim();
-                if trimmed.starts_with("http://")
-                    || trimmed.starts_with("https://")
-                    || trimmed.starts_with("www.")
-                    || (trimmed.contains('.') && !trimmed.contains(' ') && trimmed.len() > 3)
-                {
-                    return Some(trimmed.to_string());
-                }
-            }
-        }
-    }
-    None
-}
-
-/// Fling active browser tab across to Omarchy
-pub fn fling_browser_to_omarchy() {
-    thread::spawn(|| {
-        if let Some(url) = try_get_active_browser_url() {
-            let pkt = format!("U {}\n", url);
-            send_fast_bytes(pkt.as_bytes());
-        }
-    });
-}
-
-pub fn handle_edge_drag_or_transfer() {
-    // 1. Check if files are copied in clipboard (CF_HDROP)
-    let files = get_clipboard_files();
-    if !files.is_empty() {
-        send_files_to_omarchy(files);
-        return;
-    }
-
-    // 2. If left button was held (dragging window / tab) or browser is active, fling URL
-    if LBUTTON_DOWN.load(Ordering::SeqCst) {
-        fling_browser_to_omarchy();
-    }
-}
-
-pub fn switch_to_remote() {
-    handle_edge_drag_or_transfer();
-
+    LBUTTON_DOWN.store(false, Ordering::SeqCst);
     IS_REMOTE.store(true, Ordering::SeqCst);
     IGNORE_WARP.store(true, Ordering::SeqCst);
+
     #[cfg(windows)]
     unsafe {
-        SetCursorPos(CENTER_X, CENTER_Y);
+        SetCursorPos(
+            CENTER_X.load(Ordering::Relaxed),
+            CENTER_Y.load(Ordering::Relaxed),
+        );
+    }
+
+    #[cfg(windows)]
+    if was_dragging {
+        execute_handoff(fg_hwnd, click_hwnd, true);
     }
 }
 
@@ -283,7 +664,10 @@ pub fn switch_to_local() {
     #[cfg(windows)]
     unsafe {
         ClipCursor(std::ptr::null());
-        SetCursorPos(SCREEN_WIDTH - 80, CENTER_Y);
+        SetCursorPos(
+            SCREEN_WIDTH.load(Ordering::Relaxed) - 80,
+            CENTER_Y.load(Ordering::Relaxed),
+        );
     }
 }
 
@@ -294,19 +678,35 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
         let x = mouse_data.pt.x;
         let y = mouse_data.pt.y;
         let msg = wparam as u32;
+        let injected = (mouse_data.flags & LLMHF_INJECTED) != 0;
 
-        if msg == WM_LBUTTONDOWN {
-            LBUTTON_DOWN.store(true, Ordering::SeqCst);
-        } else if msg == WM_LBUTTONUP {
-            LBUTTON_DOWN.store(false, Ordering::SeqCst);
+        // Pass through our own synthesized button releases (e.g. MOUSEEVENTF_LEFTUP during drag cancel)
+        if injected && msg != WM_MOUSEMOVE {
+            if msg == WM_LBUTTONUP {
+                LBUTTON_DOWN.store(false, Ordering::SeqCst);
+            }
+            return CallNextHookEx(MOUSE_HOOK, code, wparam, lparam);
         }
 
         let remote = IS_REMOTE.load(Ordering::SeqCst);
 
-        // Check if cursor hits the right screen edge of Windows
         if !remote {
-            if x >= SCREEN_WIDTH - 2 {
-                switch_to_remote();
+            if msg == WM_LBUTTONDOWN {
+                LBUTTON_DOWN.store(true, Ordering::SeqCst);
+                DRAG_START_X.store(x, Ordering::Relaxed);
+                DRAG_START_Y.store(y, Ordering::Relaxed);
+                DRAG_CLICK_HWND.store(WindowFromPoint(mouse_data.pt), Ordering::Relaxed);
+            } else if msg == WM_LBUTTONUP {
+                LBUTTON_DOWN.store(false, Ordering::SeqCst);
+            }
+
+            let screen_w = SCREEN_WIDTH.load(Ordering::Relaxed);
+            if x >= screen_w - 3 && IS_CONNECTED.load(Ordering::Relaxed) {
+                let held = LBUTTON_DOWN.load(Ordering::SeqCst);
+                let dx_drag = x - DRAG_START_X.load(Ordering::Relaxed);
+                // Require deliberate rightward drag (>= 35px) so vertical scrollbar grabs never misfire
+                let was_dragging = held && dx_drag >= 35;
+                switch_to_remote(was_dragging);
                 return 1;
             }
             return CallNextHookEx(MOUSE_HOOK, code, wparam, lparam);
@@ -318,48 +718,49 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
                 return 1;
             }
 
-            let dx = x - CENTER_X;
-            let dy = y - CENTER_Y;
+            let cx = CENTER_X.load(Ordering::Relaxed);
+            let cy = CENTER_Y.load(Ordering::Relaxed);
+            let dx = x - cx;
+            let dy = y - cy;
 
             if dx != 0 || dy != 0 {
-                let pkt = format!("M {} {}\n", dx, dy);
-                send_fast_bytes(pkt.as_bytes());
+                let mut buf = [0u8; 32];
+                let mut cur = Cursor::new(&mut buf[..]);
+                if writeln!(cur, "M {} {}", dx, dy).is_ok() {
+                    let len = cur.position() as usize;
+                    send_fast_bytes(&buf[..len]);
+                }
 
                 IGNORE_WARP.store(true, Ordering::SeqCst);
-                SetCursorPos(CENTER_X, CENTER_Y);
+                SetCursorPos(cx, cy);
             }
             return 1;
         }
 
-        // Clicks
         if msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN {
-            let btn = match msg {
-                WM_LBUTTONDOWN => "left",
-                WM_RBUTTONDOWN => "right",
-                _ => "middle",
+            let pkt: &[u8] = match msg {
+                WM_LBUTTONDOWN => b"C left down\n",
+                WM_RBUTTONDOWN => b"C right down\n",
+                _ => b"C middle down\n",
             };
-            let pkt = format!("C {} down\n", btn);
-            send_fast_bytes(pkt.as_bytes());
+            send_fast_bytes(pkt);
             return 1;
         }
 
         if msg == WM_LBUTTONUP || msg == WM_RBUTTONUP || msg == WM_MBUTTONUP {
-            let btn = match msg {
-                WM_LBUTTONUP => "left",
-                WM_RBUTTONUP => "right",
-                _ => "middle",
+            let pkt: &[u8] = match msg {
+                WM_LBUTTONUP => b"C left up\n",
+                WM_RBUTTONUP => b"C right up\n",
+                _ => b"C middle up\n",
             };
-            let pkt = format!("C {} up\n", btn);
-            send_fast_bytes(pkt.as_bytes());
+            send_fast_bytes(pkt);
             return 1;
         }
 
-        // Mouse Wheel Scroll
         if msg == WM_MOUSEWHEEL {
             let delta = (mouse_data.mouseData >> 16) as i16;
-            let scroll_units = if delta > 0 { 1 } else { -1 };
-            let pkt = format!("S 0 {}\n", scroll_units);
-            send_fast_bytes(pkt.as_bytes());
+            let pkt: &[u8] = if delta > 0 { b"S 0 1\n" } else { b"S 0 -1\n" };
+            send_fast_bytes(pkt);
             return 1;
         }
     }
@@ -371,6 +772,12 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
 unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     if code >= 0 {
         let kbd_data = *(lparam as *const KBDLLHOOKSTRUCT);
+
+        // Always allow our own synthesized keystrokes (Escape, Ctrl+L, Ctrl+C) to reach local Windows apps!
+        if (kbd_data.flags & LLKHF_INJECTED) != 0 {
+            return CallNextHookEx(KEYBOARD_HOOK, code, wparam, lparam);
+        }
+
         let vk = kbd_data.vkCode as u16;
         let msg = wparam as u32;
         let is_down = msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN;
@@ -383,23 +790,24 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
             WIN_DOWN.store(is_down, Ordering::SeqCst);
         }
 
-        // Non-conflicting Hotkeys to instantly Fling Tab / File:
-        // Win + Right Arrow  OR  Ctrl + Alt + Right Arrow
-        if vk == VK_RIGHT && is_down {
-            if WIN_DOWN.load(Ordering::SeqCst)
-                || (CTRL_DOWN.load(Ordering::SeqCst) && ALT_DOWN.load(Ordering::SeqCst))
-            {
-                handle_edge_drag_or_transfer();
-                return 1;
-            }
+        // Hotkey to fling active Browser Tab or selected Explorer File(s): Win + Right Arrow
+        if !IS_REMOTE.load(Ordering::Relaxed)
+            && vk == VK_RIGHT
+            && is_down
+            && WIN_DOWN.load(Ordering::Relaxed)
+            && IS_CONNECTED.load(Ordering::Relaxed)
+        {
+            let fg = GetForegroundWindow();
+            execute_handoff(fg, 0, false);
+            return 1;
         }
 
         // Emergency Release Hotkeys: F12 (0x7B), Pause (0x13), ScrollLock (0x91)
         if vk == 0x7B || vk == 0x13 || vk == 0x91 {
             if IS_REMOTE.load(Ordering::SeqCst) && is_down {
                 switch_to_local();
+                return 1;
             }
-            return 1;
         }
 
         if !IS_REMOTE.load(Ordering::SeqCst) {
@@ -409,8 +817,12 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
         // In Remote Mode: map and send to Omarchy, swallow on Windows
         if let Some(evdev_code) = vk_map::translate_vk(vk as u32) {
             let action = if is_down { "down" } else { "up" };
-            let pkt = format!("K {} {}\n", evdev_code, action);
-            send_fast_bytes(pkt.as_bytes());
+            let mut buf = [0u8; 24];
+            let mut cur = Cursor::new(&mut buf[..]);
+            if writeln!(cur, "K {} {}", evdev_code, action).is_ok() {
+                let len = cur.position() as usize;
+                send_fast_bytes(&buf[..len]);
+            }
         }
         return 1;
     }
@@ -418,75 +830,110 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
     CallNextHookEx(KEYBOARD_HOOK, code, wparam, lparam)
 }
 
+/// Zero-allocation idle clipboard monitor using GetClipboardSequenceNumber().
+/// Only opens the clipboard when the sequence integer actually changes.
 fn start_clipboard_sync() {
+    #[cfg(windows)]
     thread::spawn(|| {
-        let mut clipboard = arboard::Clipboard::new().ok();
-        let mut last_text = String::new();
+        LAST_CLIP_SEQ.store(unsafe { GetClipboardSequenceNumber() }, Ordering::SeqCst);
 
         loop {
-            if let Some(clip) = clipboard.as_mut() {
-                if let Ok(text) = clip.get_text() {
-                    if !text.is_empty() && text != last_text {
-                        last_text = text.clone();
-                        let json = serde_json::json!({
-                            "type": "clipboard",
-                            "text": text
-                        });
-                        let pkt = format!("{}\n", json);
-                        send_fast_bytes(pkt.as_bytes());
+            thread::sleep(Duration::from_millis(500));
+
+            if SUPPRESS_CLIPBOARD_SYNC.load(Ordering::SeqCst) || !IS_CONNECTED.load(Ordering::Relaxed) {
+                continue;
+            }
+
+            let cur_seq = unsafe { GetClipboardSequenceNumber() };
+            let prev_seq = LAST_CLIP_SEQ.load(Ordering::SeqCst);
+            if cur_seq == prev_seq {
+                continue;
+            }
+            LAST_CLIP_SEQ.store(cur_seq, Ordering::SeqCst);
+
+            if let Some(text) = read_clipboard_unicode_text() {
+                if !text.is_empty() {
+                    let mut pkt = String::with_capacity(text.len() + 4);
+                    pkt.push_str("T ");
+                    for ch in text.chars() {
+                        match ch {
+                            '\\' => pkt.push_str("\\\\"),
+                            '\n' => pkt.push_str("\\n"),
+                            '\r' => pkt.push_str("\\r"),
+                            c => pkt.push(c),
+                        }
                     }
+                    pkt.push('\n');
+                    send_fast_bytes(pkt.as_bytes());
                 }
             }
-            thread::sleep(Duration::from_millis(500));
         }
     });
 }
 
-fn start_receiver_listener(stream: TcpStream) {
-    thread::spawn(move || {
-        let reader = BufReader::new(stream);
-        for line in reader.lines() {
-            if let Ok(line_str) = line {
-                let trimmed = line_str.trim();
-                if trimmed == "switch_to_local" || trimmed == "{\"type\":\"switch_to_local\"}" {
-                    switch_to_local();
+/// Persistent TCP connection manager with automatic reconnect on disconnect or receiver restart.
+fn start_connection_manager(target_ip: String) {
+    thread::spawn(move || loop {
+        if let Some(addr) = resolve_target_addr(&target_ip) {
+            if let Ok(mut stream) = TcpStream::connect_timeout(&addr, Duration::from_secs(3)) {
+                let _ = stream.set_nodelay(true);
+                let _ = stream.set_write_timeout(Some(Duration::from_secs(5)));
+
+                // Identify as primary control session
+                if stream.write_all(b"H control\n").is_ok() {
+                    if let Ok(reader_stream) = stream.try_clone() {
+                        if let Ok(mut lock) = STREAM_SENDER.lock() {
+                            *lock = Some(stream);
+                        }
+                        IS_CONNECTED.store(true, Ordering::SeqCst);
+
+                        // Block reading server notifications until disconnect/EOF
+                        let reader = BufReader::new(reader_stream);
+                        for line in reader.lines() {
+                            match line {
+                                Ok(line_str) => {
+                                    let trimmed = line_str.trim();
+                                    if trimmed == "switch_to_local"
+                                        || trimmed == "{\"type\":\"switch_to_local\"}"
+                                    {
+                                        switch_to_local();
+                                    }
+                                }
+                                Err(_) => break,
+                            }
+                        }
+                    }
                 }
             }
         }
+
+        IS_CONNECTED.store(false, Ordering::SeqCst);
+        if let Ok(mut lock) = STREAM_SENDER.lock() {
+            *lock = None;
+        }
+        if IS_REMOTE.load(Ordering::SeqCst) {
+            switch_to_local();
+        }
+
+        thread::sleep(Duration::from_secs(2));
     });
 }
 
 fn main() {
     let target_ip = get_config_ip();
+    let _ = TARGET_IP.set(target_ip.clone());
 
     #[cfg(windows)]
     unsafe {
-        SCREEN_WIDTH = GetSystemMetrics(SM_CXSCREEN);
-        SCREEN_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
-        CENTER_X = SCREEN_WIDTH / 2;
-        CENTER_Y = SCREEN_HEIGHT / 2;
+        let sw = GetSystemMetrics(SM_CXSCREEN);
+        let sh = GetSystemMetrics(SM_CYSCREEN);
+        SCREEN_WIDTH.store(sw, Ordering::SeqCst);
+        SCREEN_HEIGHT.store(sh, Ordering::SeqCst);
+        CENTER_X.store(sw / 2, Ordering::SeqCst);
+        CENTER_Y.store(sh / 2, Ordering::SeqCst);
     }
 
-    // Connect to Omarchy over Tailscale with auto-reconnect
-    loop {
-        match TcpStream::connect(format!("{}:9876", target_ip)) {
-            Ok(stream) => {
-                let _ = stream.set_nodelay(true);
-
-                let stream_clone = stream.try_clone().expect("Failed to clone TCP stream");
-                start_receiver_listener(stream_clone);
-
-                if let Ok(mut lock) = STREAM_SENDER.lock() {
-                    *lock = Some(stream);
-                }
-                break;
-            }
-            Err(_) => {
-                thread::sleep(Duration::from_secs(3));
-            }
-        }
-    }
-
+    start_connection_manager(target_ip);
     start_clipboard_sync();
 
     #[cfg(windows)]
