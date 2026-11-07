@@ -233,7 +233,7 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
 unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     if code >= 0 {
         let kbd_data = *(lparam as *const KBDLLHOOKSTRUCT);
-        let vk = kbd_data.vkCode;
+        let vk = kbd_data.vkCode as u16;
         let msg = wparam as u32;
         let is_down = msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN;
 
@@ -262,7 +262,7 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
         }
 
         // In Remote Mode: map and send to Omarchy, swallow on Windows
-        if let Some(evdev_code) = vk_map::translate_vk(vk) {
+        if let Some(evdev_code) = vk_map::translate_vk(vk as u32) {
             let action = if is_down { "down" } else { "up" };
             let pkt = format!("K {} {}\n", evdev_code, action);
             send_fast_bytes(pkt.as_bytes());
