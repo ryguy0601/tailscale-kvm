@@ -1,17 +1,17 @@
 # Graph Report - tailscale-kvm  (2026-11-06)
 
 ## Corpus Check
-- 15 files · ~12,337 words
+- 15 files · ~12,516 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 4 file(s) not represented in the graph (top: (none) 3, .toml 1)
 
 ## Summary
-- 262 nodes · 428 edges · 35 communities (21 shown, 14 thin omitted)
+- 264 nodes · 430 edges · 33 communities (19 shown, 14 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `61725281`
+- Built from commit: `a921be05`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -21,7 +21,7 @@
 - windows-host/src/main.rs
 - linux-receiver/src/main.rs
 - start_windows_server_listener
-- ⚡ Tailscale Software KVM: Windows Host to Omarchy / Hyprland (Pure Rust)
+- ⚡ Tailscale Software KVM: Universal Multi-Directional & Multi-Platform Mesh (Pure Rust)
 - execute_handoff
 - mouse_hook_proc
 - main
@@ -31,15 +31,13 @@
 - tailscale-kvm-receiver
 - AtomicI32
 - EdgeDirection
-- ACTIVE_CONTROL_WRITER
+- execute_reverse_handoff
 - AtomicIsize
 - update_current_monitor_bounds
 - ReturnEdge
 - ActiveApp
-- execute_reverse_handoff
 - main
 - web_gui.rs
-- AtomicBool
 - resolve_target_addr
 - STREAM_SENDER
 - EDGE_DIRECTION
@@ -53,11 +51,11 @@
 2. `execute_handoff()` - 14 edges
 3. `mouse_hook_proc()` - 10 edges
 4. `main()` - 9 edges
-5. `keyboard_hook_proc()` - 8 edges
-6. `EdgeDirection` - 7 edges
-7. `send_fast_bytes()` - 7 edges
-8. `ReturnEdge` - 7 edges
-9. `⚡ Tailscale Software KVM: Universal Multi-Directional & Multi-Platform Mesh (Pure Rust)` - 7 edges
+5. `⚡ Tailscale Software KVM: Universal Multi-Directional & Multi-Platform Mesh (Pure Rust)` - 9 edges
+6. `keyboard_hook_proc()` - 8 edges
+7. `EdgeDirection` - 7 edges
+8. `send_fast_bytes()` - 7 edges
+9. `ReturnEdge` - 7 edges
 10. `start_windows_server_listener()` - 6 edges
 
 ## Surprising Connections (you probably didn't know these)
@@ -73,7 +71,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (35 total, 14 thin omitted)
+## Communities (33 total, 14 thin omitted)
 
 ### Community 0 - "AtomicBool"
 Cohesion: 0.18
@@ -89,15 +87,15 @@ Nodes (9): CF_DIB_FMT, CF_DIBV5_FMT, CF_HDROP_FMT, CF_UNICODETEXT_FMT, FILE_CHUN
 
 ### Community 3 - "linux-receiver/src/main.rs"
 Cohesion: 0.08
-Nodes (4): ACTIVE_CONTROL_CLIENTS, MAX_IMAGE_BYTES, MAX_SINGLE_FILE_BYTES, STREAM_CHUNK_SIZE
+Nodes (7): ACTIVE_CONTROL_CLIENTS, MAX_IMAGE_BYTES, MAX_SINGLE_FILE_BYTES, REMOTE_HANDOFF_BUSY, REMOTE_MOUSE_LBUTTON, STREAM_CHUNK_SIZE, SWITCHED_SINGLE_MONITOR
 
 ### Community 4 - "start_windows_server_listener"
 Cohesion: 0.29
 Nodes (7): get_windows_downloads_dir(), open_terminal_on_windows(), open_url_on_windows(), receive_binary_file_windows(), sanitize_relative_path(), start_windows_server_listener(), write_clipboard_dib_bytes()
 
-### Community 5 - "⚡ Tailscale Software KVM: Windows Host to Omarchy / Hyprland (Pure Rust)"
-Cohesion: 0.18
-Nodes (10): 1. Starting the Receiver (Client Machine), 2. Starting the Host Controller, 🏗 Architecture & Tech Stack, Configuration File (`config.txt`), 🕸 Graphify Knowledge Graph, 🎮 How to Control, 🌟 Key Features, 📄 License (+2 more)
+### Community 5 - "⚡ Tailscale Software KVM: Universal Multi-Directional & Multi-Platform Mesh (Pure Rust)"
+Cohesion: 0.15
+Nodes (12): 1. Build the Workspace, 2. Launch the Receiver (The device being controlled), 3. Launch the Host (The device with your keyboard & mouse), 🏗 Architecture & Multi-Screen Mesh, 🎮 Controls & Shortcuts, 🕸 Graphify Knowledge Graph, 🌟 Key Features, 📄 License (+4 more)
 
 ### Community 6 - "execute_handoff"
 Cohesion: 0.17
@@ -123,9 +121,9 @@ Nodes (6): CENTER_X, CENTER_Y, DRAG_START_X, DRAG_START_Y, SCREEN_HEIGHT, SCREEN
 Cohesion: 0.33
 Nodes (6): EdgeDirection, Down, Left, Right, Up, get_config_direction()
 
-### Community 15 - "ACTIVE_CONTROL_WRITER"
-Cohesion: 0.33
-Nodes (3): ACTIVE_CONTROL_WRITER, ACTIVE_WINDOWS_PEER, LAST_WAYLAND_CLIP_TEXT
+### Community 15 - "execute_reverse_handoff"
+Cohesion: 0.17
+Nodes (9): ACTIVE_CONTROL_WRITER, ACTIVE_WINDOWS_PEER, collect_transfer_entries(), execute_reverse_handoff(), LAST_WAYLAND_CLIP_TEXT, looks_like_url(), parse_file_uris(), percent_decode_str() (+1 more)
 
 ### Community 17 - "update_current_monitor_bounds"
 Cohesion: 0.33
@@ -139,10 +137,6 @@ Nodes (6): parse_return_edge(), ReturnEdge, Bottom, Left, Right, Top
 Cohesion: 0.40
 Nodes (6): ActiveApp, Browser, FileManager, Other, Terminal, get_active_hyprland_app()
 
-### Community 20 - "execute_reverse_handoff"
-Cohesion: 0.33
-Nodes (6): collect_transfer_entries(), execute_reverse_handoff(), looks_like_url(), parse_file_uris(), percent_decode_str(), stream_files_to_windows()
-
 ### Community 21 - "main"
 Cohesion: 0.50
 Nodes (4): escape_text_for_transmission(), main(), start_cursorpos_worker(), start_wayland_clipboard_monitor()
@@ -151,17 +145,13 @@ Nodes (4): escape_text_for_transmission(), main(), start_cursorpos_worker(), sta
 Cohesion: 0.15
 Nodes (11): get_slot(), get_slot_peer(), get_tailscale_peers_json(), GUI_ACTIVE_DOWN, GUI_ACTIVE_LEFT, GUI_ACTIVE_RIGHT, GUI_ACTIVE_UP, handle_http_client() (+3 more)
 
-### Community 23 - "AtomicBool"
-Cohesion: 0.50
-Nodes (3): REMOTE_HANDOFF_BUSY, REMOTE_MOUSE_LBUTTON, SWITCHED_SINGLE_MONITOR
-
 ### Community 24 - "resolve_target_addr"
 Cohesion: 0.40
 Nodes (4): collect_transfer_entries(), resolve_target_addr(), stream_files_to_omarchy(), stream_image_to_omarchy()
 
 ## Knowledge Gaps
 - **16 isolated node(s):** `tailscale-kvm-host`, `Right`, `Left`, `Up`, `Down` (+11 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 92 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 94 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **14 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
@@ -176,6 +166,6 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `EdgeDirection` connect `EdgeDirection` to `windows-host/src/main.rs`?**
   _High betweenness centrality (0.031) - this node is a cross-community bridge._
 - **Should `linux-receiver/src/main.rs` be split into smaller, more focused modules?**
-  _Cohesion score 0.08 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07586206896551724 - nodes in this community are weakly interconnected._
 - **Why does `ActiveApp` connect `ActiveApp` to `linux-receiver/src/main.rs`?**
   _High betweenness centrality (0.024) - this node is a cross-community bridge._

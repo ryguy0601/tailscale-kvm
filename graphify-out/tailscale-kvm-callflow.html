@@ -60,14 +60,13 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 <div class="container">
 
 <h1>tailscale-kvm — Complete Call Flow &amp; Architecture Documentation</h1>
-<p class="subtitle">Generated from graphify knowledge graph: 262 nodes, 428 edges, 35 communities. Commit: 6172528</p>
+<p class="subtitle">Generated from graphify knowledge graph: 264 nodes, 430 edges, 33 communities. Commit: a921be0</p>
 
 <div class="nav">
     <a href="#overview">Architecture Overview</a>
     <a href="#build-graph">Graph Build</a>
     <a href="#cli-skills">CLI &amp; Skill Installers</a>
     <a href="#web-guirs-host">Web Guirs Host</a>
-    <a href="#readmemd-starting-multi">Readmemd Starting Multi</a>
     <a href="#mutex-tcpstream-stream">Mutex Tcpstream Stream</a>
     <a href="#run-hostsh-script">Run Hostsh Script</a>
     <a href="#run-receiversh-script">Run Receiversh Script</a>
@@ -84,14 +83,12 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    BUILD_GRAPH_321CBB04("Graph Build<br/><small>7 nodes</small>")
+    BUILD_GRAPH_321CBB04("Graph Build<br/><small>20 nodes</small>")
     class BUILD_GRAPH_321CBB04 module;
     CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>210 nodes</small>")
     class CLI_SKILLS_9964CBB8 module;
     WEB_GUIRS_HOST_60B7092F("Web Guirs Host<br/><small>23 nodes</small>")
     class WEB_GUIRS_HOST_60B7092F module;
-    READMEMD_STARTING_MULTI_A3F54AAD("Readmemd Starting Multi<br/><small>11 nodes</small>")
-    class READMEMD_STARTING_MULTI_A3F54AAD module;
     MUTEX_TCPSTREAM_STREAM_9426569D("Mutex Tcpstream Stream<br/><small>3 nodes</small>")
     class MUTEX_TCPSTREAM_STREAM_9426569D module;
     RUN_HOSTSH_SCRIPT_336292B9("Run Hostsh Script<br/><small>2 nodes</small>")
@@ -125,19 +122,19 @@ flowchart LR
     <h4>Architecture Layers</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>Layer</th><th>Nodes</th><th>Communities</th></tr>
-      <tr><td>Graph Build</td><td>7</td><td><code>26, 27, 28, 31</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>210</td><td><code>2, 3, 6, 10, 7, 0, 1, 4, 13, 14, 17, 18, 8, 15, 19, 20, 24, 21, 23, 16, 9, 34</code></td></tr><tr><td>Web Guirs Host</td><td>23</td><td><code>22</code></td></tr><tr><td>Readmemd Starting Multi</td><td>11</td><td><code>5</code></td></tr><tr><td>Mutex Tcpstream Stream</td><td>3</td><td><code>25</code></td></tr><tr><td>Run Hostsh Script</td><td>2</td><td><code>29</code></td></tr><tr><td>Run Receiversh Script</td><td>2</td><td><code>30</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr><tr><td>Run Hostps1</td><td>1</td><td><code>32</code></td></tr><tr><td>Run Receiverps1</td><td>1</td><td><code>33</code></td></tr>
+      <tr><td>Graph Build</td><td>20</td><td><code>5, 26, 27, 28, 31</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>210</td><td><code>2, 3, 6, 10, 7, 15, 0, 1, 4, 13, 14, 17, 18, 8, 19, 24, 21, 16, 9, 34</code></td></tr><tr><td>Web Guirs Host</td><td>23</td><td><code>22</code></td></tr><tr><td>Mutex Tcpstream Stream</td><td>3</td><td><code>25</code></td></tr><tr><td>Run Hostsh Script</td><td>2</td><td><code>29</code></td></tr><tr><td>Run Receiversh Script</td><td>2</td><td><code>30</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr><tr><td>Run Hostps1</td><td>1</td><td><code>32</code></td></tr><tr><td>Run Receiverps1</td><td>1</td><td><code>33</code></td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Core Flow</h4>
-    <div class="arrow-chain">CLI &amp; Skill Installers -&gt; Web Guirs Host -&gt; Graph Build -&gt; Readmemd Starting Multi -&gt; Mutex Tcpstream Stream -&gt; Run Hostsh Script -&gt; Run Receiversh Script</div>
+    <div class="arrow-chain">CLI &amp; Skill Installers -&gt; Web Guirs Host -&gt; Graph Build -&gt; Mutex Tcpstream Stream -&gt; Run Hostsh Script -&gt; Run Receiversh Script -&gt; Host Tailscale Kvm</div>
   </div>
 </div>
 <div class="grid">
   <div class="card">
     <h4>Graph Report Highlights</h4>
     <ul>
-      <li>262 nodes · 428 edges · 35 communities (21 shown, 14 thin omitted)</li>
+      <li>264 nodes · 430 edges · 33 communities (19 shown, 14 thin omitted)</li>
       <li>Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS</li>
       <li>Token cost: 0 input · 0 output</li>
       <li>1. `handle_connection()` - 18 edges</li>
@@ -149,12 +146,25 @@ flowchart LR
 <hr>
 <!-- ====== 2. Graph Build ====== -->
 <h2 id="build-graph">2. Graph Build</h2>
-<p>Graph Build groups implementation around buildsh, edge, mainrs, atomicu8, mostly in build.sh, host/src/main.rs, receiver/src/main.rs. This section covers 7 nodes and 3 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>Graph Build groups implementation around readmemd, multi, buildsh, receiver, mostly in README.md, build.sh, host/src/main.rs. This section covers 20 nodes and 15 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Graph Build (7 nodes, 3 edges)
+    %% Section: Graph Build (20 nodes, 15 edges)
+    subgraph build_graph_README_md_df5bf028["README.md"]
+        readme_tailscale_software_kvm_universal_multi_di_a21c53b1("⚡ Tailscale Software KVM: Universal Mul...<br/><small>README.md</small>")
+        readme_quick_start_bb6875fc("🚀 Quick Start<br/><small>README.md</small>")
+        readme_f78a71af("README.md")
+        readme_1_build_the_workspace_e892a050("1. Build the Workspace<br/><small>README.md</small>")
+        readme_2_launch_the_receiver_the_device_being_co_bc8650b6("2. Launch the Receiver (The device bein...<br/><small>README.md</small>")
+        readme_3_launch_the_host_the_device_with_your_ke_c44847ce("3. Launch the Host (The device with you...<br/><small>README.md</small>")
+        readme_key_features_fae64a16("🌟 Key Features<br/><small>README.md</small>")
+        readme_controls_shortcuts_2e97bc93("🎮 Controls &amp; Shortcuts<br/><small>README.md</small>")
+        readme_architecture_multi_screen_mesh_b07b0176("🏗 Architecture &amp; Multi-Screen Mesh<br/><small>README.md</small>")
+        readme_repository_structure_895860fe("📁 Repository Structure<br/><small>README.md</small>")
+        readme_license_edbe4ad9("📄 License<br/><small>README.md</small>")
+    end
     subgraph build_graph_External_generated_653891f5["External / generated"]
         host_src_main_rs_atomicu8_0b591eb8("AtomicU8")
         receiver_src_main_rs_atomicu8_1fb402b0("AtomicU8")
@@ -169,6 +179,28 @@ flowchart LR
     host_src_main_edge_direction_ecf9c5a6 -->|references| host_src_main_rs_atomicu8_0b591eb8
     receiver_src_main_return_edge_bd77a7d0 -->|references| receiver_src_main_rs_atomicu8_1fb402b0
     build_sh_build_2c509fe1 -->|contains| build_sh_entry_ed350c5c
+    readme_f78a71af -->|contains| readme_tailscale_software_kvm_universal_multi_di_a21c53b1
+    readme_quick_start_bb6875fc -->|contains| readme_2_launch_the_receiver_the_device_being_co_bc8650b6
+    readme_quick_start_bb6875fc -->|contains| readme_3_launch_the_host_the_device_with_your_ke_c44847ce
+    readme_quick_start_bb6875fc -->|contains| readme_1_build_the_workspace_e892a050
+    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_controls_shortcuts_2e97bc93
+    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_license_edbe4ad9
+    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_key_features_fae64a16
+    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_repository_structure_895860fe
+    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_architecture_multi_screen_mesh_b07b0176
+    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_quick_start_bb6875fc
+    %% Omitted for readability: 2 nodes, 0 edges
+    class readme_tailscale_software_kvm_universal_multi_di_a21c53b1 concept;
+    class readme_quick_start_bb6875fc concept;
+    class readme_f78a71af concept;
+    class readme_1_build_the_workspace_e892a050 concept;
+    class readme_2_launch_the_receiver_the_device_being_co_bc8650b6 concept;
+    class readme_3_launch_the_host_the_device_with_your_ke_c44847ce concept;
+    class readme_key_features_fae64a16 concept;
+    class readme_controls_shortcuts_2e97bc93 concept;
+    class readme_architecture_multi_screen_mesh_b07b0176 concept;
+    class readme_repository_structure_895860fe concept;
+    class readme_license_edbe4ad9 concept;
     class host_src_main_rs_atomicu8_0b591eb8 klass;
     class receiver_src_main_rs_atomicu8_1fb402b0 klass;
     class build_sh_build_2c509fe1 function;
@@ -199,6 +231,110 @@ flowchart LR
 </tr>
 <tr>
   <td>1</td>
+  <td><code>README.md</code><br><small style="color:var(--muted)">README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing README.md.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>1. Build the Workspace</code><br><small style="color:var(--muted)">README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing 1. Build the Workspace.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>2. Launch the Receiver (The device being controlled)</code><br><small style="color:var(--muted)">README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing 2. Launch the Receiver (The device being controlled).</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>3. Launch the Host (The device with your keyboard &amp; mouse)</code><br><small style="color:var(--muted)">README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing 3. Launch the Host (The device with your keyboard &amp; mouse).</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>🏗 Architecture &amp; Multi-Screen Mesh</code><br><small style="color:var(--muted)">README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing 🏗 Architecture &amp; Multi-Screen Mesh.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>🎮 Controls &amp; Shortcuts</code><br><small style="color:var(--muted)">README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing 🎮 Controls &amp; Shortcuts.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>🕸 Graphify Knowledge Graph</code><br><small style="color:var(--muted)">README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing 🕸 Graphify Knowledge Graph.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>🌟 Key Features</code><br><small style="color:var(--muted)">README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing 🌟 Key Features.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>📄 License</code><br><small style="color:var(--muted)">README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing 📄 License.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>🚀 Quick Start</code><br><small style="color:var(--muted)">README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing 🚀 Quick Start.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>📁 Repository Structure</code><br><small style="color:var(--muted)">README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing 📁 Repository Structure.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>⚡ Tailscale Software KVM: Universal Multi-Directional &amp; Multi-Platform Mesh (Pure Rust)</code><br><small style="color:var(--muted)">README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing ⚡ Tailscale Software KVM: Universal Multi-Directional &amp; Multi-Platform Mesh (Pure Rust).</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>🖥️ Visual Web Dashboard &amp; Multi-Receiver Layout</code><br><small style="color:var(--muted)">README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing 🖥️ Visual Web Dashboard &amp; Multi-Receiver Layout.</td>
+</tr>
+<tr>
+  <td>14</td>
   <td><code>EDGE_DIRECTION</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -206,7 +342,7 @@ flowchart LR
   <td>EDGE_DIRECTION node in host/src/main.rs.</td>
 </tr>
 <tr>
-  <td>2</td>
+  <td>15</td>
   <td><code>AtomicU8</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -214,7 +350,7 @@ flowchart LR
   <td>AtomicU8 node in project.</td>
 </tr>
 <tr>
-  <td>3</td>
+  <td>16</td>
   <td><code>RETURN_EDGE</code><br><small style="color:var(--muted)">receiver/src/main.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -222,7 +358,7 @@ flowchart LR
   <td>RETURN_EDGE node in receiver/src/main.rs.</td>
 </tr>
 <tr>
-  <td>4</td>
+  <td>17</td>
   <td><code>AtomicU8</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -230,7 +366,7 @@ flowchart LR
   <td>AtomicU8 node in project.</td>
 </tr>
 <tr>
-  <td>5</td>
+  <td>18</td>
   <td><code>build.sh script</code><br><small style="color:var(--muted)">build.sh</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
@@ -238,7 +374,7 @@ flowchart LR
   <td>build.sh script node in build.sh.</td>
 </tr>
 <tr>
-  <td>6</td>
+  <td>19</td>
   <td><code>build.sh</code><br><small style="color:var(--muted)">build.sh</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
@@ -246,7 +382,7 @@ flowchart LR
   <td>build.sh node in build.sh.</td>
 </tr>
 <tr>
-  <td>7</td>
+  <td>20</td>
   <td><code>build.ps1</code><br><small style="color:var(--muted)">build.ps1</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
@@ -260,7 +396,8 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>build.sh</code></td><td>2 nodes</td></tr>
+      <tr><td><code>README.md</code></td><td>13 nodes</td></tr>
+<tr><td><code>build.sh</code></td><td>2 nodes</td></tr>
 <tr><td><code>build.ps1</code></td><td>1 nodes</td></tr>
 <tr><td><code>host/src/main.rs</code></td><td>1 nodes</td></tr>
 <tr><td><code>receiver/src/main.rs</code></td><td>1 nodes</td></tr>
@@ -268,7 +405,7 @@ flowchart LR
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: references x2, contains x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x13, references x2. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
@@ -902,174 +1039,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 5. Readmemd Starting Multi ====== -->
-<h2 id="readmemd-starting-multi">5. Readmemd Starting Multi</h2>
-<p>Readmemd Starting Multi groups implementation around readmemd, starting, multi, receiver, mostly in README.md. This section covers 11 nodes and 10 internal edges; the diagram shows only representative relationships to stay readable.</p>
-
-<div class="mermaid">
-%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
-flowchart LR
-    %% Section: Readmemd Starting Multi (11 nodes, 10 edges)
-    readme_tailscale_software_kvm_universal_multi_di_a21c53b1("⚡ Tailscale Software KVM: Universal Mul...<br/><small>README.md</small>")
-    readme_setup_usage_99d2f04f("🚀 Setup &amp; Usage<br/><small>README.md</small>")
-    readme_f78a71af("README.md")
-    readme_1_starting_the_receiver_client_machine_e6df0bd6("1. Starting the Receiver (Client Machine)<br/><small>README.md</small>")
-    readme_2_starting_the_host_controller_d7802526("2. Starting the Host Controller<br/><small>README.md</small>")
-    readme_configuration_file_config_txt_62851478("Configuration File (config.txt)<br/><small>README.md</small>")
-    readme_key_features_fae64a16("🌟 Key Features<br/><small>README.md</small>")
-    readme_how_to_control_c4bb8951("🎮 How to Control<br/><small>README.md</small>")
-    readme_architecture_tech_stack_db33fd69("🏗 Architecture &amp; Tech Stack<br/><small>README.md</small>")
-    readme_license_edbe4ad9("📄 License<br/><small>README.md</small>")
-    readme_graphify_knowledge_graph_9ffe2d71("🕸 Graphify Knowledge Graph<br/><small>README.md</small>")
-    readme_f78a71af -->|contains| readme_tailscale_software_kvm_universal_multi_di_a21c53b1
-    readme_setup_usage_99d2f04f -->|contains| readme_1_starting_the_receiver_client_machine_e6df0bd6
-    readme_setup_usage_99d2f04f -->|contains| readme_2_starting_the_host_controller_d7802526
-    readme_setup_usage_99d2f04f -->|contains| readme_configuration_file_config_txt_62851478
-    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_how_to_control_c4bb8951
-    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_graphify_knowledge_graph_9ffe2d71
-    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_license_edbe4ad9
-    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_key_features_fae64a16
-    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_architecture_tech_stack_db33fd69
-    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_setup_usage_99d2f04f
-    class readme_tailscale_software_kvm_universal_multi_di_a21c53b1 concept;
-    class readme_setup_usage_99d2f04f concept;
-    class readme_f78a71af concept;
-    class readme_1_starting_the_receiver_client_machine_e6df0bd6 concept;
-    class readme_2_starting_the_host_controller_d7802526 concept;
-    class readme_configuration_file_config_txt_62851478 concept;
-    class readme_key_features_fae64a16 concept;
-    class readme_how_to_control_c4bb8951 concept;
-    class readme_architecture_tech_stack_db33fd69 concept;
-    class readme_license_edbe4ad9 concept;
-    class readme_graphify_knowledge_graph_9ffe2d71 concept;
-    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
-    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
-    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
-    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
-    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
-    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
-    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
-    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
-    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
-</div>
-
-<h3>Call Details</h3>
-<table class="call-table">
-<tr>
-  <th style="width:5%">#</th>
-  <th style="width:28%">Node</th>
-  <th style="width:10%">Type</th>
-  <th style="width:17%">Caller</th>
-  <th style="width:20%">Callees</th>
-  <th style="width:20%">Description</th>
-</tr>
-<tr>
-  <td>1</td>
-  <td><code>README.md</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing README.md.</td>
-</tr>
-<tr>
-  <td>2</td>
-  <td><code>1. Starting the Receiver (Client Machine)</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 1. Starting the Receiver (Client Machine).</td>
-</tr>
-<tr>
-  <td>3</td>
-  <td><code>2. Starting the Host Controller</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 2. Starting the Host Controller.</td>
-</tr>
-<tr>
-  <td>4</td>
-  <td><code>🏗 Architecture &amp; Tech Stack</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 🏗 Architecture &amp; Tech Stack.</td>
-</tr>
-<tr>
-  <td>5</td>
-  <td><code>Configuration File (`config.txt`)</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing Configuration File (`config.txt`).</td>
-</tr>
-<tr>
-  <td>6</td>
-  <td><code>🕸 Graphify Knowledge Graph</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 🕸 Graphify Knowledge Graph.</td>
-</tr>
-<tr>
-  <td>7</td>
-  <td><code>🎮 How to Control</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 🎮 How to Control.</td>
-</tr>
-<tr>
-  <td>8</td>
-  <td><code>🌟 Key Features</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 🌟 Key Features.</td>
-</tr>
-<tr>
-  <td>9</td>
-  <td><code>📄 License</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 📄 License.</td>
-</tr>
-<tr>
-  <td>10</td>
-  <td><code>🚀 Setup &amp; Usage</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 🚀 Setup &amp; Usage.</td>
-</tr>
-<tr>
-  <td>11</td>
-  <td><code>⚡ Tailscale Software KVM: Universal Multi-Directional &amp; Multi-Platform Mesh (Pure Rust)</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing ⚡ Tailscale Software KVM: Universal Multi-Directional &amp; Multi-Platform Mesh (Pure Rust).</td>
-</tr>
-</table>
-
-<div class="grid">
-  <div class="card">
-    <h4>Key Files</h4>
-    <table style="width:100%;font-size:0.85rem;">
-      <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>README.md</code></td><td>11 nodes</td></tr>
-    </table>
-  </div>
-  <div class="card">
-    <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: contains x10. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
-  </div>
-</div>
-<hr>
-
-<!-- ====== 6. Mutex Tcpstream Stream ====== -->
-<h2 id="mutex-tcpstream-stream">6. Mutex Tcpstream Stream</h2>
+<!-- ====== 5. Mutex Tcpstream Stream ====== -->
+<h2 id="mutex-tcpstream-stream">5. Mutex Tcpstream Stream</h2>
 <p>Mutex Tcpstream Stream groups implementation around mutex, tcpstream, stream, sender, mostly in host/src/main.rs. This section covers 3 nodes and 2 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1148,8 +1119,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 7. Run Hostsh Script ====== -->
-<h2 id="run-hostsh-script">7. Run Hostsh Script</h2>
+<!-- ====== 6. Run Hostsh Script ====== -->
+<h2 id="run-hostsh-script">6. Run Hostsh Script</h2>
 <p>Run Hostsh Script groups implementation around run, hostsh, script, mostly in run-host.sh. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1215,8 +1186,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 8. Run Receiversh Script ====== -->
-<h2 id="run-receiversh-script">8. Run Receiversh Script</h2>
+<!-- ====== 7. Run Receiversh Script ====== -->
+<h2 id="run-receiversh-script">7. Run Receiversh Script</h2>
 <p>Run Receiversh Script groups implementation around run, receiversh, script, mostly in run-receiver.sh. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1282,8 +1253,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 9. Host Tailscale Kvm ====== -->
-<h2 id="host-tailscale-kvm">9. Host Tailscale Kvm</h2>
+<!-- ====== 8. Host Tailscale Kvm ====== -->
+<h2 id="host-tailscale-kvm">8. Host Tailscale Kvm</h2>
 <p>Host Tailscale Kvm groups implementation around host, tailscale, kvm, cargotoml, mostly in host/Cargo.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1338,8 +1309,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 10. Receiver Tailscale Kvm ====== -->
-<h2 id="receiver-tailscale-kvm">10. Receiver Tailscale Kvm</h2>
+<!-- ====== 9. Receiver Tailscale Kvm ====== -->
+<h2 id="receiver-tailscale-kvm">9. Receiver Tailscale Kvm</h2>
 <p>Receiver Tailscale Kvm groups implementation around receiver, tailscale, kvm, cargotoml, mostly in receiver/Cargo.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1394,8 +1365,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 11. Run Hostps1 ====== -->
-<h2 id="run-hostps1">11. Run Hostps1</h2>
+<!-- ====== 10. Run Hostps1 ====== -->
+<h2 id="run-hostps1">10. Run Hostps1</h2>
 <p>Run Hostps1 groups implementation around run, hostps1, mostly in run-host.ps1. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1450,8 +1421,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 12. Run Receiverps1 ====== -->
-<h2 id="run-receiverps1">12. Run Receiverps1</h2>
+<!-- ====== 11. Run Receiverps1 ====== -->
+<h2 id="run-receiverps1">11. Run Receiverps1</h2>
 <p>Run Receiverps1 groups implementation around run, receiverps1, mostly in run-receiver.ps1. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1512,17 +1483,17 @@ flowchart LR
   <div class="card">
     <h4>Graph</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>Nodes</td><td>262</td></tr>
-      <tr><td>Edges</td><td>428</td></tr>
+      <tr><td>Nodes</td><td>264</td></tr>
+      <tr><td>Edges</td><td>430</td></tr>
       <tr><td>Hyperedges</td><td>0</td></tr>
-      <tr><td>Communities</td><td>35</td></tr>
-      <tr><td>Documented Sections</td><td>11</td></tr>
+      <tr><td>Communities</td><td>33</td></tr>
+      <tr><td>Documented Sections</td><td>10</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Edge Confidence</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>EXTRACTED</td><td>428</td></tr>
+      <tr><td>EXTRACTED</td><td>430</td></tr>
       <tr><td>INFERRED</td><td>0</td></tr>
       <tr><td>AMBIGUOUS</td><td>0</td></tr>
     </table>
@@ -1531,7 +1502,7 @@ flowchart LR
 
 <div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
   <p>tailscale-kvm — Architecture Documentation</p>
-  <p>Generated: 2026-11-07 03:39 UTC · graphify callflow-html</p>
+  <p>Generated: 2026-11-07 03:41 UTC · graphify callflow-html</p>
 </div>
 
 </div><!-- .container -->
