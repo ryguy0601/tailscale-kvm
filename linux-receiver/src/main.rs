@@ -13,6 +13,38 @@ use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
 
 static CURSOR_X: AtomicI32 = AtomicI32::new(6000);
+static CURRENT_LEFT_BOUND: AtomicI32 = AtomicI32::new(0);
+
+fn apply_single_monitor_if_docked() {
+    let output = Command::new("hyprctl")
+        .args(["monitors", "-j"])
+        .output();
+
+    if let Ok(out) = output {
+        if let Ok(json_val) = serde_json::from_slice::<serde_json::Value>(&out.stdout) {
+            if let Some(arr) = json_val.as_array() {
+                // If more than 1 monitor is connected, laptop is docked with external monitors
+                if arr.len() > 1 {
+                    println!("[*] Docked multi-monitor detected ({} outputs). Switching to docked-single profile...", arr.len());
+                    let _ = Command::new("hyprmoncfg")
+                        .args(["apply", "docked-single", "--confirm-timeout", "0"])
+                        .status();
+                    let new_bound = get_hyprland_left_bound();
+                    CURRENT_LEFT_BOUND.store(new_bound, Ordering::SeqCst);
+                }
+            }
+        }
+    }
+}
+
+fn restore_docked_monitors_if_needed() {
+    println!("[*] KVM client disconnected. Restoring full docked monitor layout...");
+    let _ = Command::new("hyprmoncfg")
+        .args(["apply", "docked", "--confirm-timeout", "0"])
+        .status();
+    let new_bound = get_hyprland_left_bound();
+    CURRENT_LEFT_BOUND.store(new_bound, Ordering::SeqCst);
+}
 
 fn get_hyprland_left_bound() -> i32 {
     let output = Command::new("hyprctl")
@@ -139,10 +171,12 @@ fn decode_base64(s: &str) -> Result<Vec<u8>, ()> {
 async fn handle_connection(
     stream: TcpStream,
     device: Arc<Mutex<evdev::uinput::VirtualDevice>>,
-    left_bound: i32,
 ) {
     let peer = stream.peer_addr().ok();
     println!("[+] Connection accepted from: {:?}", peer);
+
+    // If docked with multiple monitors, enforce single internal monitor while running
+    apply_single_monitor_if_docked();
 
     let (reader, mut writer) = stream.into_split();
     let mut lines = BufReader::new(reader).lines();
@@ -167,6 +201,7 @@ async fn handle_connection(
 
                         if dx < 0 {
                             let cur_x = CURSOR_X.load(Ordering::Relaxed);
+                            let left_bound = CURRENT_LEFT_BOUND.load(Ordering::Relaxed);
                             if cur_x <= left_bound + 2 {
                                 let _ = writer.write_all(b"switch_to_local\n").await;
                             }
@@ -275,6 +310,7 @@ async fn handle_connection(
     }
 
     println!("[-] Connection closed from: {:?}", peer);
+    restore_docked_monitors_if_needed();
 }
 
 #[tokio::main]
@@ -305,6 +341,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let device = Arc::new(Mutex::new(virtual_device));
     let left_bound = get_hyprland_left_bound();
+    CURRENT_LEFT_BOUND.store(left_bound, Ordering::SeqCst);
     println!("[*] Detected Hyprland leftmost coordinate: {}", left_bound);
 
     start_cursorpos_worker();
@@ -316,6 +353,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let (stream, _) = listener.accept().await?;
         let _ = stream.set_nodelay(true);
         let dev_clone = Arc::clone(&device);
-        tokio::spawn(handle_connection(stream, dev_clone, left_bound));
+        tokio::spawn(handle_connection(stream, dev_clone));
     }
 }
