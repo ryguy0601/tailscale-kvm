@@ -18,12 +18,16 @@ use std::time::{Duration, Instant};
 #[cfg(windows)]
 use windows_sys::Win32::Foundation::*;
 #[cfg(windows)]
+use windows_sys::Win32::Graphics::Gdi::*;
+#[cfg(windows)]
 use windows_sys::Win32::System::DataExchange::{
-    CloseClipboard, GetClipboardData, GetClipboardSequenceNumber, IsClipboardFormatAvailable,
-    OpenClipboard,
+    CloseClipboard, EmptyClipboard, GetClipboardData, GetClipboardSequenceNumber,
+    IsClipboardFormatAvailable, OpenClipboard, SetClipboardData,
 };
 #[cfg(windows)]
-use windows_sys::Win32::System::Memory::{GlobalLock, GlobalSize, GlobalUnlock};
+use windows_sys::Win32::System::Memory::{
+    GlobalAlloc, GlobalLock, GlobalSize, GlobalUnlock, GMEM_MOVEABLE,
+};
 #[cfg(windows)]
 use windows_sys::Win32::System::Threading::{
     OpenProcess, QueryFullProcessImageNameW, PROCESS_QUERY_LIMITED_INFORMATION,
@@ -60,15 +64,25 @@ static ALT_DOWN: AtomicBool = AtomicBool::new(false);
 static WIN_DOWN: AtomicBool = AtomicBool::new(false);
 
 #[cfg(windows)]
+static OVERLAY_HWND: AtomicIsize = AtomicIsize::new(0);
+static OVERLAY_ACTIVE: AtomicBool = AtomicBool::new(false);
+
+#[cfg(windows)]
 static mut MOUSE_HOOK: HHOOK = 0;
 #[cfg(windows)]
 static mut KEYBOARD_HOOK: HHOOK = 0;
 
 #[cfg(windows)]
+const CF_DIB_FMT: u32 = 8;
+#[cfg(windows)]
+const CF_DIBV5_FMT: u32 = 17;
+#[cfg(windows)]
 const CF_UNICODETEXT_FMT: u32 = 13;
 #[cfg(windows)]
 const CF_HDROP_FMT: u32 = 15;
+
 const MAX_CLIPBOARD_TEXT_BYTES: usize = 1_048_576; // 1 MB cap for text clipboard sync
+const MAX_IMAGE_BYTES: usize = 67_108_864; // 64 MB cap for image clipboard sync
 const FILE_CHUNK_SIZE: usize = 65_536; // 64 KB streaming chunk buffer
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -118,7 +132,7 @@ fn send_fast_bytes(bytes: &[u8]) {
     if disconnected {
         IS_CONNECTED.store(false, Ordering::SeqCst);
         if IS_REMOTE.load(Ordering::SeqCst) {
-            switch_to_local();
+            switch_to_local(None);
         }
     }
 }
@@ -169,11 +183,9 @@ unsafe fn tap_chord(modifier_vk: u16, key_vk: u16) {
 
 #[cfg(windows)]
 unsafe fn cancel_active_drag_and_release_mouse() {
-    // 1. Escape cancels Win32 modal window move, Aero Snap, Firefox tab tear-off, and Explorer OLE drag
     tap_key(VK_ESCAPE);
     thread::sleep(Duration::from_millis(20));
 
-    // 2. Release left mouse button via SendInput so Windows exits drag state cleanly
     let up = [INPUT {
         r#type: INPUT_MOUSE,
         Anonymous: INPUT_0 {
@@ -360,6 +372,68 @@ fn read_clipboard_files() -> Vec<PathBuf> {
     }
 }
 
+#[cfg(windows)]
+fn read_clipboard_dib_bytes() -> Option<Vec<u8>> {
+    unsafe {
+        let fmt = if IsClipboardFormatAvailable(CF_DIBV5_FMT) != 0 {
+            CF_DIBV5_FMT
+        } else if IsClipboardFormatAvailable(CF_DIB_FMT) != 0 {
+            CF_DIB_FMT
+        } else {
+            return None;
+        };
+
+        if OpenClipboard(0) == 0 {
+            return None;
+        }
+
+        let mut result = None;
+        let h_data = GetClipboardData(fmt);
+        if h_data != 0 {
+            let h_global = h_data as HGLOBAL;
+            let byte_size = GlobalSize(h_global);
+            if byte_size > 0 && byte_size <= MAX_IMAGE_BYTES {
+                let ptr = GlobalLock(h_global) as *const u8;
+                if !ptr.is_null() {
+                    let slice = std::slice::from_raw_parts(ptr, byte_size);
+                    result = Some(slice.to_vec());
+                    let _ = GlobalUnlock(h_global);
+                }
+            }
+        }
+        let _ = CloseClipboard();
+        result
+    }
+}
+
+#[cfg(windows)]
+#[cfg(windows)]
+fn write_clipboard_dib_bytes(dib_bytes: &[u8]) -> bool {
+    unsafe {
+        if OpenClipboard(0) == 0 {
+            return false;
+        }
+        EmptyClipboard();
+
+        let h_mem = GlobalAlloc(GMEM_MOVEABLE, dib_bytes.len());
+        if !h_mem.is_null() {
+            let ptr = GlobalLock(h_mem) as *mut u8;
+            if !ptr.is_null() {
+                std::ptr::copy_nonoverlapping(dib_bytes.as_ptr(), ptr, dib_bytes.len());
+                let _ = GlobalUnlock(h_mem);
+                SetClipboardData(CF_DIB_FMT, h_mem as _);
+            }
+        }
+        let _ = CloseClipboard();
+        true
+    }
+}
+
+#[cfg(not(windows))]
+fn write_clipboard_dib_bytes(_dib_bytes: &[u8]) -> bool {
+    false
+}
+
 fn collect_transfer_entries(
     base: &Path,
     current: &Path,
@@ -407,7 +481,6 @@ fn resolve_target_addr(target_ip: &str) -> Option<SocketAddr> {
     addr_str.to_socket_addrs().ok()?.next()
 }
 
-/// Windows-side Downloads directory
 fn get_windows_downloads_dir() -> PathBuf {
     if let Ok(profile) = env::var("USERPROFILE") {
         let p = PathBuf::from(profile).join("Downloads");
@@ -484,7 +557,6 @@ fn open_url_on_windows(url: &str) {
             u
         };
 
-        // Try opening in Firefox directly if available, else standard Windows 'start'
         let ff_candidates = [
             "C:\\Program Files\\Mozilla Firefox\\firefox.exe",
             "C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe",
@@ -510,7 +582,29 @@ fn open_url_on_windows(url: &str) {
     });
 }
 
-/// Incoming transfer listener on Windows port 9876 so Omarchy can stream files & tabs back to Windows
+fn open_terminal_on_windows(dir_path: &str) {
+    let d = dir_path.trim().to_string();
+    thread::spawn(move || {
+        let win_path = if d.contains("/Work") {
+            let userprofile = env::var("USERPROFILE").unwrap_or_else(|_| "C:\\Users\\ryguy".to_string());
+            let sub = d.split("/Work").nth(1).unwrap_or("");
+            format!("{}\\{}", userprofile, sub.replace('/', "\\").trim_start_matches('\\'))
+        } else {
+            env::var("USERPROFILE").unwrap_or_else(|_| "C:\\Users\\ryguy".to_string())
+        };
+
+        let _ = std::process::Command::new("wt.exe")
+            .args(["-d", &win_path])
+            .spawn()
+            .or_else(|_| {
+                std::process::Command::new("powershell.exe")
+                    .args(["-NoExit", "-Command", &format!("Set-Location '{}'", win_path)])
+                    .spawn()
+            });
+    });
+}
+
+/// Incoming transfer listener on Windows port 9876 so Omarchy can stream files, images, tabs & teleports
 fn start_windows_server_listener() {
     thread::spawn(|| {
         let Ok(listener) = std::net::TcpListener::bind("0.0.0.0:9876") else {
@@ -558,11 +652,35 @@ fn start_windows_server_listener() {
                                 }
                             }
 
+                            // "I <size>\n" -> Image clipboard stream from Omarchy
+                            b'I' => {
+                                if trimmed.len() > 2 {
+                                    if let Ok(img_size) = trimmed[2..].trim().parse::<usize>() {
+                                        let mut buf = vec![0u8; img_size];
+                                        if reader.read_exact(&mut buf).is_ok() {
+                                            SUPPRESS_CLIPBOARD_SYNC.store(true, Ordering::SeqCst);
+                                            write_clipboard_dib_bytes(&buf);
+                                            #[cfg(windows)]
+                                            LAST_CLIP_SEQ.store(unsafe { GetClipboardSequenceNumber() }, Ordering::SeqCst);
+                                            SUPPRESS_CLIPBOARD_SYNC.store(false, Ordering::SeqCst);
+                                        }
+                                    }
+                                }
+                            }
+
                             // "U <url>\n" -> Tab fling from Omarchy
                             b'U' => {
                                 if trimmed.len() > 2 {
                                     let url = trimmed[2..].trim();
                                     open_url_on_windows(url);
+                                }
+                            }
+
+                            // "D <dir_path>\n" -> Terminal directory teleport
+                            b'D' => {
+                                if trimmed.len() > 2 {
+                                    let path = trimmed[2..].trim();
+                                    open_terminal_on_windows(path);
                                 }
                             }
 
@@ -576,7 +694,6 @@ fn start_windows_server_listener() {
 }
 
 /// Streams files over a dedicated secondary TCP connection using a constant 64 KB stack buffer.
-/// Uses < 128 KB RAM even for multi-gigabyte files and never blocks the 1000Hz mouse/keyboard socket.
 fn stream_files_to_omarchy(paths: Vec<PathBuf>) {
     let Some(target_ip) = TARGET_IP.get() else {
         return;
@@ -622,7 +739,6 @@ fn stream_files_to_omarchy(paths: Vec<PathBuf>) {
             let to_read = FILE_CHUNK_SIZE.min(remaining as usize);
             match file.read(&mut chunk_buf[..to_read]) {
                 Ok(0) => {
-                    // File truncated mid-transfer; pad remaining bytes so framing stays intact
                     let zeros = [0u8; 4096];
                     while remaining > 0 {
                         let pad = zeros.len().min(remaining as usize);
@@ -656,6 +772,26 @@ fn stream_files_to_omarchy(paths: Vec<PathBuf>) {
     let _ = tx.flush();
 }
 
+fn stream_image_to_omarchy(dib_bytes: Vec<u8>) {
+    let Some(target_ip) = TARGET_IP.get() else {
+        return;
+    };
+    let Some(addr) = resolve_target_addr(target_ip) else {
+        return;
+    };
+
+    thread::spawn(move || {
+        if let Ok(mut tx) = TcpStream::connect_timeout(&addr, Duration::from_secs(4)) {
+            let _ = tx.set_nodelay(true);
+            let header = format!("I {}\n", dib_bytes.len());
+            if tx.write_all(header.as_bytes()).is_ok() {
+                let _ = tx.write_all(&dib_bytes);
+                let _ = tx.flush();
+            }
+        }
+    });
+}
+
 fn looks_like_url(s: &str) -> bool {
     let t = s.trim();
     if t.len() < 4 || t.chars().any(char::is_whitespace) {
@@ -684,7 +820,6 @@ fn execute_handoff(source_hwnd: HWND, fallback_hwnd: HWND, from_drag: bool) {
             if from_drag {
                 cancel_active_drag_and_release_mouse();
             } else {
-                // Wait briefly for user to release Win/Ctrl/Alt hotkey modifiers so Ctrl+L/Ctrl+C are clean
                 let deadline = Instant::now() + Duration::from_millis(600);
                 while Instant::now() < deadline {
                     if !WIN_DOWN.load(Ordering::Relaxed)
@@ -717,14 +852,12 @@ fn execute_handoff(source_hwnd: HWND, fallback_hwnd: HWND, from_drag: bool) {
                     SUPPRESS_CLIPBOARD_SYNC.store(true, Ordering::SeqCst);
                     let seq_before = GetClipboardSequenceNumber();
 
-                    // Focus URL bar via Ctrl+L and copy via Ctrl+C
                     tap_chord(VK_CONTROL, b'L' as u16);
                     thread::sleep(Duration::from_millis(45));
                     tap_chord(VK_CONTROL, b'C' as u16);
 
                     let mut changed = wait_for_clipboard_change(seq_before, 240);
                     if !changed {
-                        // Fallback: Alt+D then Ctrl+C
                         tap_chord(VK_MENU, b'D' as u16);
                         thread::sleep(Duration::from_millis(45));
                         tap_chord(VK_CONTROL, b'C' as u16);
@@ -740,11 +873,9 @@ fn execute_handoff(source_hwnd: HWND, fallback_hwnd: HWND, from_drag: bool) {
                     LAST_CLIP_SEQ.store(GetClipboardSequenceNumber(), Ordering::SeqCst);
                     SUPPRESS_CLIPBOARD_SYNC.store(false, Ordering::SeqCst);
 
-                    // Close the address bar dropdown cleanly on Windows
                     tap_key(VK_ESCAPE);
                     thread::sleep(Duration::from_millis(30));
 
-                    // When dragging a tab or window across, close the originating tab on Windows (Ctrl+W)
                     if from_drag {
                         tap_chord(VK_CONTROL, b'W' as u16);
                     }
@@ -776,8 +907,6 @@ fn execute_handoff(source_hwnd: HWND, fallback_hwnd: HWND, from_drag: bool) {
                         changed = wait_for_clipboard_change(seq_before, 250);
                     }
 
-                    // On mouse drag, require clipboard sequence update so an empty desktop marquee doesn't resend old files.
-                    // On explicit hotkey, allow sending already-copied clipboard files if present.
                     let files = if changed || !from_drag {
                         read_clipboard_files()
                     } else {
@@ -793,7 +922,6 @@ fn execute_handoff(source_hwnd: HWND, fallback_hwnd: HWND, from_drag: bool) {
                 }
 
                 DragKind::Other => {
-                    // If triggered explicitly by hotkey (not drag) and files are in clipboard, transfer them
                     if !from_drag {
                         let files = read_clipboard_files();
                         if !files.is_empty() {
@@ -808,11 +936,17 @@ fn execute_handoff(source_hwnd: HWND, fallback_hwnd: HWND, from_drag: bool) {
     });
 }
 
-pub fn switch_to_remote(was_dragging: bool) {
+pub fn switch_to_remote(was_dragging: bool, entry_y: i32) {
     #[cfg(windows)]
     let fg_hwnd = unsafe { GetForegroundWindow() };
     #[cfg(windows)]
     let click_hwnd = DRAG_CLICK_HWND.load(Ordering::Relaxed);
+
+    hide_edge_overlay();
+
+    // Send Y alignment coordinate to receiver so cursor lands at matching vertical position
+    let y_pkt = format!("Y {}\n", entry_y);
+    send_fast_bytes(y_pkt.as_bytes());
 
     LBUTTON_DOWN.store(false, Ordering::SeqCst);
     IS_REMOTE.store(true, Ordering::SeqCst);
@@ -832,16 +966,133 @@ pub fn switch_to_remote(was_dragging: bool) {
     }
 }
 
-pub fn switch_to_local() {
+pub fn switch_to_local(target_y: Option<i32>) {
     IS_REMOTE.store(false, Ordering::SeqCst);
     IGNORE_WARP.store(true, Ordering::SeqCst);
+    hide_edge_overlay();
+
     #[cfg(windows)]
     unsafe {
         ClipCursor(std::ptr::null());
+        let y = target_y.unwrap_or_else(|| CENTER_Y.load(Ordering::Relaxed));
         SetCursorPos(
             SCREEN_WIDTH.load(Ordering::Relaxed) - 80,
-            CENTER_Y.load(Ordering::Relaxed),
+            y,
         );
+    }
+}
+
+// -------------------------------------------------------------
+// Visual Edge Glow Barrier Window (Win32 Layered Window)
+// -------------------------------------------------------------
+
+#[cfg(windows)]
+unsafe extern "system" fn overlay_wnd_proc(
+    hwnd: HWND,
+    msg: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+) -> LRESULT {
+    match msg {
+        WM_PAINT => {
+            let mut ps: PAINTSTRUCT = std::mem::zeroed();
+            let hdc = BeginPaint(hwnd, &mut ps);
+            let brush = CreateSolidBrush(0x00D77838); // Cyan/Teal accent border glow
+            let mut rc = RECT {
+                left: 0,
+                top: 0,
+                right: 3,
+                bottom: SCREEN_HEIGHT.load(Ordering::Relaxed),
+            };
+            FillRect(hdc, &mut rc, brush);
+            DeleteObject(brush as _);
+            EndPaint(hwnd, &ps);
+            0
+        }
+        WM_ERASEBKGND => 1,
+        _ => DefWindowProcW(hwnd, msg, wparam, lparam),
+    }
+}
+
+#[cfg(windows)]
+fn init_edge_overlay() {
+    thread::spawn(|| unsafe {
+        let class_name: Vec<u16> = "TailscaleKVMEdgeOverlay\0".encode_utf16().collect();
+        let wnd_class = WNDCLASSW {
+            style: CS_HREDRAW | CS_VREDRAW,
+            lpfnWndProc: Some(overlay_wnd_proc),
+            cbClsExtra: 0,
+            cbWndExtra: 0,
+            hInstance: 0,
+            hIcon: 0,
+            hCursor: 0,
+            hbrBackground: 0,
+            lpszMenuName: std::ptr::null(),
+            lpszClassName: class_name.as_ptr(),
+        };
+        RegisterClassW(&wnd_class);
+
+        let sw = SCREEN_WIDTH.load(Ordering::Relaxed);
+        let sh = SCREEN_HEIGHT.load(Ordering::Relaxed);
+
+        let hwnd = CreateWindowExW(
+            WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED,
+            class_name.as_ptr(),
+            std::ptr::null(),
+            WS_POPUP,
+            sw - 3,
+            0,
+            3,
+            sh,
+            0,
+            0,
+            0,
+            std::ptr::null(),
+        );
+
+        if hwnd != 0 {
+            SetLayeredWindowAttributes(hwnd, 0, 180, LWA_ALPHA);
+            OVERLAY_HWND.store(hwnd as isize, Ordering::SeqCst);
+
+            let mut msg: MSG = std::mem::zeroed();
+            while GetMessageW(&mut msg, hwnd, 0, 0) > 0 {
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+        }
+    });
+}
+
+fn show_edge_overlay() {
+    #[cfg(windows)]
+    if !OVERLAY_ACTIVE.swap(true, Ordering::SeqCst) {
+        let hwnd = OVERLAY_HWND.load(Ordering::SeqCst) as HWND;
+        if hwnd != 0 {
+            unsafe {
+                ShowWindow(hwnd, SW_SHOW);
+                SetWindowPos(
+                    hwnd,
+                    HWND_TOPMOST,
+                    SCREEN_WIDTH.load(Ordering::Relaxed) - 3,
+                    0,
+                    3,
+                    SCREEN_HEIGHT.load(Ordering::Relaxed),
+                    SWP_NOACTIVATE | SWP_SHOWWINDOW,
+                );
+            }
+        }
+    }
+}
+
+fn hide_edge_overlay() {
+    #[cfg(windows)]
+    if OVERLAY_ACTIVE.swap(false, Ordering::SeqCst) {
+        let hwnd = OVERLAY_HWND.load(Ordering::SeqCst) as HWND;
+        if hwnd != 0 {
+            unsafe {
+                ShowWindow(hwnd, SW_HIDE);
+            }
+        }
     }
 }
 
@@ -854,7 +1105,6 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
         let msg = wparam as u32;
         let injected = (mouse_data.flags & LLMHF_INJECTED) != 0;
 
-        // Pass through our own synthesized button releases (e.g. MOUSEEVENTF_LEFTUP during drag cancel)
         if injected && msg != WM_MOUSEMOVE {
             if msg == WM_LBUTTONUP {
                 LBUTTON_DOWN.store(false, Ordering::SeqCst);
@@ -875,12 +1125,25 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
             }
 
             let screen_w = SCREEN_WIDTH.load(Ordering::Relaxed);
-            if x >= screen_w - 3 && IS_CONNECTED.load(Ordering::Relaxed) {
+            let screen_h = SCREEN_HEIGHT.load(Ordering::Relaxed);
+
+            // Feature 6: Edge Visual Glow when cursor nears the right boundary
+            if x >= screen_w - 45 && IS_CONNECTED.load(Ordering::Relaxed) {
+                show_edge_overlay();
+            } else {
+                hide_edge_overlay();
+            }
+
+            // Feature 3: Anti-Slip Corner Locking (Deadzone in top & bottom 50px of right screen edge)
+            let in_corner_deadzone = y <= 50 || y >= screen_h - 50;
+
+            if x >= screen_w - 3 && IS_CONNECTED.load(Ordering::Relaxed) && !in_corner_deadzone {
                 let held = LBUTTON_DOWN.load(Ordering::SeqCst);
                 let dx_drag = x - DRAG_START_X.load(Ordering::Relaxed);
-                // Require deliberate rightward drag (>= 35px) so vertical scrollbar grabs never misfire
                 let was_dragging = held && dx_drag >= 35;
-                switch_to_remote(was_dragging);
+
+                // Feature 1: Seamless Y-axis alignment (pass entry y)
+                switch_to_remote(was_dragging, y);
                 return 1;
             }
             return CallNextHookEx(MOUSE_HOOK, code, wparam, lparam);
@@ -947,7 +1210,6 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
     if code >= 0 {
         let kbd_data = *(lparam as *const KBDLLHOOKSTRUCT);
 
-        // Always allow our own synthesized keystrokes (Escape, Ctrl+L, Ctrl+C) to reach local Windows apps!
         if (kbd_data.flags & LLKHF_INJECTED) != 0 {
             return CallNextHookEx(KEYBOARD_HOOK, code, wparam, lparam);
         }
@@ -962,6 +1224,19 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
             ALT_DOWN.store(is_down, Ordering::SeqCst);
         } else if vk == VK_LWIN || vk == VK_RWIN {
             WIN_DOWN.store(is_down, Ordering::SeqCst);
+        }
+
+        // Feature 5: Working Directory Teleport (Win + Alt + T)
+        if !IS_REMOTE.load(Ordering::Relaxed)
+            && is_down
+            && vk == b'T' as u16
+            && WIN_DOWN.load(Ordering::Relaxed)
+            && ALT_DOWN.load(Ordering::Relaxed)
+            && IS_CONNECTED.load(Ordering::Relaxed)
+        {
+            let pkt = "D /home/ryguy/Work/tailscale-kvm\n";
+            send_fast_bytes(pkt.as_bytes());
+            return 1;
         }
 
         // Hotkey to fling active Browser Tab or selected Explorer File(s): Win + Right Arrow
@@ -979,7 +1254,7 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
         // Emergency Release Hotkeys: F12 (0x7B), Pause (0x13), ScrollLock (0x91)
         if vk == 0x7B || vk == 0x13 || vk == 0x91 {
             if IS_REMOTE.load(Ordering::SeqCst) && is_down {
-                switch_to_local();
+                switch_to_local(None);
                 return 1;
             }
         }
@@ -1005,7 +1280,7 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
 }
 
 /// Zero-allocation idle clipboard monitor using GetClipboardSequenceNumber().
-/// Only opens the clipboard when the sequence integer actually changes.
+/// Supports both text and image bitmap clipboard synchronization.
 fn start_clipboard_sync() {
     #[cfg(windows)]
     thread::spawn(|| {
@@ -1025,6 +1300,15 @@ fn start_clipboard_sync() {
             }
             LAST_CLIP_SEQ.store(cur_seq, Ordering::SeqCst);
 
+            // Feature 2: Image Clipboard Synchronization (Win32 CF_DIB / CF_DIBV5)
+            if let Some(dib_bytes) = read_clipboard_dib_bytes() {
+                if !dib_bytes.is_empty() {
+                    stream_image_to_omarchy(dib_bytes);
+                    continue;
+                }
+            }
+
+            // Text clipboard sync
             if let Some(text) = read_clipboard_unicode_text() {
                 if !text.is_empty() {
                     let mut pkt = String::with_capacity(text.len() + 4);
@@ -1053,7 +1337,6 @@ fn start_connection_manager(target_ip: String) {
                 let _ = stream.set_nodelay(true);
                 let _ = stream.set_write_timeout(Some(Duration::from_secs(5)));
 
-                // Identify as primary control session
                 if stream.write_all(b"H control\n").is_ok() {
                     if let Ok(reader_stream) = stream.try_clone() {
                         if let Ok(mut lock) = STREAM_SENDER.lock() {
@@ -1061,16 +1344,19 @@ fn start_connection_manager(target_ip: String) {
                         }
                         IS_CONNECTED.store(true, Ordering::SeqCst);
 
-                        // Block reading server notifications until disconnect/EOF
                         let reader = BufReader::new(reader_stream);
                         for line in reader.lines() {
                             match line {
                                 Ok(line_str) => {
                                     let trimmed = line_str.trim();
-                                    if trimmed == "switch_to_local"
-                                        || trimmed == "{\"type\":\"switch_to_local\"}"
-                                    {
-                                        switch_to_local();
+                                    if trimmed.starts_with("switch_to_local") {
+                                        let target_y = trimmed
+                                            .split_whitespace()
+                                            .nth(1)
+                                            .and_then(|y| y.parse::<i32>().ok());
+                                        switch_to_local(target_y);
+                                    } else if trimmed == "{\"type\":\"switch_to_local\"}" {
+                                        switch_to_local(None);
                                     }
                                 }
                                 Err(_) => break,
@@ -1086,7 +1372,7 @@ fn start_connection_manager(target_ip: String) {
             *lock = None;
         }
         if IS_REMOTE.load(Ordering::SeqCst) {
-            switch_to_local();
+            switch_to_local(None);
         }
 
         thread::sleep(Duration::from_secs(2));
@@ -1106,6 +1392,9 @@ fn main() {
         CENTER_X.store(sw / 2, Ordering::SeqCst);
         CENTER_Y.store(sh / 2, Ordering::SeqCst);
     }
+
+    #[cfg(windows)]
+    init_edge_overlay();
 
     start_windows_server_listener();
     start_connection_manager(target_ip);
