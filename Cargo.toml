@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "linux-receiver",
-    "windows-host",
+    "receiver",
+    "host",
 ]
 resolver = "2"

@@ -73,7 +73,7 @@ A high-performance, zero-overhead software KVM switch written in 100% native Rus
 On the receiver computer (e.g. Omarchy Linux, macOS, or Windows):
 
 ```bash
-cd linux-receiver
+cd receiver
 cargo build --release
 
 # Run receiver specifying which edge returns cursor back to host:
@@ -86,7 +86,7 @@ cargo build --release
 On the host machine (where your physical mouse and keyboard are connected):
 
 ```bash
-cd windows-host
+cd host
 cargo build --release
 
 # Run host specifying where the receiver is located:
