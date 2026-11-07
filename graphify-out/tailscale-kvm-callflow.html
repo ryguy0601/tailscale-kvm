@@ -60,7 +60,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 <div class="container">
 
 <h1>tailscale-kvm — Complete Call Flow &amp; Architecture Documentation</h1>
-<p class="subtitle">Generated from graphify knowledge graph: 236 nodes, 380 edges, 26 communities. Commit: 435d12e</p>
+<p class="subtitle">Generated from graphify knowledge graph: 245 nodes, 383 edges, 34 communities. Commit: 77d451b</p>
 
 <div class="nav">
     <a href="#overview">Architecture Overview</a>
@@ -70,8 +70,12 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
     <a href="#mutex-tcpstream-stream">Mutex Tcpstream Stream</a>
     <a href="#atomicu32-last-clip">Atomicu32 Last Clip</a>
     <a href="#oncelock-target-windows">Oncelock Target Windows</a>
+    <a href="#run-hostsh-script">Run Hostsh Script</a>
+    <a href="#run-receiversh-script">Run Receiversh Script</a>
     <a href="#host-tailscale-kvm">Host Tailscale Kvm</a>
     <a href="#receiver-tailscale-kvm">Receiver Tailscale Kvm</a>
+    <a href="#run-hostps1">Run Hostps1</a>
+    <a href="#run-receiverps1">Run Receiverps1</a>
 </div>
 
 <!-- ====== Architecture Overview ====== -->
@@ -81,7 +85,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    BUILD_GRAPH_321CBB04("Graph Build<br/><small>4 nodes</small>")
+    BUILD_GRAPH_321CBB04("Graph Build<br/><small>7 nodes</small>")
     class BUILD_GRAPH_321CBB04 module;
     CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>212 nodes</small>")
     class CLI_SKILLS_9964CBB8 module;
@@ -93,10 +97,18 @@ flowchart LR
     class ATOMICU32_LAST_CLIP_A6666AFC module;
     ONCELOCK_TARGET_WINDOWS_DCC24742("Oncelock Target Windows<br/><small>2 nodes</small>")
     class ONCELOCK_TARGET_WINDOWS_DCC24742 module;
+    RUN_HOSTSH_SCRIPT_336292B9("Run Hostsh Script<br/><small>2 nodes</small>")
+    class RUN_HOSTSH_SCRIPT_336292B9 module;
+    RUN_RECEIVERSH_SCRIPT_DEBDB906("Run Receiversh Script<br/><small>2 nodes</small>")
+    class RUN_RECEIVERSH_SCRIPT_DEBDB906 module;
     HOST_TAILSCALE_KVM_5F916E6E("Host Tailscale Kvm<br/><small>1 nodes</small>")
     class HOST_TAILSCALE_KVM_5F916E6E module;
     RECEIVER_TAILSCALE_KVM_389A10DC("Receiver Tailscale Kvm<br/><small>1 nodes</small>")
     class RECEIVER_TAILSCALE_KVM_389A10DC module;
+    RUN_HOSTPS1_87DC0170("Run Hostps1<br/><small>1 nodes</small>")
+    class RUN_HOSTPS1_87DC0170 module;
+    RUN_RECEIVERPS1_80A96601("Run Receiverps1<br/><small>1 nodes</small>")
+    class RUN_RECEIVERPS1_80A96601 module;
     CLI_SKILLS_9964CBB8 -->|imports x3| MUTEX_TCPSTREAM_STREAM_9426569D
     CLI_SKILLS_9964CBB8 -->|imports x2| ATOMICU32_LAST_CLIP_A6666AFC
     CLI_SKILLS_9964CBB8 -->|imports x2| ONCELOCK_TARGET_WINDOWS_DCC24742
@@ -117,19 +129,19 @@ flowchart LR
     <h4>Architecture Layers</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>Layer</th><th>Nodes</th><th>Communities</th></tr>
-      <tr><td>Graph Build</td><td>4</td><td><code>23, 25</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>212</td><td><code>2, 3, 6, 15, 10, 7, 8, 1, 17, 13, 19, 20, 4, 18, 21, 16, 9, 14</code></td></tr><tr><td>Readmemd Starting Multi</td><td>11</td><td><code>5</code></td></tr><tr><td>Mutex Tcpstream Stream</td><td>3</td><td><code>0</code></td></tr><tr><td>Atomicu32 Last Clip</td><td>2</td><td><code>22</code></td></tr><tr><td>Oncelock Target Windows</td><td>2</td><td><code>24</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr>
+      <tr><td>Graph Build</td><td>7</td><td><code>23, 25, 28, 31</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>212</td><td><code>2, 3, 7, 6, 10, 20, 8, 1, 17, 13, 19, 4, 15, 26, 27, 18, 21, 16, 9, 14</code></td></tr><tr><td>Readmemd Starting Multi</td><td>11</td><td><code>5</code></td></tr><tr><td>Mutex Tcpstream Stream</td><td>3</td><td><code>0</code></td></tr><tr><td>Atomicu32 Last Clip</td><td>2</td><td><code>22</code></td></tr><tr><td>Oncelock Target Windows</td><td>2</td><td><code>24</code></td></tr><tr><td>Run Hostsh Script</td><td>2</td><td><code>29</code></td></tr><tr><td>Run Receiversh Script</td><td>2</td><td><code>30</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr><tr><td>Run Hostps1</td><td>1</td><td><code>32</code></td></tr><tr><td>Run Receiverps1</td><td>1</td><td><code>33</code></td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Core Flow</h4>
-    <div class="arrow-chain">CLI &amp; Skill Installers -&gt; Mutex Tcpstream Stream -&gt; Graph Build -&gt; Readmemd Starting Multi -&gt; Atomicu32 Last Clip -&gt; Oncelock Target Windows -&gt; Host Tailscale Kvm</div>
+    <div class="arrow-chain">CLI &amp; Skill Installers -&gt; Mutex Tcpstream Stream -&gt; Graph Build -&gt; Readmemd Starting Multi -&gt; Atomicu32 Last Clip -&gt; Oncelock Target Windows -&gt; Run Hostsh Script</div>
   </div>
 </div>
 <div class="grid">
   <div class="card">
     <h4>Graph Report Highlights</h4>
     <ul>
-      <li>236 nodes · 380 edges · 26 communities (16 shown, 10 thin omitted)</li>
+      <li>245 nodes · 383 edges · 34 communities (18 shown, 16 thin omitted)</li>
       <li>Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS</li>
       <li>Token cost: 0 input · 0 output</li>
       <li>1. `handle_connection()` - 18 edges</li>
@@ -141,22 +153,31 @@ flowchart LR
 <hr>
 <!-- ====== 2. Graph Build ====== -->
 <h2 id="build-graph">2. Graph Build</h2>
-<p>Graph Build groups implementation around edge, mainrs, atomicu8, return, mostly in linux-receiver/src/main.rs, windows-host/src/main.rs. This section covers 4 nodes and 2 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>Graph Build groups implementation around buildsh, edge, mainrs, atomicu8, mostly in build.sh, linux-receiver/src/main.rs, windows-host/src/main.rs. This section covers 7 nodes and 3 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Graph Build (4 nodes, 2 edges)
+    %% Section: Graph Build (7 nodes, 3 edges)
     subgraph build_graph_External_generated_653891f5["External / generated"]
         linux_receiver_src_main_rs_atomicu8_c4d6330f("AtomicU8")
         windows_host_src_main_rs_atomicu8_9575cbd3("AtomicU8")
     end
+    subgraph build_graph_build_sh_4d78c334["build.sh"]
+        build_sh_build_2c509fe1("build.sh")
+        build_sh_entry_ed350c5c("build.sh script<br/><small>build.sh</small>")
+    end
+    build_ps1_build_af6fd22d("build.ps1")
     linux_receiver_src_main_return_edge_49c380bf("RETURN_EDGE<br/><small>linux-receiver/src/main.rs</small>")
     windows_host_src_main_edge_direction_5698dd5f("EDGE_DIRECTION<br/><small>windows-host/src/main.rs</small>")
     linux_receiver_src_main_return_edge_49c380bf -->|references| linux_receiver_src_main_rs_atomicu8_c4d6330f
     windows_host_src_main_edge_direction_5698dd5f -->|references| windows_host_src_main_rs_atomicu8_9575cbd3
+    build_sh_build_2c509fe1 -->|contains| build_sh_entry_ed350c5c
     class linux_receiver_src_main_rs_atomicu8_c4d6330f klass;
     class windows_host_src_main_rs_atomicu8_9575cbd3 klass;
+    class build_sh_build_2c509fe1 function;
+    class build_sh_entry_ed350c5c function;
+    class build_ps1_build_af6fd22d function;
     class linux_receiver_src_main_return_edge_49c380bf klass;
     class windows_host_src_main_edge_direction_5698dd5f klass;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
@@ -212,6 +233,30 @@ flowchart LR
   <td>No direct outbound edge</td>
   <td>AtomicU8 node in project.</td>
 </tr>
+<tr>
+  <td>5</td>
+  <td><code>build.sh script</code><br><small style="color:var(--muted)">build.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>build.sh script node in build.sh.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>build.sh</code><br><small style="color:var(--muted)">build.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>build.sh node in build.sh.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>build.ps1</code><br><small style="color:var(--muted)">build.ps1</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>build.ps1 node in build.ps1.</td>
+</tr>
 </table>
 
 <div class="grid">
@@ -219,13 +264,15 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>linux-receiver/src/main.rs</code></td><td>1 nodes</td></tr>
+      <tr><td><code>build.sh</code></td><td>2 nodes</td></tr>
+<tr><td><code>build.ps1</code></td><td>1 nodes</td></tr>
+<tr><td><code>linux-receiver/src/main.rs</code></td><td>1 nodes</td></tr>
 <tr><td><code>windows-host/src/main.rs</code></td><td>1 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: references x2. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: references x2, contains x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
@@ -952,8 +999,142 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 8. Host Tailscale Kvm ====== -->
-<h2 id="host-tailscale-kvm">8. Host Tailscale Kvm</h2>
+<!-- ====== 8. Run Hostsh Script ====== -->
+<h2 id="run-hostsh-script">8. Run Hostsh Script</h2>
+<p>Run Hostsh Script groups implementation around run, hostsh, script, mostly in run-host.sh. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Run Hostsh Script (2 nodes, 1 edges)
+    run_host_sh_run_host_739c688d("run-host.sh")
+    run_host_sh_entry_cba216b5("run-host.sh script<br/><small>run-host.sh</small>")
+    run_host_sh_run_host_739c688d -->|contains| run_host_sh_entry_cba216b5
+    class run_host_sh_run_host_739c688d function;
+    class run_host_sh_entry_cba216b5 function;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>run-host.sh script</code><br><small style="color:var(--muted)">run-host.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>run-host.sh script node in run-host.sh.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>run-host.sh</code><br><small style="color:var(--muted)">run-host.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>run-host.sh node in run-host.sh.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>run-host.sh</code></td><td>2 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 9. Run Receiversh Script ====== -->
+<h2 id="run-receiversh-script">9. Run Receiversh Script</h2>
+<p>Run Receiversh Script groups implementation around run, receiversh, script, mostly in run-receiver.sh. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Run Receiversh Script (2 nodes, 1 edges)
+    run_receiver_sh_run_receiver_f14e95e0("run-receiver.sh")
+    run_receiver_sh_entry_c5fc00b8("run-receiver.sh script<br/><small>run-receiver.sh</small>")
+    run_receiver_sh_run_receiver_f14e95e0 -->|contains| run_receiver_sh_entry_c5fc00b8
+    class run_receiver_sh_run_receiver_f14e95e0 function;
+    class run_receiver_sh_entry_c5fc00b8 function;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>run-receiver.sh script</code><br><small style="color:var(--muted)">run-receiver.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>run-receiver.sh script node in run-receiver.sh.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>run-receiver.sh</code><br><small style="color:var(--muted)">run-receiver.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>run-receiver.sh node in run-receiver.sh.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>run-receiver.sh</code></td><td>2 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 10. Host Tailscale Kvm ====== -->
+<h2 id="host-tailscale-kvm">10. Host Tailscale Kvm</h2>
 <p>Host Tailscale Kvm groups implementation around host, tailscale, kvm, windows, mostly in windows-host/Cargo.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1008,8 +1189,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 9. Receiver Tailscale Kvm ====== -->
-<h2 id="receiver-tailscale-kvm">9. Receiver Tailscale Kvm</h2>
+<!-- ====== 11. Receiver Tailscale Kvm ====== -->
+<h2 id="receiver-tailscale-kvm">11. Receiver Tailscale Kvm</h2>
 <p>Receiver Tailscale Kvm groups implementation around receiver, tailscale, kvm, linux, mostly in linux-receiver/Cargo.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1064,23 +1245,135 @@ flowchart LR
 </div>
 <hr>
 
+<!-- ====== 12. Run Hostps1 ====== -->
+<h2 id="run-hostps1">12. Run Hostps1</h2>
+<p>Run Hostps1 groups implementation around run, hostps1, mostly in run-host.ps1. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Run Hostps1 (1 nodes, 0 edges)
+    run_host_ps1_run_host_4cebf4b0("run-host.ps1")
+    class run_host_ps1_run_host_4cebf4b0 function;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>run-host.ps1</code><br><small style="color:var(--muted)">run-host.ps1</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>run-host.ps1 node in run-host.ps1.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>run-host.ps1</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: No high-confidence call edges detected. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 13. Run Receiverps1 ====== -->
+<h2 id="run-receiverps1">13. Run Receiverps1</h2>
+<p>Run Receiverps1 groups implementation around run, receiverps1, mostly in run-receiver.ps1. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Run Receiverps1 (1 nodes, 0 edges)
+    run_receiver_ps1_run_receiver_6b0f349d("run-receiver.ps1")
+    class run_receiver_ps1_run_receiver_6b0f349d function;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>run-receiver.ps1</code><br><small style="color:var(--muted)">run-receiver.ps1</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>run-receiver.ps1 node in run-receiver.ps1.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>run-receiver.ps1</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: No high-confidence call edges detected. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
 <h2 id="stats">Project Statistics</h2>
 
 <div class="grid">
   <div class="card">
     <h4>Graph</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>Nodes</td><td>236</td></tr>
-      <tr><td>Edges</td><td>380</td></tr>
+      <tr><td>Nodes</td><td>245</td></tr>
+      <tr><td>Edges</td><td>383</td></tr>
       <tr><td>Hyperedges</td><td>0</td></tr>
-      <tr><td>Communities</td><td>26</td></tr>
-      <tr><td>Documented Sections</td><td>8</td></tr>
+      <tr><td>Communities</td><td>34</td></tr>
+      <tr><td>Documented Sections</td><td>12</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Edge Confidence</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>EXTRACTED</td><td>380</td></tr>
+      <tr><td>EXTRACTED</td><td>383</td></tr>
       <tr><td>INFERRED</td><td>0</td></tr>
       <tr><td>AMBIGUOUS</td><td>0</td></tr>
     </table>
@@ -1089,7 +1382,7 @@ flowchart LR
 
 <div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
   <p>tailscale-kvm — Architecture Documentation</p>
-  <p>Generated: 2026-11-07 03:22 UTC · graphify callflow-html</p>
+  <p>Generated: 2026-11-07 03:29 UTC · graphify callflow-html</p>
 </div>
 
 </div><!-- .container -->

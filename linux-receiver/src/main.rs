@@ -1294,7 +1294,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ReturnEdge::Left => 0,
     };
     RETURN_EDGE.store(edge_val, Ordering::SeqCst);
-    println!("=== Tailscale KVM Rust Receiver Daemon ===");
+    println!("=== Tailscale KVM Universal Receiver Daemon ===");
     println!("[*] Configured return edge trigger: {:?} (exit this edge to return control to host)", return_edge);
 
     let mut key_set = AttributeSet::<Key>::new();

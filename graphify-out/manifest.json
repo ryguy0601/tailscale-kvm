@@ -30,9 +30,9 @@
     "semantic_hash": ""
   },
   "linux-receiver/src/main.rs": {
-    "mtime": 1794021762.253956,
-    "seen": 1794021762.5753276,
-    "ast_hash": "509026a90e6b9048295c21fd44b64c72",
+    "mtime": 1794022114.5524263,
+    "seen": 1794022142.8127403,
+    "ast_hash": "73d232aee8e9a6e3b32728480774cfd9",
     "semantic_hash": ""
   },
   "windows-host/Cargo.toml": {
@@ -42,9 +42,9 @@
     "semantic_hash": ""
   },
   "windows-host/src/main.rs": {
-    "mtime": 1794021762.253956,
-    "seen": 1794021762.5753307,
-    "ast_hash": "f909ffc9f9000935f8722dcb0d3ddc98",
+    "mtime": 1794022119.7363157,
+    "seen": 1794022142.8127465,
+    "ast_hash": "99a0f11da4bd6de833e673225847f1b9",
     "semantic_hash": ""
   },
   "windows-host/src/vk_map.rs": {
@@ -57,6 +57,42 @@
     "mtime": 1794015310.0406594,
     "seen": 1794015624.799336,
     "ast_hash": "bb7e5c8a74e6d5d5cf23620fe09391e1",
+    "semantic_hash": ""
+  },
+  "build.ps1": {
+    "mtime": 1794022103.8913062,
+    "seen": 1794022142.8127363,
+    "ast_hash": "babe5f223c8b0f69f8de7743eef194a7",
+    "semantic_hash": ""
+  },
+  "build.sh": {
+    "mtime": 1794022099.2761805,
+    "seen": 1794022142.8127375,
+    "ast_hash": "4704a7c970d6a886190a5795694c11df",
+    "semantic_hash": ""
+  },
+  "run-host.ps1": {
+    "mtime": 1794022123.992307,
+    "seen": 1794022142.812741,
+    "ast_hash": "59104a85411a9ed15c280619843c077f",
+    "semantic_hash": ""
+  },
+  "run-host.sh": {
+    "mtime": 1794022123.989385,
+    "seen": 1794022142.812742,
+    "ast_hash": "04a289b16a7f0df8bbffed97f100b59c",
+    "semantic_hash": ""
+  },
+  "run-receiver.ps1": {
+    "mtime": 1794022123.9929414,
+    "seen": 1794022142.8127427,
+    "ast_hash": "f8237c1e6c8862d988f787755058ec2f",
+    "semantic_hash": ""
+  },
+  "run-receiver.sh": {
+    "mtime": 1794022123.9908755,
+    "seen": 1794022142.812744,
+    "ast_hash": "f039385ad8cf8af30851ef8ffdaf8d1b",
     "semantic_hash": ""
   }
 }

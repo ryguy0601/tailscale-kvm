@@ -1540,7 +1540,7 @@ fn main() {
     let target_ip = get_config_ip();
     let _ = TARGET_IP.set(target_ip.clone());
 
-    println!("=== Tailscale KVM Windows Host Controller ===");
+    println!("=== Tailscale KVM Universal Host Controller ===");
     println!("[*] Configured Host Screen Edge Trigger: {:?} (move cursor past this edge to control remote)", dir);
     println!("[*] Target Receiver Peer: {}", target_ip);
 
