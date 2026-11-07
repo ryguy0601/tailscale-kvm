@@ -121,7 +121,17 @@ fn handle_http_client(mut stream: TcpStream) {
 }
 
 fn get_tailscale_peers_json() -> String {
-    if let Ok(output) = std::process::Command::new("tailscale").args(["status", "--json"]).output() {
+    let mut cmd = std::process::Command::new("tailscale");
+    cmd.args(["status", "--json"]);
+
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    if let Ok(output) = cmd.output() {
         if let Ok(val) = serde_json::from_slice::<serde_json::Value>(&output.stdout) {
             if let Some(peers) = val.get("Peer").and_then(|p| p.as_object()) {
                 let mut list = Vec::new();

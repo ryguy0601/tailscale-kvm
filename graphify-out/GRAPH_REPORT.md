@@ -1,17 +1,17 @@
 # Graph Report - tailscale-kvm  (2026-11-06)
 
 ## Corpus Check
-- 16 files · ~12,911 words
+- 16 files · ~13,009 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 4 file(s) not represented in the graph (top: (none) 3, .toml 1)
 
 ## Summary
-- 270 nodes · 436 edges · 34 communities (17 shown, 17 thin omitted)
+- 269 nodes · 434 edges · 33 communities (17 shown, 16 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `9bd61d90`
+- Built from commit: `ea4c45bf`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -39,7 +39,6 @@
 - InputAdapter
 - main
 - web_gui.rs
-- OnceLock
 - STREAM_SENDER
 - EDGE_DIRECTION
 - RETURN_EDGE
@@ -74,7 +73,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (34 total, 17 thin omitted)
+## Communities (33 total, 16 thin omitted)
 
 ### Community 0 - "AtomicBool"
 Cohesion: 0.18
@@ -105,7 +104,7 @@ Cohesion: 0.11
 Nodes (21): cancel_active_drag_and_release_mouse(), classify_window(), collect_transfer_entries(), DragKind, Browser, Explorer, Other, execute_handoff() (+13 more)
 
 ### Community 7 - "mouse_hook_proc"
-Cohesion: 0.23
+Cohesion: 0.22
 Nodes (11): hide_edge_overlay(), keyboard_hook_proc(), mouse_hook_proc(), overlay_wnd_proc(), send_fast_bytes(), show_edge_overlay(), start_connection_manager(), switch_active_peer() (+3 more)
 
 ### Community 10 - "handle_connection"
@@ -147,7 +146,7 @@ Nodes (13): init_edge_overlay(), main(), get_slot(), get_slot_peer(), get_tailsc
 ## Knowledge Gaps
 - **16 isolated node(s):** `tailscale-kvm-host`, `Right`, `Left`, `Up`, `Down` (+11 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 98 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **17 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **16 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_

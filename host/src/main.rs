@@ -12,7 +12,7 @@ use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
 use std::os::windows::ffi::OsStringExt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicIsize, AtomicU32, Ordering};
-use std::sync::{Mutex, OnceLock};
+use std::sync::Mutex;
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -48,7 +48,7 @@ static SUPPRESS_CLIPBOARD_SYNC: AtomicBool = AtomicBool::new(false);
 static LAST_CLIP_SEQ: AtomicU32 = AtomicU32::new(0);
 
 static STREAM_SENDER: Mutex<Option<TcpStream>> = Mutex::new(None);
-static TARGET_IP: OnceLock<String> = OnceLock::new();
+static TARGET_PEER_IP: Mutex<Option<String>> = Mutex::new(None);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EdgeDirection {
@@ -114,7 +114,17 @@ enum DragKind {
 }
 
 fn auto_discover_peer_ip() -> Option<String> {
-    if let Ok(output) = std::process::Command::new("tailscale").args(["status", "--json"]).output() {
+    let mut cmd = std::process::Command::new("tailscale");
+    cmd.args(["status", "--json"]);
+
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    if let Ok(output) = cmd.output() {
         if let Ok(val) = serde_json::from_slice::<serde_json::Value>(&output.stdout) {
             if let Some(peers) = val.get("Peer").and_then(|p| p.as_object()) {
                 for (_, peer) in peers {
@@ -791,7 +801,8 @@ fn start_windows_server_listener() {
 
 /// Streams files over a dedicated secondary TCP connection using a constant 64 KB stack buffer.
 fn stream_files_to_omarchy(paths: Vec<PathBuf>) {
-    let Some(target_ip) = TARGET_IP.get() else {
+    let target_ip_opt = TARGET_PEER_IP.lock().ok().and_then(|l| l.clone());
+    let Some(ref target_ip) = target_ip_opt else {
         return;
     };
 
@@ -869,7 +880,8 @@ fn stream_files_to_omarchy(paths: Vec<PathBuf>) {
 }
 
 fn stream_image_to_omarchy(dib_bytes: Vec<u8>) {
-    let Some(target_ip) = TARGET_IP.get() else {
+    let target_ip_opt = TARGET_PEER_IP.lock().ok().and_then(|l| l.clone());
+    let Some(ref target_ip) = target_ip_opt else {
         return;
     };
     let Some(addr) = resolve_target_addr(target_ip) else {
@@ -1300,7 +1312,8 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
                         EdgeDirection::Down => "down",
                     };
                     if let Some(target_peer_ip) = web_gui::get_slot_peer(slot_key) {
-                        if TARGET_IP.get().map(|s| s.as_str()) != Some(&target_peer_ip) {
+                        let cur = TARGET_PEER_IP.lock().ok().and_then(|l| l.clone());
+                    if cur.as_deref() != Some(&target_peer_ip) {
                             switch_active_peer(target_peer_ip);
                         }
                     }
@@ -1505,43 +1518,55 @@ fn start_clipboard_sync() {
 
 /// Persistent TCP connection manager with automatic reconnect on disconnect or receiver restart.
 fn switch_active_peer(new_ip: String) {
+    if let Ok(mut lock) = TARGET_PEER_IP.lock() {
+        *lock = Some(new_ip);
+    }
     if let Ok(mut lock) = STREAM_SENDER.lock() {
         *lock = None;
     }
     IS_CONNECTED.store(false, Ordering::SeqCst);
-    start_connection_manager(new_ip);
 }
 
-fn start_connection_manager(target_ip: String) {
+fn start_connection_manager() {
     thread::spawn(move || loop {
-        if let Some(addr) = resolve_target_addr(&target_ip) {
-            if let Ok(mut stream) = TcpStream::connect_timeout(&addr, Duration::from_secs(3)) {
-                let _ = stream.set_nodelay(true);
-                let _ = stream.set_write_timeout(Some(Duration::from_secs(5)));
+        let current_target = TARGET_PEER_IP.lock().ok().and_then(|l| l.clone());
 
-                if stream.write_all(b"H control\n").is_ok() {
-                    if let Ok(reader_stream) = stream.try_clone() {
-                        if let Ok(mut lock) = STREAM_SENDER.lock() {
-                            *lock = Some(stream);
-                        }
-                        IS_CONNECTED.store(true, Ordering::SeqCst);
+        if let Some(target_ip) = current_target {
+            if let Some(addr) = resolve_target_addr(&target_ip) {
+                if let Ok(mut stream) = TcpStream::connect_timeout(&addr, Duration::from_secs(2)) {
+                    let _ = stream.set_nodelay(true);
+                    let _ = stream.set_write_timeout(Some(Duration::from_secs(5)));
 
-                        let reader = BufReader::new(reader_stream);
-                        for line in reader.lines() {
-                            match line {
-                                Ok(line_str) => {
-                                    let trimmed = line_str.trim();
-                                    if trimmed.starts_with("switch_to_local") {
-                                        let target_y = trimmed
-                                            .split_whitespace()
-                                            .nth(1)
-                                            .and_then(|y| y.parse::<i32>().ok());
-                                        switch_to_local(target_y);
-                                    } else if trimmed == "{\"type\":\"switch_to_local\"}" {
-                                        switch_to_local(None);
-                                    }
+                    if stream.write_all(b"H control\n").is_ok() {
+                        if let Ok(reader_stream) = stream.try_clone() {
+                            if let Ok(mut lock) = STREAM_SENDER.lock() {
+                                *lock = Some(stream);
+                            }
+                            IS_CONNECTED.store(true, Ordering::SeqCst);
+
+                            let reader = BufReader::new(reader_stream);
+                            for line in reader.lines() {
+                                // Check if target IP has changed while connected
+                                let active_now = TARGET_PEER_IP.lock().ok().and_then(|l| l.clone());
+                                if active_now.as_deref() != Some(&target_ip) {
+                                    break;
                                 }
-                                Err(_) => break,
+
+                                match line {
+                                    Ok(line_str) => {
+                                        let trimmed = line_str.trim();
+                                        if trimmed.starts_with("switch_to_local") {
+                                            let target_y = trimmed
+                                                .split_whitespace()
+                                                .nth(1)
+                                                .and_then(|y| y.parse::<i32>().ok());
+                                            switch_to_local(target_y);
+                                        } else if trimmed == "{\"type\":\"switch_to_local\"}" {
+                                            switch_to_local(None);
+                                        }
+                                    }
+                                    Err(_) => break,
+                                }
                             }
                         }
                     }
@@ -1557,7 +1582,7 @@ fn start_connection_manager(target_ip: String) {
             switch_to_local(None);
         }
 
-        thread::sleep(Duration::from_secs(2));
+        thread::sleep(Duration::from_millis(800));
     });
 }
 
@@ -1572,7 +1597,9 @@ fn main() {
     EDGE_DIRECTION.store(dir_val, Ordering::SeqCst);
 
     let target_ip = get_config_ip();
-    let _ = TARGET_IP.set(target_ip.clone());
+    if let Ok(mut lock) = TARGET_PEER_IP.lock() {
+        *lock = Some(target_ip.clone());
+    }
 
     println!("=== Tailscale KVM Universal Host Controller ===");
     println!("[*] Configured Host Screen Edge Trigger: {:?} (move cursor past this edge to control remote)", dir);
@@ -1603,7 +1630,7 @@ fn main() {
     init_edge_overlay();
 
     start_windows_server_listener();
-    start_connection_manager(target_ip);
+    start_connection_manager();
     start_clipboard_sync();
 
     #[cfg(windows)]

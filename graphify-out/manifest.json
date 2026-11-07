@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "host/src/main.rs": {
-    "mtime": 1794022586.164686,
-    "seen": 1794022773.2815256,
-    "ast_hash": "462ab1b7ae20b64d71f9fd4febcdc068",
+    "mtime": 1794023849.0262399,
+    "seen": 1794023859.275602,
+    "ast_hash": "858f054ae8ed36a24be04788def500d3",
     "semantic_hash": ""
   },
   "host/src/vk_map.rs": {
@@ -84,9 +84,9 @@
     "semantic_hash": ""
   },
   "host/src/web_gui.rs": {
-    "mtime": 1794023196.3607624,
-    "seen": 1794023308.427578,
-    "ast_hash": "9b101cbf6ab5985b49b8f304e6287b2f",
+    "mtime": 1794023807.6059632,
+    "seen": 1794023859.275604,
+    "ast_hash": "1e2aa8f652f8e3f780fdcdc2cde8ab48",
     "semantic_hash": ""
   },
   "receiver/Cargo.toml": {

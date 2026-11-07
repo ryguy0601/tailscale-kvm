@@ -60,15 +60,13 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 <div class="container">
 
 <h1>tailscale-kvm — Complete Call Flow &amp; Architecture Documentation</h1>
-<p class="subtitle">Generated from graphify knowledge graph: 270 nodes, 436 edges, 34 communities. Commit: 9bd61d9</p>
+<p class="subtitle">Generated from graphify knowledge graph: 269 nodes, 434 edges, 33 communities. Commit: ea4c45b</p>
 
 <div class="nav">
     <a href="#overview">Architecture Overview</a>
     <a href="#build-graph">Graph Build</a>
     <a href="#cli-skills">CLI &amp; Skill Installers</a>
     <a href="#input-adapterrs-receiver">Input Adapterrs Receiver</a>
-    <a href="#mutex-tcpstream-stream">Mutex Tcpstream Stream</a>
-    <a href="#oncelock-target-host">Oncelock Target Host</a>
     <a href="#run-hostsh-script">Run Hostsh Script</a>
     <a href="#run-receiversh-script">Run Receiversh Script</a>
     <a href="#host-tailscale-kvm">Host Tailscale Kvm</a>
@@ -86,14 +84,10 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 flowchart LR
     BUILD_GRAPH_321CBB04("Graph Build<br/><small>20 nodes</small>")
     class BUILD_GRAPH_321CBB04 module;
-    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>223 nodes</small>")
+    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>227 nodes</small>")
     class CLI_SKILLS_9964CBB8 module;
     INPUT_ADAPTERRS_RECEIVER_BE9A3D9B("Input Adapterrs Receiver<br/><small>14 nodes</small>")
     class INPUT_ADAPTERRS_RECEIVER_BE9A3D9B module;
-    MUTEX_TCPSTREAM_STREAM_9426569D("Mutex Tcpstream Stream<br/><small>3 nodes</small>")
-    class MUTEX_TCPSTREAM_STREAM_9426569D module;
-    ONCELOCK_TARGET_HOST_73F7F2E6("Oncelock Target Host<br/><small>2 nodes</small>")
-    class ONCELOCK_TARGET_HOST_73F7F2E6 module;
     RUN_HOSTSH_SCRIPT_336292B9("Run Hostsh Script<br/><small>2 nodes</small>")
     class RUN_HOSTSH_SCRIPT_336292B9 module;
     RUN_RECEIVERSH_SCRIPT_DEBDB906("Run Receiversh Script<br/><small>2 nodes</small>")
@@ -106,9 +100,7 @@ flowchart LR
     class RUN_HOSTPS1_87DC0170 module;
     RUN_RECEIVERPS1_80A96601("Run Receiverps1<br/><small>1 nodes</small>")
     class RUN_RECEIVERPS1_80A96601 module;
-    CLI_SKILLS_9964CBB8 -->|imports x3| MUTEX_TCPSTREAM_STREAM_9426569D
     CLI_SKILLS_9964CBB8 -->|references x2| INPUT_ADAPTERRS_RECEIVER_BE9A3D9B
-    CLI_SKILLS_9964CBB8 -->|imports x2| ONCELOCK_TARGET_HOST_73F7F2E6
     CLI_SKILLS_9964CBB8 -->|contains x2| BUILD_GRAPH_321CBB04
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
@@ -126,19 +118,19 @@ flowchart LR
     <h4>Architecture Layers</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>Layer</th><th>Nodes</th><th>Communities</th></tr>
-      <tr><td>Graph Build</td><td>20</td><td><code>5, 26, 27, 28, 31</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>223</td><td><code>2, 3, 6, 22, 7, 10, 15, 0, 1, 4, 13, 14, 17, 18, 19, 21, 16, 9, 8, 34</code></td></tr><tr><td>Input Adapterrs Receiver</td><td>14</td><td><code>20</code></td></tr><tr><td>Mutex Tcpstream Stream</td><td>3</td><td><code>25</code></td></tr><tr><td>Oncelock Target Host</td><td>2</td><td><code>23</code></td></tr><tr><td>Run Hostsh Script</td><td>2</td><td><code>29</code></td></tr><tr><td>Run Receiversh Script</td><td>2</td><td><code>30</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr><tr><td>Run Hostps1</td><td>1</td><td><code>32</code></td></tr><tr><td>Run Receiverps1</td><td>1</td><td><code>33</code></td></tr>
+      <tr><td>Graph Build</td><td>20</td><td><code>5, 26, 27, 28, 31</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>227</td><td><code>2, 3, 6, 22, 7, 10, 15, 0, 1, 4, 13, 14, 17, 18, 19, 21, 25, 16, 9, 8, 34</code></td></tr><tr><td>Input Adapterrs Receiver</td><td>14</td><td><code>20</code></td></tr><tr><td>Run Hostsh Script</td><td>2</td><td><code>29</code></td></tr><tr><td>Run Receiversh Script</td><td>2</td><td><code>30</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr><tr><td>Run Hostps1</td><td>1</td><td><code>32</code></td></tr><tr><td>Run Receiverps1</td><td>1</td><td><code>33</code></td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Core Flow</h4>
-    <div class="arrow-chain">CLI &amp; Skill Installers -&gt; Mutex Tcpstream Stream -&gt; Graph Build -&gt; Input Adapterrs Receiver -&gt; Oncelock Target Host -&gt; Run Hostsh Script -&gt; Run Receiversh Script</div>
+    <div class="arrow-chain">CLI &amp; Skill Installers -&gt; Input Adapterrs Receiver -&gt; Graph Build -&gt; Run Hostsh Script -&gt; Run Receiversh Script -&gt; Host Tailscale Kvm -&gt; Receiver Tailscale Kvm</div>
   </div>
 </div>
 <div class="grid">
   <div class="card">
     <h4>Graph Report Highlights</h4>
     <ul>
-      <li>270 nodes · 436 edges · 34 communities (17 shown, 17 thin omitted)</li>
+      <li>269 nodes · 434 edges · 33 communities (17 shown, 16 thin omitted)</li>
       <li>Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS</li>
       <li>Token cost: 0 input · 0 output</li>
       <li>1. `handle_connection()` - 18 edges</li>
@@ -416,12 +408,12 @@ flowchart LR
 
 <!-- ====== 3. CLI & Skill Installers ====== -->
 <h2 id="cli-skills">3. CLI &amp; Skill Installers</h2>
-<p>CLI &amp; Skill Installers groups implementation around mainrs, host, receiver, web, mostly in host/src/main.rs, receiver/src/main.rs, host/src/web_gui.rs. This section covers 223 nodes and 393 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>CLI &amp; Skill Installers groups implementation around mainrs, host, receiver, web, mostly in host/src/main.rs, receiver/src/main.rs, host/src/web_gui.rs. This section covers 227 nodes and 399 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: CLI &amp; Skill Installers (223 nodes, 393 edges)
+    %% Section: CLI &amp; Skill Installers (227 nodes, 399 edges)
     subgraph cli_skills_receiver_src_main_rs_687ecddc["receiver/src/main.rs"]
         receiver_src_main_27e70eb4("main.rs")
         receiver_src_main_handle_connection_6d2ddb88("handle_connection()<br/><small>receiver/src/main.rs</small>")
@@ -454,7 +446,7 @@ flowchart LR
     receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_open_url_in_browser_25d40946
     receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_unescape_text_line_cfe48a2a
     receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_copy_text_to_wayland_clipboard_00090a52
-    %% Omitted for readability: 205 nodes, 0 edges
+    %% Omitted for readability: 209 nodes, 0 edges
     class receiver_src_main_27e70eb4 module;
     class receiver_src_main_handle_connection_6d2ddb88 function;
     class receiver_src_main_returnedge_725f957f klass;
@@ -507,7 +499,7 @@ flowchart LR
   <td><code>host/src/main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
   <td><span class="tag tag-class">Module</span></td>
   <td>External entry / no inbound edge</td>
-  <td><code>AtomicBool</code><br><code>AtomicI32</code><br><code>AtomicIsize</code><br>+40 more</td>
+  <td><code>AtomicBool</code><br><code>AtomicI32</code><br><code>AtomicIsize</code><br>+39 more</td>
   <td>host/src/main.rs node in host/src/main.rs.</td>
 </tr>
 <tr>
@@ -741,7 +733,7 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>host/src/main.rs</code></td><td>78 nodes</td></tr>
+      <tr><td><code>host/src/main.rs</code></td><td>80 nodes</td></tr>
 <tr><td><code>receiver/src/main.rs</code></td><td>60 nodes</td></tr>
 <tr><td><code>host/src/web_gui.rs</code></td><td>12 nodes</td></tr>
 <tr><td><code>host/src/vk_map.rs</code></td><td>2 nodes</td></tr>
@@ -750,7 +742,7 @@ flowchart LR
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: contains x131, calls x99, references x75, imports x71. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x133, calls x98, references x78, imports x73. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
@@ -957,155 +949,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 5. Mutex Tcpstream Stream ====== -->
-<h2 id="mutex-tcpstream-stream">5. Mutex Tcpstream Stream</h2>
-<p>Mutex Tcpstream Stream groups implementation around mutex, tcpstream, stream, sender, mostly in host/src/main.rs. This section covers 3 nodes and 2 internal edges; the diagram shows only representative relationships to stay readable.</p>
-
-<div class="mermaid">
-%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
-flowchart LR
-    %% Section: Mutex Tcpstream Stream (3 nodes, 2 edges)
-    subgraph mutex_tcpstream_stream_External_generated_86517fc4["External / generated"]
-        host_src_main_rs_mutex_06309980("Mutex")
-        host_src_main_rs_tcpstream_1d4347e0("TcpStream")
-    end
-    host_src_main_stream_sender_5d31859d("STREAM_SENDER<br/><small>host/src/main.rs</small>")
-    host_src_main_stream_sender_5d31859d -->|references| host_src_main_rs_mutex_06309980
-    host_src_main_stream_sender_5d31859d -->|references| host_src_main_rs_tcpstream_1d4347e0
-    class host_src_main_rs_mutex_06309980 klass;
-    class host_src_main_rs_tcpstream_1d4347e0 async;
-    class host_src_main_stream_sender_5d31859d async;
-    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
-    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
-    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
-    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
-    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
-    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
-    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
-    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
-    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
-</div>
-
-<h3>Call Details</h3>
-<table class="call-table">
-<tr>
-  <th style="width:5%">#</th>
-  <th style="width:28%">Node</th>
-  <th style="width:10%">Type</th>
-  <th style="width:17%">Caller</th>
-  <th style="width:20%">Callees</th>
-  <th style="width:20%">Description</th>
-</tr>
-<tr>
-  <td>1</td>
-  <td><code>Mutex</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>Mutex node in project.</td>
-</tr>
-<tr>
-  <td>2</td>
-  <td><code>TcpStream</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-async">Async</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>TcpStream node in project.</td>
-</tr>
-<tr>
-  <td>3</td>
-  <td><code>STREAM_SENDER</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td><span class="tag tag-async">Async</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>STREAM_SENDER node in host/src/main.rs.</td>
-</tr>
-</table>
-
-<div class="grid">
-  <div class="card">
-    <h4>Key Files</h4>
-    <table style="width:100%;font-size:0.85rem;">
-      <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>host/src/main.rs</code></td><td>1 nodes</td></tr>
-    </table>
-  </div>
-  <div class="card">
-    <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: references x2. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
-  </div>
-</div>
-<hr>
-
-<!-- ====== 6. Oncelock Target Host ====== -->
-<h2 id="oncelock-target-host">6. Oncelock Target Host</h2>
-<p>Oncelock Target Host groups implementation around oncelock, target, host, mainrs, mostly in host/src/main.rs. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
-
-<div class="mermaid">
-%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
-flowchart LR
-    %% Section: Oncelock Target Host (2 nodes, 1 edges)
-    host_src_main_rs_oncelock_cf713789("OnceLock")
-    host_src_main_target_ip_4bebec9c("TARGET_IP<br/><small>host/src/main.rs</small>")
-    host_src_main_target_ip_4bebec9c -->|references| host_src_main_rs_oncelock_cf713789
-    class host_src_main_rs_oncelock_cf713789 klass;
-    class host_src_main_target_ip_4bebec9c klass;
-    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
-    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
-    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
-    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
-    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
-    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
-    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
-    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
-    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
-</div>
-
-<h3>Call Details</h3>
-<table class="call-table">
-<tr>
-  <th style="width:5%">#</th>
-  <th style="width:28%">Node</th>
-  <th style="width:10%">Type</th>
-  <th style="width:17%">Caller</th>
-  <th style="width:20%">Callees</th>
-  <th style="width:20%">Description</th>
-</tr>
-<tr>
-  <td>1</td>
-  <td><code>OnceLock</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>OnceLock node in project.</td>
-</tr>
-<tr>
-  <td>2</td>
-  <td><code>TARGET_IP</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>TARGET_IP node in host/src/main.rs.</td>
-</tr>
-</table>
-
-<div class="grid">
-  <div class="card">
-    <h4>Key Files</h4>
-    <table style="width:100%;font-size:0.85rem;">
-      <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>host/src/main.rs</code></td><td>1 nodes</td></tr>
-    </table>
-  </div>
-  <div class="card">
-    <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: references x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
-  </div>
-</div>
-<hr>
-
-<!-- ====== 7. Run Hostsh Script ====== -->
-<h2 id="run-hostsh-script">7. Run Hostsh Script</h2>
+<!-- ====== 5. Run Hostsh Script ====== -->
+<h2 id="run-hostsh-script">5. Run Hostsh Script</h2>
 <p>Run Hostsh Script groups implementation around run, hostsh, script, mostly in run-host.sh. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1171,8 +1016,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 8. Run Receiversh Script ====== -->
-<h2 id="run-receiversh-script">8. Run Receiversh Script</h2>
+<!-- ====== 6. Run Receiversh Script ====== -->
+<h2 id="run-receiversh-script">6. Run Receiversh Script</h2>
 <p>Run Receiversh Script groups implementation around run, receiversh, script, mostly in run-receiver.sh. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1238,8 +1083,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 9. Host Tailscale Kvm ====== -->
-<h2 id="host-tailscale-kvm">9. Host Tailscale Kvm</h2>
+<!-- ====== 7. Host Tailscale Kvm ====== -->
+<h2 id="host-tailscale-kvm">7. Host Tailscale Kvm</h2>
 <p>Host Tailscale Kvm groups implementation around host, tailscale, kvm, cargotoml, mostly in host/Cargo.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1294,8 +1139,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 10. Receiver Tailscale Kvm ====== -->
-<h2 id="receiver-tailscale-kvm">10. Receiver Tailscale Kvm</h2>
+<!-- ====== 8. Receiver Tailscale Kvm ====== -->
+<h2 id="receiver-tailscale-kvm">8. Receiver Tailscale Kvm</h2>
 <p>Receiver Tailscale Kvm groups implementation around receiver, tailscale, kvm, cargotoml, mostly in receiver/Cargo.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1350,8 +1195,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 11. Run Hostps1 ====== -->
-<h2 id="run-hostps1">11. Run Hostps1</h2>
+<!-- ====== 9. Run Hostps1 ====== -->
+<h2 id="run-hostps1">9. Run Hostps1</h2>
 <p>Run Hostps1 groups implementation around run, hostps1, mostly in run-host.ps1. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1406,8 +1251,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 12. Run Receiverps1 ====== -->
-<h2 id="run-receiverps1">12. Run Receiverps1</h2>
+<!-- ====== 10. Run Receiverps1 ====== -->
+<h2 id="run-receiverps1">10. Run Receiverps1</h2>
 <p>Run Receiverps1 groups implementation around run, receiverps1, mostly in run-receiver.ps1. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1468,17 +1313,17 @@ flowchart LR
   <div class="card">
     <h4>Graph</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>Nodes</td><td>270</td></tr>
-      <tr><td>Edges</td><td>436</td></tr>
+      <tr><td>Nodes</td><td>269</td></tr>
+      <tr><td>Edges</td><td>434</td></tr>
       <tr><td>Hyperedges</td><td>0</td></tr>
-      <tr><td>Communities</td><td>34</td></tr>
-      <tr><td>Documented Sections</td><td>11</td></tr>
+      <tr><td>Communities</td><td>33</td></tr>
+      <tr><td>Documented Sections</td><td>9</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Edge Confidence</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>EXTRACTED</td><td>436</td></tr>
+      <tr><td>EXTRACTED</td><td>434</td></tr>
       <tr><td>INFERRED</td><td>0</td></tr>
       <tr><td>AMBIGUOUS</td><td>0</td></tr>
     </table>
@@ -1487,7 +1332,7 @@ flowchart LR
 
 <div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
   <p>tailscale-kvm — Architecture Documentation</p>
-  <p>Generated: 2026-11-07 03:48 UTC · graphify callflow-html</p>
+  <p>Generated: 2026-11-07 03:57 UTC · graphify callflow-html</p>
 </div>
 
 </div><!-- .container -->
