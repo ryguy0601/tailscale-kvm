@@ -13,8 +13,6 @@ use std::time::Duration;
 #[cfg(windows)]
 use windows_sys::Win32::Foundation::*;
 #[cfg(windows)]
-use windows_sys::Win32::UI::Input::KeyboardAndMouse::*;
-#[cfg(windows)]
 use windows_sys::Win32::UI::WindowsAndMessaging::*;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -48,8 +46,10 @@ static mut SCREEN_HEIGHT: i32 = 1080;
 static mut CENTER_X: i32 = 960;
 static mut CENTER_Y: i32 = 540;
 
-static mut MOUSE_HOOK: HHOOK = std::ptr::null_mut();
-static mut KEYBOARD_HOOK: HHOOK = std::ptr::null_mut();
+#[cfg(windows)]
+static mut MOUSE_HOOK: HHOOK = 0;
+#[cfg(windows)]
+static mut KEYBOARD_HOOK: HHOOK = 0;
 
 fn get_config_ip() -> String {
     let args: Vec<String> = env::args().collect();
@@ -244,7 +244,7 @@ fn start_clipboard_sync() {
     });
 }
 
-fn start_receiver_listener(mut stream: TcpStream) {
+fn start_receiver_listener(stream: TcpStream) {
     thread::spawn(move || {
         let reader = BufReader::new(stream);
         for line in reader.lines() {
@@ -302,8 +302,8 @@ fn main() {
 
     #[cfg(windows)]
     unsafe {
-        MOUSE_HOOK = SetWindowsHookExW(WH_MOUSE_LL, Some(mouse_hook_proc), std::ptr::null_mut(), 0);
-        KEYBOARD_HOOK = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_hook_proc), std::ptr::null_mut(), 0);
+        MOUSE_HOOK = SetWindowsHookExW(WH_MOUSE_LL, Some(mouse_hook_proc), 0, 0);
+        KEYBOARD_HOOK = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_hook_proc), 0, 0);
 
         println!("[*] Windows Win32 Low-Level Hooks Active!");
         println!("    - Move cursor past right edge -> Enter Omarchy");
@@ -311,7 +311,7 @@ fn main() {
         println!("    - Press F12, Pause, or ScrollLock -> Emergency Release");
 
         let mut msg: MSG = std::mem::zeroed();
-        while GetMessageW(&mut msg, std::ptr::null_mut(), 0, 0) > 0 {
+        while GetMessageW(&mut msg, 0, 0, 0) > 0 {
             TranslateMessage(&msg);
             DispatchMessageW(&msg);
         }
