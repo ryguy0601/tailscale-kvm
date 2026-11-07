@@ -1,18 +1,26 @@
-#![windows_subsystem = "windows"]
-#![cfg_attr(not(windows), allow(dead_code, unused_imports, unused_variables))]
-
+#[cfg(windows)]
 mod vk_map;
 mod web_gui;
 
+#[cfg(target_os = "linux")]
+mod linux_host;
+#[cfg(target_os = "macos")]
+mod macos_host;
+
+use serde_json::json;
 use std::env;
 use std::fs;
-use std::io::{BufRead, BufReader, Cursor, Read, Write};
-use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
+use std::io::{BufRead, BufReader, Read, Write};
+#[cfg(windows)]
+use std::io::Cursor;
+use std::net::{Shutdown, SocketAddr, TcpStream, ToSocketAddrs};
 #[cfg(windows)]
 use std::os::windows::ffi::OsStringExt;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, AtomicI32, AtomicIsize, AtomicU32, Ordering};
-use std::sync::Mutex;
+#[cfg(windows)]
+use std::sync::atomic::AtomicIsize;
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU32, AtomicU64, AtomicU8, Ordering};
+use std::sync::{Condvar, Mutex, OnceLock};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -40,15 +48,132 @@ use windows_sys::Win32::UI::Shell::DragQueryFileW;
 #[cfg(windows)]
 use windows_sys::Win32::UI::WindowsAndMessaging::*;
 
-static IS_CONNECTED: AtomicBool = AtomicBool::new(false);
-static IS_REMOTE: AtomicBool = AtomicBool::new(false);
+pub const SLOT_RIGHT: usize = 0;
+pub const SLOT_LEFT: usize = 1;
+pub const SLOT_UP: usize = 2;
+pub const SLOT_DOWN: usize = 3;
+
+pub static SLOT_CONNECTED: [AtomicBool; 4] = [
+    AtomicBool::new(false),
+    AtomicBool::new(false),
+    AtomicBool::new(false),
+    AtomicBool::new(false),
+];
+pub static ACTIVE_REMOTE_SLOT: AtomicU8 = AtomicU8::new(255); // 0=Right, 1=Left, 2=Up, 3=Down, 255=Local
+pub static IS_REMOTE: AtomicBool = AtomicBool::new(false);
+pub static LAST_LOCAL_RETURN_MS: AtomicU64 = AtomicU64::new(0);
+
 static IGNORE_WARP: AtomicBool = AtomicBool::new(false);
+#[cfg(windows)]
 static HANDOFF_BUSY: AtomicBool = AtomicBool::new(false);
-static SUPPRESS_CLIPBOARD_SYNC: AtomicBool = AtomicBool::new(false);
+pub static SUPPRESS_CLIPBOARD_SYNC: AtomicBool = AtomicBool::new(false);
 static LAST_CLIP_SEQ: AtomicU32 = AtomicU32::new(0);
 
-static STREAM_SENDER: Mutex<Option<TcpStream>> = Mutex::new(None);
-static TARGET_PEER_IP: Mutex<Option<String>> = Mutex::new(None);
+pub static HOST_MIN_X: AtomicI32 = AtomicI32::new(0);
+pub static HOST_MAX_X: AtomicI32 = AtomicI32::new(1920);
+pub static HOST_MIN_Y: AtomicI32 = AtomicI32::new(0);
+pub static HOST_MAX_Y: AtomicI32 = AtomicI32::new(1080);
+static CENTER_X: AtomicI32 = AtomicI32::new(960);
+static CENTER_Y: AtomicI32 = AtomicI32::new(540);
+
+#[cfg(windows)]
+static LBUTTON_DOWN: AtomicBool = AtomicBool::new(false);
+#[cfg(windows)]
+static DRAG_START_X: AtomicI32 = AtomicI32::new(0);
+#[cfg(windows)]
+static DRAG_START_Y: AtomicI32 = AtomicI32::new(0);
+#[cfg(windows)]
+static DRAG_CLICK_HWND: AtomicIsize = AtomicIsize::new(0);
+
+#[cfg(windows)]
+static CTRL_DOWN: AtomicBool = AtomicBool::new(false);
+#[cfg(windows)]
+static ALT_DOWN: AtomicBool = AtomicBool::new(false);
+#[cfg(windows)]
+static WIN_DOWN: AtomicBool = AtomicBool::new(false);
+
+#[cfg(windows)]
+static OVERLAY_HWND: AtomicIsize = AtomicIsize::new(0);
+#[cfg(windows)]
+static OVERLAY_ACTIVE: AtomicBool = AtomicBool::new(false);
+#[cfg(windows)]
+static OVERLAY_DIR: AtomicU8 = AtomicU8::new(255);
+
+#[cfg(windows)]
+static mut MOUSE_HOOK: HHOOK = 0;
+#[cfg(windows)]
+static mut KEYBOARD_HOOK: HHOOK = 0;
+
+#[cfg(windows)]
+const CF_DIB_FMT: u32 = 8;
+#[cfg(windows)]
+const CF_DIBV5_FMT: u32 = 17;
+#[cfg(windows)]
+const CF_UNICODETEXT_FMT: u32 = 13;
+#[cfg(windows)]
+const CF_HDROP_FMT: u32 = 15;
+
+#[cfg(windows)]
+const MAX_CLIPBOARD_TEXT_BYTES: usize = 1_048_576; // 1 MB cap for text clipboard sync
+#[cfg(windows)]
+const MAX_IMAGE_BYTES: usize = 67_108_864; // 64 MB cap for image clipboard sync
+const FILE_CHUNK_SIZE: usize = 65_536; // 64 KB streaming chunk buffer
+const LAYOUT_FILE_NAME: &str = "kvm_layout.json";
+
+static START_INSTANT: OnceLock<Instant> = OnceLock::new();
+
+pub struct SlotChannel {
+    pub target_ip: Mutex<Option<String>>,
+    pub writer: Mutex<Option<TcpStream>>,
+    pub generation: AtomicU64,
+    pub wake_mutex: Mutex<u64>,
+    pub wake_cv: Condvar,
+}
+
+impl SlotChannel {
+    fn new() -> Self {
+        Self {
+            target_ip: Mutex::new(None),
+            writer: Mutex::new(None),
+            generation: AtomicU64::new(0),
+            wake_mutex: Mutex::new(0),
+            wake_cv: Condvar::new(),
+        }
+    }
+
+    fn notify_change(&self) {
+        if let Ok(mut g) = self.wake_mutex.lock() {
+            *g = g.wrapping_add(1);
+            self.wake_cv.notify_all();
+        }
+    }
+
+    fn wait_timeout(&self, dur: Duration) {
+        if let Ok(g) = self.wake_mutex.lock() {
+            let _ = self.wake_cv.wait_timeout(g, dur);
+        }
+    }
+}
+
+static SLOT_POOL: OnceLock<[SlotChannel; 4]> = OnceLock::new();
+
+fn pool() -> &'static [SlotChannel; 4] {
+    SLOT_POOL.get_or_init(|| {
+        [
+            SlotChannel::new(),
+            SlotChannel::new(),
+            SlotChannel::new(),
+            SlotChannel::new(),
+        ]
+    })
+}
+
+pub fn monotonic_ms() -> u64 {
+    START_INSTANT
+        .get_or_init(Instant::now)
+        .elapsed()
+        .as_millis() as u64
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EdgeDirection {
@@ -67,45 +192,27 @@ impl EdgeDirection {
             _ => EdgeDirection::Right,
         }
     }
+
+    pub fn to_slot_index(self) -> usize {
+        match self {
+            EdgeDirection::Right => SLOT_RIGHT,
+            EdgeDirection::Left => SLOT_LEFT,
+            EdgeDirection::Up => SLOT_UP,
+            EdgeDirection::Down => SLOT_DOWN,
+        }
+    }
+
+    pub fn reciprocal_return_edge(slot_idx: usize) -> &'static str {
+        match slot_idx {
+            SLOT_LEFT => "right",
+            SLOT_UP => "bottom",
+            SLOT_DOWN => "top",
+            _ => "left",
+        }
+    }
 }
 
-static EDGE_DIRECTION: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(0); // 0=Right, 1=Left, 2=Up, 3=Down
-static SCREEN_WIDTH: AtomicI32 = AtomicI32::new(1920);
-static SCREEN_HEIGHT: AtomicI32 = AtomicI32::new(1080);
-static CENTER_X: AtomicI32 = AtomicI32::new(960);
-static CENTER_Y: AtomicI32 = AtomicI32::new(540);
-
-static LBUTTON_DOWN: AtomicBool = AtomicBool::new(false);
-static DRAG_START_X: AtomicI32 = AtomicI32::new(0);
-static DRAG_START_Y: AtomicI32 = AtomicI32::new(0);
-static DRAG_CLICK_HWND: AtomicIsize = AtomicIsize::new(0);
-
-static CTRL_DOWN: AtomicBool = AtomicBool::new(false);
-static ALT_DOWN: AtomicBool = AtomicBool::new(false);
-static WIN_DOWN: AtomicBool = AtomicBool::new(false);
-
 #[cfg(windows)]
-static OVERLAY_HWND: AtomicIsize = AtomicIsize::new(0);
-static OVERLAY_ACTIVE: AtomicBool = AtomicBool::new(false);
-
-#[cfg(windows)]
-static mut MOUSE_HOOK: HHOOK = 0;
-#[cfg(windows)]
-static mut KEYBOARD_HOOK: HHOOK = 0;
-
-#[cfg(windows)]
-const CF_DIB_FMT: u32 = 8;
-#[cfg(windows)]
-const CF_DIBV5_FMT: u32 = 17;
-#[cfg(windows)]
-const CF_UNICODETEXT_FMT: u32 = 13;
-#[cfg(windows)]
-const CF_HDROP_FMT: u32 = 15;
-
-const MAX_CLIPBOARD_TEXT_BYTES: usize = 1_048_576; // 1 MB cap for text clipboard sync
-const MAX_IMAGE_BYTES: usize = 67_108_864; // 64 MB cap for image clipboard sync
-const FILE_CHUNK_SIZE: usize = 65_536; // 64 KB streaming chunk buffer
-
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum DragKind {
     Browser,
@@ -113,33 +220,241 @@ enum DragKind {
     Other,
 }
 
-fn auto_discover_peer_ip() -> Option<String> {
-    let mut cmd = std::process::Command::new("tailscale");
-    cmd.args(["status", "--json"]);
+pub fn any_slot_connected() -> bool {
+    SLOT_CONNECTED.iter().any(|c| c.load(Ordering::Relaxed))
+}
 
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x08000000;
-        cmd.creation_flags(CREATE_NO_WINDOW);
+pub fn first_connected_slot() -> Option<usize> {
+    (0..4).find(|&i| SLOT_CONNECTED[i].load(Ordering::Relaxed))
+}
+
+#[cfg(windows)]
+fn slot_target_ip(slot_idx: usize) -> Option<String> {
+    pool()[slot_idx].target_ip.lock().ok().and_then(|g| g.clone())
+}
+
+pub fn send_bytes_to_slot(slot_idx: usize, bytes: &[u8]) -> bool {
+    if slot_idx >= 4 {
+        return false;
     }
+    let mut disconnected = false;
+    if let Ok(mut lock) = pool()[slot_idx].writer.lock() {
+        if let Some(stream) = lock.as_mut() {
+            if stream.write_all(bytes).is_err() {
+                let _ = stream.shutdown(Shutdown::Both);
+                *lock = None;
+                disconnected = true;
+            }
+        } else {
+            return false;
+        }
+    }
+    if disconnected {
+        SLOT_CONNECTED[slot_idx].store(false, Ordering::SeqCst);
+        pool()[slot_idx].notify_change();
+        if IS_REMOTE.load(Ordering::SeqCst)
+            && ACTIVE_REMOTE_SLOT.load(Ordering::SeqCst) == slot_idx as u8
+        {
+            switch_to_local(slot_idx, None, None);
+        }
+        return false;
+    }
+    true
+}
 
-    if let Ok(output) = cmd.output() {
-        if let Ok(val) = serde_json::from_slice::<serde_json::Value>(&output.stdout) {
-            if let Some(peers) = val.get("Peer").and_then(|p| p.as_object()) {
-                for (_, peer) in peers {
-                    let online = peer.get("Online").and_then(|o| o.as_bool()).unwrap_or(false);
-                    if online {
-                        if let Some(ips) = peer.get("TailscaleIPs").and_then(|i| i.as_array()) {
-                            if let Some(first_ip) = ips.get(0).and_then(|ip| ip.as_str()) {
-                                return Some(first_ip.to_string());
-                            }
-                        }
-                    }
+pub fn send_to_active_remote(bytes: &[u8]) {
+    let active = ACTIVE_REMOTE_SLOT.load(Ordering::Relaxed) as usize;
+    if active < 4 {
+        send_bytes_to_slot(active, bytes);
+    } else if let Some(first) = first_connected_slot() {
+        send_bytes_to_slot(first, bytes);
+    }
+}
+
+pub fn broadcast_clipboard_text(text: &str) {
+    let mut pkt = String::with_capacity(text.len() + 4);
+    pkt.push_str("T ");
+    for ch in text.chars() {
+        match ch {
+            '\\' => pkt.push_str("\\\\"),
+            '\n' => pkt.push_str("\\n"),
+            '\r' => pkt.push_str("\\r"),
+            c => pkt.push(c),
+        }
+    }
+    pkt.push('\n');
+    let raw = pkt.as_bytes();
+    for idx in 0..4 {
+        if SLOT_CONNECTED[idx].load(Ordering::Relaxed) {
+            let _ = send_bytes_to_slot(idx, raw);
+        }
+    }
+}
+
+fn unescape_text_line(escaped: &str) -> String {
+    let mut out = String::with_capacity(escaped.len());
+    let mut chars = escaped.chars();
+    while let Some(ch) = chars.next() {
+        if ch == '\\' {
+            match chars.next() {
+                Some('n') => out.push('\n'),
+                Some('r') => out.push('\r'),
+                Some('\\') => out.push('\\'),
+                Some(other) => {
+                    out.push('\\');
+                    out.push(other);
+                }
+                None => out.push('\\'),
+            }
+        } else {
+            out.push(ch);
+        }
+    }
+    out
+}
+
+fn save_layout_file(slots: &[Option<String>; 4]) {
+    let data = json!({
+        "right": slots[0].clone().unwrap_or_default(),
+        "left": slots[1].clone().unwrap_or_default(),
+        "up": slots[2].clone().unwrap_or_default(),
+        "down": slots[3].clone().unwrap_or_default(),
+    });
+    if let Ok(pretty) = serde_json::to_string_pretty(&data) {
+        let _ = fs::write(LAYOUT_FILE_NAME, pretty);
+    }
+}
+
+fn load_layout_file() -> Option<[Option<String>; 4]> {
+    let raw = fs::read_to_string(LAYOUT_FILE_NAME).ok()?;
+    let val: serde_json::Value = serde_json::from_str(&raw).ok()?;
+    let norm = |k: &str| -> Option<String> {
+        let s = val.get(k)?.as_str()?.trim();
+        if s.is_empty() || s.eq_ignore_ascii_case("none") {
+            None
+        } else {
+            Some(s.to_string())
+        }
+    };
+    Some([norm("right"), norm("left"), norm("up"), norm("down")])
+}
+
+/// Atomically applies a 4-slot topology layout across Host & connected Receivers!
+pub fn apply_slot_layout(mut desired: [Option<String>; 4], save_to_disk: bool) {
+    // Sanitize & deduplicate so a single IP cannot occupy two edges simultaneously
+    for i in 0..4 {
+        if let Some(s) = desired[i].take() {
+            let trimmed = s.trim().to_string();
+            if !trimmed.is_empty() && !trimmed.eq_ignore_ascii_case("none") {
+                let already_used = (0..i).any(|prev| desired[prev].as_deref() == Some(&trimmed));
+                if !already_used {
+                    desired[i] = Some(trimmed);
                 }
             }
         }
     }
+
+    let slots = pool();
+
+    // Pass 1: Immediately tear down any slot whose IP was cleared or changed
+    // (guarantees old connection closes BEFORE the same IP reconnects on a new edge!)
+    for idx in 0..4 {
+        let old_ip = slots[idx].target_ip.lock().ok().and_then(|g| g.clone());
+        if old_ip != desired[idx] {
+            if IS_REMOTE.load(Ordering::SeqCst)
+                && ACTIVE_REMOTE_SLOT.load(Ordering::SeqCst) == idx as u8
+            {
+                switch_to_local(idx, None, None);
+            }
+
+            if let Ok(mut g) = slots[idx].target_ip.lock() {
+                *g = None;
+            }
+            slots[idx].generation.fetch_add(1, Ordering::SeqCst);
+            SLOT_CONNECTED[idx].store(false, Ordering::SeqCst);
+
+            if let Ok(mut w) = slots[idx].writer.lock() {
+                if let Some(stream) = w.take() {
+                    let _ = stream.shutdown(Shutdown::Both);
+                }
+            }
+            slots[idx].notify_change();
+        }
+    }
+
+    // Pass 2: Activate newly assigned slots (or re-sync return edge on unchanged live slots)
+    for idx in 0..4 {
+        if let Some(ref target_ip) = desired[idx] {
+            let cur_ip = slots[idx].target_ip.lock().ok().and_then(|g| g.clone());
+            if cur_ip.as_deref() != Some(target_ip.as_str()) {
+                println!(
+                    "[*] Assigned slot [{}] -> {} (return edge: {})",
+                    web_gui::index_to_slot_name(idx),
+                    target_ip,
+                    EdgeDirection::reciprocal_return_edge(idx)
+                );
+                if let Ok(mut g) = slots[idx].target_ip.lock() {
+                    *g = Some(target_ip.clone());
+                }
+                slots[idx].generation.fetch_add(1, Ordering::SeqCst);
+                SLOT_CONNECTED[idx].store(false, Ordering::SeqCst);
+                slots[idx].notify_change();
+            } else if SLOT_CONNECTED[idx].load(Ordering::SeqCst) {
+                let pkt = format!("E {}\n", EdgeDirection::reciprocal_return_edge(idx));
+                let _ = send_bytes_to_slot(idx, pkt.as_bytes());
+            }
+        }
+    }
+
+    web_gui::set_all_slots_mirror(&desired);
+    if save_to_disk {
+        save_layout_file(&desired);
+    }
+}
+
+fn explicit_cli_target() -> Option<String> {
+    let args: Vec<String> = env::args().collect();
+    for i in 1..args.len() {
+        if args[i] == "--target" || args[i] == "-t" || args[i] == "--ip" {
+            if i + 1 < args.len() && !args[i + 1].trim().is_empty() {
+                return Some(args[i + 1].trim().to_string());
+            }
+        }
+        if let Some(val) = args[i].strip_prefix("--target=") {
+            if !val.trim().is_empty() {
+                return Some(val.trim().to_string());
+            }
+        }
+        if let Some(val) = args[i].strip_prefix("--ip=") {
+            if !val.trim().is_empty() {
+                return Some(val.trim().to_string());
+            }
+        }
+    }
+    if args.len() > 1 && !args[1].starts_with('-') && !args[1].trim().is_empty() {
+        return Some(args[1].trim().to_string());
+    }
+    None
+}
+
+fn legacy_env_or_config_target() -> Option<String> {
+    if let Ok(ip) = env::var("OMARCHY_TAILSCALE_IP") {
+        if !ip.trim().is_empty() && ip != "100.x.y.z" {
+            return Some(ip.trim().to_string());
+        }
+    }
+
+    if let Ok(content) = fs::read_to_string("config.txt") {
+        for line in content.lines() {
+            let line = line.trim();
+            if let Some(rest) = line.strip_prefix("OMARCHY_IP=") {
+                if !rest.trim().is_empty() {
+                    return Some(rest.trim().to_string());
+                }
+            }
+        }
+    }
+
     None
 }
 
@@ -178,75 +493,6 @@ fn get_config_direction() -> EdgeDirection {
     }
 
     EdgeDirection::Right
-}
-
-fn get_config_ip() -> String {
-    let args: Vec<String> = env::args().collect();
-    for i in 1..args.len() {
-        if args[i] == "--target" || args[i] == "-t" || args[i] == "--ip" {
-            if i + 1 < args.len() {
-                return args[i + 1].trim().to_string();
-            }
-        }
-        if let Some(val) = args[i].strip_prefix("--target=") {
-            return val.trim().to_string();
-        }
-        if let Some(val) = args[i].strip_prefix("--ip=") {
-            return val.trim().to_string();
-        }
-    }
-    if args.len() > 1 && !args[1].starts_with('-') && !args[1].trim().is_empty() {
-        return args[1].trim().to_string();
-    }
-
-    if let Ok(ip) = env::var("OMARCHY_TAILSCALE_IP") {
-        if !ip.trim().is_empty() && ip != "100.x.y.z" {
-            return ip.trim().to_string();
-        }
-    }
-
-    if let Ok(content) = fs::read_to_string("config.txt") {
-        for line in content.lines() {
-            let line = line.trim();
-            if let Some(rest) = line.strip_prefix("OMARCHY_IP=") {
-                if !rest.trim().is_empty() {
-                    return rest.trim().to_string();
-                }
-            }
-        }
-    }
-
-    auto_discover_peer_ip().unwrap_or_else(|| "127.0.0.1".to_string())
-}
-
-#[inline(always)]
-pub fn sync_receiver_return_edge(slot: &str) {
-    let reciprocal = match slot {
-        "left" => "right",
-        "up" | "top" => "bottom",
-        "down" | "bottom" => "top",
-        _ => "left",
-    };
-    let pkt = format!("E {}\n", reciprocal);
-    send_fast_bytes(pkt.as_bytes());
-}
-
-fn send_fast_bytes(bytes: &[u8]) {
-    let mut disconnected = false;
-    if let Ok(mut lock) = STREAM_SENDER.lock() {
-        if let Some(stream) = lock.as_mut() {
-            if stream.write_all(bytes).is_err() {
-                *lock = None;
-                disconnected = true;
-            }
-        }
-    }
-    if disconnected {
-        IS_CONNECTED.store(false, Ordering::SeqCst);
-        if IS_REMOTE.load(Ordering::SeqCst) {
-            switch_to_local(None);
-        }
-    }
 }
 
 #[cfg(windows)]
@@ -441,6 +687,61 @@ fn read_clipboard_unicode_text() -> Option<String> {
 }
 
 #[cfg(windows)]
+fn write_clipboard_unicode_text(text: &str) -> bool {
+    let mut wide: Vec<u16> = text.encode_utf16().collect();
+    wide.push(0);
+    let byte_len = wide.len() * 2;
+
+    unsafe {
+        let mut opened = false;
+        for _ in 0..4 {
+            if OpenClipboard(0) != 0 {
+                opened = true;
+                break;
+            }
+            thread::sleep(Duration::from_millis(10));
+        }
+        if !opened {
+            return false;
+        }
+
+        EmptyClipboard();
+        let h_mem = GlobalAlloc(GMEM_MOVEABLE, byte_len);
+        if !h_mem.is_null() {
+            let ptr = GlobalLock(h_mem) as *mut u16;
+            if !ptr.is_null() {
+                std::ptr::copy_nonoverlapping(wide.as_ptr(), ptr, wide.len());
+                let _ = GlobalUnlock(h_mem);
+                SetClipboardData(CF_UNICODETEXT_FMT, h_mem as _);
+            }
+        }
+        let _ = CloseClipboard();
+        true
+    }
+}
+
+fn write_host_clipboard_text(text: &str) {
+    if text.is_empty() {
+        return;
+    }
+    SUPPRESS_CLIPBOARD_SYNC.store(true, Ordering::SeqCst);
+    #[cfg(windows)]
+    {
+        write_clipboard_unicode_text(text);
+        LAST_CLIP_SEQ.store(unsafe { GetClipboardSequenceNumber() }, Ordering::SeqCst);
+    }
+    #[cfg(target_os = "linux")]
+    {
+        linux_host::write_linux_clipboard_text(text);
+    }
+    #[cfg(target_os = "macos")]
+    {
+        macos_host::write_macos_clipboard_text(text);
+    }
+    SUPPRESS_CLIPBOARD_SYNC.store(false, Ordering::SeqCst);
+}
+
+#[cfg(windows)]
 fn read_clipboard_files() -> Vec<PathBuf> {
     unsafe {
         if IsClipboardFormatAvailable(CF_HDROP_FMT) == 0 {
@@ -519,7 +820,6 @@ fn read_clipboard_dib_bytes() -> Option<Vec<u8>> {
 }
 
 #[cfg(windows)]
-#[cfg(windows)]
 fn write_clipboard_dib_bytes(dib_bytes: &[u8]) -> bool {
     unsafe {
         if OpenClipboard(0) == 0 {
@@ -543,9 +843,11 @@ fn write_clipboard_dib_bytes(dib_bytes: &[u8]) -> bool {
 
 #[cfg(not(windows))]
 fn write_clipboard_dib_bytes(_dib_bytes: &[u8]) -> bool {
+    let _ = LAST_CLIP_SEQ.load(Ordering::Relaxed);
     false
 }
 
+#[cfg(windows)]
 fn collect_transfer_entries(
     base: &Path,
     current: &Path,
@@ -593,18 +895,16 @@ fn resolve_target_addr(target_ip: &str) -> Option<SocketAddr> {
     addr_str.to_socket_addrs().ok()?.next()
 }
 
-fn get_windows_downloads_dir() -> PathBuf {
-    if let Ok(profile) = env::var("USERPROFILE") {
-        let p = PathBuf::from(profile).join("Downloads");
-        if p.exists() {
-            return p;
-        }
+fn get_host_downloads_dir() -> PathBuf {
+    if let Ok(home) = env::var("USERPROFILE").or_else(|_| env::var("HOME")) {
+        let p = PathBuf::from(home).join("Downloads");
+        return p;
     }
-    PathBuf::from("C:\\Users\\Default\\Downloads")
+    PathBuf::from("Downloads")
 }
 
 fn sanitize_relative_path(raw: &str) -> PathBuf {
-    let normalized = raw.replace('/', "\\");
+    let normalized = raw.replace('\\', "/");
     let mut safe = PathBuf::new();
     for comp in Path::new(&normalized).components() {
         if let std::path::Component::Normal(seg) = comp {
@@ -619,13 +919,13 @@ fn sanitize_relative_path(raw: &str) -> PathBuf {
     safe
 }
 
-fn receive_binary_file_windows<R: Read>(
+fn receive_binary_file_host<R: Read>(
     reader: &mut R,
     file_size: u64,
     raw_rel_path: &str,
 ) -> Result<String, std::io::Error> {
     let safe_rel = sanitize_relative_path(raw_rel_path);
-    let base_downloads = get_windows_downloads_dir();
+    let base_downloads = get_host_downloads_dir();
     let target_path = base_downloads.join(&safe_rel);
 
     if let Some(parent) = target_path.parent() {
@@ -653,7 +953,7 @@ fn receive_binary_file_windows<R: Read>(
     Ok(safe_rel.to_string_lossy().into_owned())
 }
 
-fn open_url_on_windows(url: &str) {
+fn open_url_on_host(url: &str) {
     let u = url.trim().to_string();
     if u.is_empty() {
         return;
@@ -669,60 +969,94 @@ fn open_url_on_windows(url: &str) {
             u
         };
 
-        let ff_candidates = [
-            "C:\\Program Files\\Mozilla Firefox\\firefox.exe",
-            "C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe",
-        ];
-        let mut opened = false;
-        for candidate in ff_candidates {
-            if Path::new(candidate).exists() {
-                if std::process::Command::new(candidate)
-                    .arg(&formatted)
-                    .spawn()
-                    .is_ok()
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            let ff_candidates = [
+                "C:\\Program Files\\Mozilla Firefox\\firefox.exe",
+                "C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe",
+            ];
+            for candidate in ff_candidates {
+                if Path::new(candidate).exists()
+                    && std::process::Command::new(candidate)
+                        .arg(&formatted)
+                        .spawn()
+                        .is_ok()
                 {
-                    opened = true;
-                    break;
+                    return;
                 }
             }
+            let mut cmd = std::process::Command::new("cmd");
+            cmd.args(["/C", "start", "", &formatted]);
+            cmd.creation_flags(CREATE_NO_WINDOW);
+            let _ = cmd.spawn();
         }
-        if !opened {
-            let _ = std::process::Command::new("cmd")
-                .args(["/C", "start", "", &formatted])
+
+        #[cfg(target_os = "macos")]
+        {
+            let _ = std::process::Command::new("open").arg(&formatted).spawn();
+        }
+
+        #[cfg(not(any(windows, target_os = "macos")))]
+        {
+            let _ = std::process::Command::new("xdg-open")
+                .arg(&formatted)
                 .spawn();
         }
     });
 }
 
-fn open_terminal_on_windows(dir_path: &str) {
+fn open_terminal_on_host(dir_path: &str) {
     let d = dir_path.trim().to_string();
     thread::spawn(move || {
-        let default_dir = get_windows_downloads_dir()
-            .parent()
-            .unwrap_or(Path::new("C:\\"))
-            .to_string_lossy()
-            .to_string();
-        let win_path = if d.contains("/Work") {
-            let userprofile = env::var("USERPROFILE").unwrap_or_else(|_| default_dir);
-            let sub = d.split("/Work").nth(1).unwrap_or("");
-            format!("{}\\{}", userprofile, sub.replace('/', "\\").trim_start_matches('\\'))
-        } else {
-            env::var("USERPROFILE").unwrap_or_else(|_| default_dir)
-        };
+        #[cfg(windows)]
+        {
+            let default_dir = env::var("USERPROFILE").unwrap_or_else(|_| "C:\\".to_string());
+            let win_path = if d.contains("/Work") {
+                let sub = d.split("/Work").nth(1).unwrap_or("");
+                format!(
+                    "{}\\{}",
+                    default_dir,
+                    sub.replace('/', "\\").trim_start_matches('\\')
+                )
+            } else if Path::new(&d).exists() {
+                d
+            } else {
+                default_dir
+            };
 
-        let _ = std::process::Command::new("wt.exe")
-            .args(["-d", &win_path])
-            .spawn()
-            .or_else(|_| {
-                std::process::Command::new("powershell.exe")
-                    .args(["-NoExit", "-Command", &format!("Set-Location '{}'", win_path)])
-                    .spawn()
-            });
+            let _ = std::process::Command::new("wt.exe")
+                .args(["-d", &win_path])
+                .spawn()
+                .or_else(|_| {
+                    std::process::Command::new("powershell.exe")
+                        .args(["-NoExit", "-Command", &format!("Set-Location '{}'", win_path)])
+                        .spawn()
+                });
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            let target = if Path::new(&d).exists() { &d } else { "." };
+            let _ = std::process::Command::new("open")
+                .args(["-a", "Terminal", target])
+                .spawn();
+        }
+
+        #[cfg(not(any(windows, target_os = "macos")))]
+        {
+            let home = env::var("HOME").unwrap_or_else(|_| ".".to_string());
+            let target = if Path::new(&d).exists() { &d } else { &home };
+            let _ = std::process::Command::new("foot")
+                .args(["-D", target])
+                .spawn();
+        }
     });
 }
 
-/// Incoming transfer listener on Windows port 9876 so Omarchy can stream files, images, tabs & teleports
-fn start_windows_server_listener() {
+/// Incoming reverse transfer listener on Host port 9876 (for binary file/image reverse streams)
+fn start_reverse_transfer_listener() {
     thread::spawn(|| {
         let Ok(listener) = std::net::TcpListener::bind("0.0.0.0:9876") else {
             return;
@@ -751,7 +1085,6 @@ fn start_windows_server_listener() {
                         }
 
                         match bytes[0] {
-                            // "B <size> <rel_path>\n" -> Binary file stream from Omarchy
                             b'B' => {
                                 if trimmed.len() > 2 {
                                     let rest = &trimmed[2..];
@@ -759,7 +1092,7 @@ fn start_windows_server_listener() {
                                         let size_str = &rest[..space_idx];
                                         let rel_path = rest[space_idx + 1..].trim();
                                         if let Ok(file_size) = size_str.parse::<u64>() {
-                                            let _ = receive_binary_file_windows(
+                                            let _ = receive_binary_file_host(
                                                 &mut reader,
                                                 file_size,
                                                 rel_path,
@@ -768,8 +1101,6 @@ fn start_windows_server_listener() {
                                     }
                                 }
                             }
-
-                            // "I <size>\n" -> Image clipboard stream from Omarchy
                             b'I' => {
                                 if trimmed.len() > 2 {
                                     if let Ok(img_size) = trimmed[2..].trim().parse::<usize>() {
@@ -778,29 +1109,25 @@ fn start_windows_server_listener() {
                                             SUPPRESS_CLIPBOARD_SYNC.store(true, Ordering::SeqCst);
                                             write_clipboard_dib_bytes(&buf);
                                             #[cfg(windows)]
-                                            LAST_CLIP_SEQ.store(unsafe { GetClipboardSequenceNumber() }, Ordering::SeqCst);
+                                            LAST_CLIP_SEQ.store(
+                                                unsafe { GetClipboardSequenceNumber() },
+                                                Ordering::SeqCst,
+                                            );
                                             SUPPRESS_CLIPBOARD_SYNC.store(false, Ordering::SeqCst);
                                         }
                                     }
                                 }
                             }
-
-                            // "U <url>\n" -> Tab fling from Omarchy
                             b'U' => {
                                 if trimmed.len() > 2 {
-                                    let url = trimmed[2..].trim();
-                                    open_url_on_windows(url);
+                                    open_url_on_host(trimmed[2..].trim());
                                 }
                             }
-
-                            // "D <dir_path>\n" -> Terminal directory teleport
                             b'D' => {
                                 if trimmed.len() > 2 {
-                                    let path = trimmed[2..].trim();
-                                    open_terminal_on_windows(path);
+                                    open_terminal_on_host(trimmed[2..].trim());
                                 }
                             }
-
                             _ => {}
                         }
                     }
@@ -810,10 +1137,9 @@ fn start_windows_server_listener() {
     });
 }
 
-/// Streams files over a dedicated secondary TCP connection using a constant 64 KB stack buffer.
-fn stream_files_to_omarchy(paths: Vec<PathBuf>) {
-    let target_ip_opt = TARGET_PEER_IP.lock().ok().and_then(|l| l.clone());
-    let Some(ref target_ip) = target_ip_opt else {
+#[cfg(windows)]
+fn stream_files_to_receiver(slot_idx: usize, paths: Vec<PathBuf>) {
+    let Some(target_ip) = slot_target_ip(slot_idx) else {
         return;
     };
 
@@ -825,7 +1151,7 @@ fn stream_files_to_omarchy(paths: Vec<PathBuf>) {
         return;
     }
 
-    let Some(addr) = resolve_target_addr(target_ip) else {
+    let Some(addr) = resolve_target_addr(&target_ip) else {
         return;
     };
 
@@ -890,27 +1216,34 @@ fn stream_files_to_omarchy(paths: Vec<PathBuf>) {
     let _ = tx.flush();
 }
 
-fn stream_image_to_omarchy(dib_bytes: Vec<u8>) {
-    let target_ip_opt = TARGET_PEER_IP.lock().ok().and_then(|l| l.clone());
-    let Some(ref target_ip) = target_ip_opt else {
-        return;
-    };
-    let Some(addr) = resolve_target_addr(target_ip) else {
-        return;
-    };
-
-    thread::spawn(move || {
-        if let Ok(mut tx) = TcpStream::connect_timeout(&addr, Duration::from_secs(4)) {
-            let _ = tx.set_nodelay(true);
-            let header = format!("I {}\n", dib_bytes.len());
-            if tx.write_all(header.as_bytes()).is_ok() {
-                let _ = tx.write_all(&dib_bytes);
-                let _ = tx.flush();
-            }
+#[cfg(windows)]
+fn stream_image_to_connected_receivers(dib_bytes: Vec<u8>) {
+    let bytes = std::sync::Arc::new(dib_bytes);
+    for idx in 0..4 {
+        if !SLOT_CONNECTED[idx].load(Ordering::Relaxed) {
+            continue;
         }
-    });
+        let Some(target_ip) = slot_target_ip(idx) else {
+            continue;
+        };
+        let Some(addr) = resolve_target_addr(&target_ip) else {
+            continue;
+        };
+        let payload = std::sync::Arc::clone(&bytes);
+        thread::spawn(move || {
+            if let Ok(mut tx) = TcpStream::connect_timeout(&addr, Duration::from_secs(4)) {
+                let _ = tx.set_nodelay(true);
+                let header = format!("I {}\n", payload.len());
+                if tx.write_all(header.as_bytes()).is_ok() {
+                    let _ = tx.write_all(&payload);
+                    let _ = tx.flush();
+                }
+            }
+        });
+    }
 }
 
+#[cfg(windows)]
 fn looks_like_url(s: &str) -> bool {
     let t = s.trim();
     if t.len() < 4 || t.chars().any(char::is_whitespace) {
@@ -926,7 +1259,7 @@ fn looks_like_url(s: &str) -> bool {
 }
 
 #[cfg(windows)]
-fn execute_handoff(source_hwnd: HWND, fallback_hwnd: HWND, from_drag: bool) {
+fn execute_handoff(slot_idx: usize, source_hwnd: HWND, fallback_hwnd: HWND, from_drag: bool) {
     if HANDOFF_BUSY
         .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
         .is_err()
@@ -1006,7 +1339,7 @@ fn execute_handoff(source_hwnd: HWND, fallback_hwnd: HWND, from_drag: bool) {
                         .unwrap_or("about:newtab");
 
                     let pkt = format!("U {}\n", final_url);
-                    send_fast_bytes(pkt.as_bytes());
+                    let _ = send_bytes_to_slot(slot_idx, pkt.as_bytes());
                 }
 
                 DragKind::Explorer => {
@@ -1036,7 +1369,7 @@ fn execute_handoff(source_hwnd: HWND, fallback_hwnd: HWND, from_drag: bool) {
                     SUPPRESS_CLIPBOARD_SYNC.store(false, Ordering::SeqCst);
 
                     if !files.is_empty() {
-                        stream_files_to_omarchy(files);
+                        stream_files_to_receiver(slot_idx, files);
                     }
                 }
 
@@ -1044,7 +1377,7 @@ fn execute_handoff(source_hwnd: HWND, fallback_hwnd: HWND, from_drag: bool) {
                     if !from_drag {
                         let files = read_clipboard_files();
                         if !files.is_empty() {
-                            stream_files_to_omarchy(files);
+                            stream_files_to_receiver(slot_idx, files);
                         }
                     }
                 }
@@ -1055,61 +1388,164 @@ fn execute_handoff(source_hwnd: HWND, fallback_hwnd: HWND, from_drag: bool) {
     });
 }
 
-pub fn switch_to_remote(was_dragging: bool, entry_coord: i32) {
+pub fn switch_to_remote_slot(slot_idx: usize, was_dragging: bool, entry_coord: i32, host_span: i32) {
     #[cfg(windows)]
     let fg_hwnd = unsafe { GetForegroundWindow() };
     #[cfg(windows)]
     let click_hwnd = DRAG_CLICK_HWND.load(Ordering::Relaxed);
+    #[cfg(not(windows))]
+    let _ = was_dragging;
 
     hide_edge_overlay();
 
-    let dir_val = EDGE_DIRECTION.load(Ordering::Relaxed);
-    // When switching from Up/Down, align horizontally (X); otherwise align vertically (Y)
-    let pkt = if dir_val == 2 || dir_val == 3 {
-        format!("X {}\n", entry_coord)
-    } else {
-        format!("Y {}\n", entry_coord)
-    };
-    send_fast_bytes(pkt.as_bytes());
+    ACTIVE_REMOTE_SLOT.store(slot_idx as u8, Ordering::SeqCst);
 
+    // Ensure receiver has up-to-date return edge + proportional entry alignment
+    let edge_pkt = format!("E {}\n", EdgeDirection::reciprocal_return_edge(slot_idx));
+    let _ = send_bytes_to_slot(slot_idx, edge_pkt.as_bytes());
+
+    let align_pkt = if slot_idx == SLOT_UP || slot_idx == SLOT_DOWN {
+        format!("X {} {}\n", entry_coord, host_span.max(1))
+    } else {
+        format!("Y {} {}\n", entry_coord, host_span.max(1))
+    };
+    if !send_bytes_to_slot(slot_idx, align_pkt.as_bytes()) {
+        ACTIVE_REMOTE_SLOT.store(255, Ordering::SeqCst);
+        return;
+    }
+
+    #[cfg(windows)]
     LBUTTON_DOWN.store(false, Ordering::SeqCst);
+
     IS_REMOTE.store(true, Ordering::SeqCst);
     IGNORE_WARP.store(true, Ordering::SeqCst);
 
+    #[cfg(any(windows, target_os = "macos"))]
+    let cx = CENTER_X.load(Ordering::Relaxed);
+    #[cfg(any(windows, target_os = "macos"))]
+    let cy = CENTER_Y.load(Ordering::Relaxed);
+    #[cfg(not(any(windows, target_os = "macos")))]
+    let _ = (CENTER_X.load(Ordering::Relaxed), CENTER_Y.load(Ordering::Relaxed));
+
     #[cfg(windows)]
     unsafe {
-        SetCursorPos(
-            CENTER_X.load(Ordering::Relaxed),
-            CENTER_Y.load(Ordering::Relaxed),
-        );
+        SetCursorPos(cx, cy);
     }
+
+    #[cfg(target_os = "macos")]
+    macos_host::set_macos_remote_capture(true, cx, cy);
 
     #[cfg(windows)]
     if was_dragging {
-        execute_handoff(fg_hwnd, click_hwnd, true);
+        execute_handoff(slot_idx, fg_hwnd, click_hwnd, true);
     }
 }
 
-pub fn switch_to_local(target_coord: Option<i32>) {
+pub fn switch_to_local(slot_idx: usize, rel_coord: Option<i32>, remote_span: Option<i32>) {
+    LAST_LOCAL_RETURN_MS.store(monotonic_ms(), Ordering::SeqCst);
     IS_REMOTE.store(false, Ordering::SeqCst);
+    ACTIVE_REMOTE_SLOT.store(255, Ordering::SeqCst);
     IGNORE_WARP.store(true, Ordering::SeqCst);
     hide_edge_overlay();
+
+    let min_x = HOST_MIN_X.load(Ordering::Relaxed);
+    let max_x = HOST_MAX_X.load(Ordering::Relaxed);
+    let min_y = HOST_MIN_Y.load(Ordering::Relaxed);
+    let max_y = HOST_MAX_Y.load(Ordering::Relaxed);
+    let host_w = (max_x - min_x).max(1);
+    let host_h = (max_y - min_y).max(1);
+
+    let scale_coord = |host_min: i32, host_len: i32| -> i32 {
+        match (rel_coord, remote_span) {
+            (Some(c), Some(s)) if s > 0 => {
+                (host_min + ((c as i64 * host_len as i64) / s as i64) as i32)
+                    .clamp(host_min + 20, (host_min + host_len - 20).max(host_min + 20))
+            }
+            (Some(c), _) => c.clamp(host_min + 20, (host_min + host_len - 20).max(host_min + 20)),
+            (None, _) => host_min + host_len / 2,
+        }
+    };
+
+    let (x, y) = match slot_idx {
+        SLOT_LEFT => ((min_x + 55).min(max_x - 10), scale_coord(min_y, host_h)),
+        SLOT_UP => (scale_coord(min_x, host_w), (min_y + 55).min(max_y - 10)),
+        SLOT_DOWN => (scale_coord(min_x, host_w), (max_y - 55).max(min_y + 10)),
+        _ => ((max_x - 55).max(min_x + 10), scale_coord(min_y, host_h)),
+    };
 
     #[cfg(windows)]
     unsafe {
         ClipCursor(std::ptr::null());
-        let sw = SCREEN_WIDTH.load(Ordering::Relaxed);
-        let sh = SCREEN_HEIGHT.load(Ordering::Relaxed);
-        let dir_val = EDGE_DIRECTION.load(Ordering::Relaxed);
-
-        let (x, y) = match dir_val {
-            1 => (80, target_coord.unwrap_or_else(|| CENTER_Y.load(Ordering::Relaxed))), // Host Left -> Re-enter near Left edge
-            2 => (target_coord.unwrap_or_else(|| CENTER_X.load(Ordering::Relaxed)), 80), // Host Up -> Re-enter near Top edge
-            3 => (target_coord.unwrap_or_else(|| CENTER_X.load(Ordering::Relaxed)), sh - 80), // Host Down -> Re-enter near Bottom edge
-            _ => (sw - 80, target_coord.unwrap_or_else(|| CENTER_Y.load(Ordering::Relaxed))), // Default: Host Right -> Re-enter near Right edge
-        };
-        SetCursorPos(x, y);
+        // Snap (x, y) inside the nearest real physical monitor's bounds so staggered
+        // multi-monitor desktops never place the cursor in invisible dead space!
+        let near_mon = MonitorFromPoint(POINT { x, y }, MONITOR_DEFAULTTONEAREST);
+        let mut mi: MONITORINFO = std::mem::zeroed();
+        mi.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
+        if near_mon != 0 && GetMonitorInfoW(near_mon, &mut mi) != 0 {
+            let rc = mi.rcMonitor;
+            let mw = (rc.right - rc.left).max(1);
+            let mh = (rc.bottom - rc.top).max(1);
+            let scale_mon = |m_min: i32, m_len: i32| -> i32 {
+                match (rel_coord, remote_span) {
+                    (Some(c), Some(s)) if s > 0 => {
+                        (m_min + ((c as i64 * m_len as i64) / s as i64) as i32)
+                            .clamp(m_min + 20, (m_min + m_len - 20).max(m_min + 20))
+                    }
+                    (Some(c), _) => c.clamp(m_min + 20, (m_min + m_len - 20).max(m_min + 20)),
+                    (None, _) => m_min + m_len / 2,
+                }
+            };
+            let (mx, my) = match slot_idx {
+                SLOT_LEFT => ((rc.left + 55).min(rc.right - 10), scale_mon(rc.top, mh)),
+                SLOT_UP => (scale_mon(rc.left, mw), (rc.top + 55).min(rc.bottom - 10)),
+                SLOT_DOWN => (scale_mon(rc.left, mw), (rc.bottom - 55).max(rc.top + 10)),
+                _ => ((rc.right - 55).max(rc.left + 10), scale_mon(rc.top, mh)),
+            };
+            SetCursorPos(mx, my);
+        } else {
+            SetCursorPos(x, y);
+        }
     }
+
+    #[cfg(target_os = "linux")]
+    linux_host::warp_linux_cursor(x, y);
+
+    #[cfg(target_os = "macos")]
+    macos_host::set_macos_remote_capture(false, x, y);
+}
+
+#[cfg(windows)]
+fn update_windows_screen_bounds() {
+    unsafe {
+        let sw = GetSystemMetrics(SM_CXSCREEN).max(1280);
+        let sh = GetSystemMetrics(SM_CYSCREEN).max(720);
+        CENTER_X.store(sw / 2, Ordering::SeqCst);
+        CENTER_Y.store(sh / 2, Ordering::SeqCst);
+
+        let vw = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+        let vh = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+        if vw > 0 && vh > 0 {
+            let vx = GetSystemMetrics(SM_XVIRTUALSCREEN);
+            let vy = GetSystemMetrics(SM_YVIRTUALSCREEN);
+            HOST_MIN_X.store(vx, Ordering::SeqCst);
+            HOST_MAX_X.store(vx + vw, Ordering::SeqCst);
+            HOST_MIN_Y.store(vy, Ordering::SeqCst);
+            HOST_MAX_Y.store(vy + vh, Ordering::SeqCst);
+        } else {
+            HOST_MIN_X.store(0, Ordering::SeqCst);
+            HOST_MAX_X.store(sw, Ordering::SeqCst);
+            HOST_MIN_Y.store(0, Ordering::SeqCst);
+            HOST_MAX_Y.store(sh, Ordering::SeqCst);
+        }
+    }
+}
+
+#[cfg(windows)]
+fn start_windows_bounds_refresher() {
+    thread::spawn(|| loop {
+        thread::sleep(Duration::from_secs(3));
+        update_windows_screen_bounds();
+    });
 }
 
 // -------------------------------------------------------------
@@ -1127,16 +1563,10 @@ unsafe extern "system" fn overlay_wnd_proc(
         WM_PAINT => {
             let mut ps: PAINTSTRUCT = std::mem::zeroed();
             let hdc = BeginPaint(hwnd, &mut ps);
-            let brush = CreateSolidBrush(0x00D77838); // Cyan/Teal accent border glow
-            let dir = EDGE_DIRECTION.load(Ordering::Relaxed);
-            let sw = SCREEN_WIDTH.load(Ordering::Relaxed);
-            let sh = SCREEN_HEIGHT.load(Ordering::Relaxed);
-            let mut rc = if dir == 2 || dir == 3 {
-                RECT { left: 0, top: 0, right: sw, bottom: 3 }
-            } else {
-                RECT { left: 0, top: 0, right: 3, bottom: sh }
-            };
-            FillRect(hdc, &mut rc, brush);
+            let brush = CreateSolidBrush(0x00BE_D400); // Cyan/Teal BGR accent glow
+            let mut rc: RECT = std::mem::zeroed();
+            GetClientRect(hwnd, &mut rc);
+            FillRect(hdc, &rc, brush);
             DeleteObject(brush as _);
             EndPaint(hwnd, &ps);
             0
@@ -1164,26 +1594,15 @@ fn init_edge_overlay() {
         };
         RegisterClassW(&wnd_class);
 
-        let sw = SCREEN_WIDTH.load(Ordering::Relaxed);
-        let sh = SCREEN_HEIGHT.load(Ordering::Relaxed);
-
-        let dir = EDGE_DIRECTION.load(Ordering::Relaxed);
-        let (x_pos, y_pos, w_size, h_size) = match dir {
-            1 => (0, 0, 3, sh),
-            2 => (0, 0, sw, 3),
-            3 => (0, sh - 3, sw, 3),
-            _ => (sw - 3, 0, 3, sh),
-        };
-
         let hwnd = CreateWindowExW(
-            WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED,
+            WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_NOACTIVATE,
             class_name.as_ptr(),
             std::ptr::null(),
             WS_POPUP,
-            x_pos,
-            y_pos,
-            w_size,
-            h_size,
+            0,
+            0,
+            3,
+            1080,
             0,
             0,
             0,
@@ -1191,7 +1610,7 @@ fn init_edge_overlay() {
         );
 
         if hwnd != 0 {
-            SetLayeredWindowAttributes(hwnd, 0, 180, LWA_ALPHA);
+            SetLayeredWindowAttributes(hwnd, 0, 195, LWA_ALPHA);
             OVERLAY_HWND.store(hwnd as isize, Ordering::SeqCst);
 
             let mut msg: MSG = std::mem::zeroed();
@@ -1203,22 +1622,24 @@ fn init_edge_overlay() {
     });
 }
 
-fn show_edge_overlay() {
-    #[cfg(windows)]
-    if !OVERLAY_ACTIVE.swap(true, Ordering::SeqCst) {
+#[cfg(windows)]
+fn show_edge_overlay(slot_idx: u8, rc: RECT) {
+    let was_active = OVERLAY_ACTIVE.swap(true, Ordering::SeqCst);
+    let prev_dir = OVERLAY_DIR.swap(slot_idx, Ordering::SeqCst);
+    if !was_active || prev_dir != slot_idx {
         let hwnd = OVERLAY_HWND.load(Ordering::SeqCst) as HWND;
         if hwnd != 0 {
             unsafe {
-                ShowWindow(hwnd, SW_SHOW);
-                let sw = SCREEN_WIDTH.load(Ordering::Relaxed);
-                let sh = SCREEN_HEIGHT.load(Ordering::Relaxed);
-                let dir = EDGE_DIRECTION.load(Ordering::Relaxed);
-                let (x_pos, y_pos, w_size, h_size) = match dir {
-                    1 => (0, 0, 3, sh),
-                    2 => (0, 0, sw, 3),
-                    3 => (0, sh - 3, sw, 3),
-                    _ => (sw - 3, 0, 3, sh),
+                let w = (rc.right - rc.left).max(1);
+                let h = (rc.bottom - rc.top).max(1);
+
+                let (x_pos, y_pos, w_size, h_size) = match slot_idx as usize {
+                    SLOT_LEFT => (rc.left, rc.top, 3, h),
+                    SLOT_UP => (rc.left, rc.top, w, 3),
+                    SLOT_DOWN => (rc.left, rc.bottom - 3, w, 3),
+                    _ => (rc.right - 3, rc.top, 3, h),
                 };
+
                 SetWindowPos(
                     hwnd,
                     HWND_TOPMOST,
@@ -1228,6 +1649,7 @@ fn show_edge_overlay() {
                     h_size,
                     SWP_NOACTIVATE | SWP_SHOWWINDOW,
                 );
+                InvalidateRect(hwnd, std::ptr::null(), 1);
             }
         }
     }
@@ -1236,6 +1658,7 @@ fn show_edge_overlay() {
 fn hide_edge_overlay() {
     #[cfg(windows)]
     if OVERLAY_ACTIVE.swap(false, Ordering::SeqCst) {
+        OVERLAY_DIR.store(255, Ordering::SeqCst);
         let hwnd = OVERLAY_HWND.load(Ordering::SeqCst) as HWND;
         if hwnd != 0 {
             unsafe {
@@ -1273,73 +1696,108 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
                 LBUTTON_DOWN.store(false, Ordering::SeqCst);
             }
 
-            let screen_w = SCREEN_WIDTH.load(Ordering::Relaxed);
-            let screen_h = SCREEN_HEIGHT.load(Ordering::Relaxed);
+            if monotonic_ms().saturating_sub(LAST_LOCAL_RETURN_MS.load(Ordering::Relaxed)) < 150 {
+                return CallNextHookEx(MOUSE_HOOK, code, wparam, lparam);
+            }
 
-            // Check active GUI multi-receiver slots or fall back to CLI configured direction
-            let has_left_peer = web_gui::get_slot_peer("left").is_some() || EDGE_DIRECTION.load(Ordering::Relaxed) == 1;
-            let has_up_peer = web_gui::get_slot_peer("up").is_some() || EDGE_DIRECTION.load(Ordering::Relaxed) == 2;
-            let has_down_peer = web_gui::get_slot_peer("down").is_some() || EDGE_DIRECTION.load(Ordering::Relaxed) == 3;
-            let has_right_peer = web_gui::get_slot_peer("right").is_some() || EDGE_DIRECTION.load(Ordering::Relaxed) == 0;
+            let cur_mon = MonitorFromPoint(mouse_data.pt, MONITOR_DEFAULTTONEAREST);
+            let mut mi: MONITORINFO = std::mem::zeroed();
+            mi.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
+            let rc = if cur_mon != 0 && GetMonitorInfoW(cur_mon, &mut mi) != 0 {
+                mi.rcMonitor
+            } else {
+                RECT {
+                    left: HOST_MIN_X.load(Ordering::Relaxed),
+                    top: HOST_MIN_Y.load(Ordering::Relaxed),
+                    right: HOST_MAX_X.load(Ordering::Relaxed),
+                    bottom: HOST_MAX_Y.load(Ordering::Relaxed),
+                }
+            };
+            let span_w = (rc.right - rc.left).max(1);
+            let span_h = (rc.bottom - rc.top).max(1);
 
-            let near_edge = (has_right_peer && x >= screen_w - 45)
-                || (has_left_peer && x <= 45)
-                || (has_up_peer && y <= 45)
-                || (has_down_peer && y >= screen_h - 45);
+            // Lock-free O(1) atomic checks per physical edge + MonitorFromPoint outer-edge check
+            let right_ready = SLOT_CONNECTED[SLOT_RIGHT].load(Ordering::Relaxed);
+            let left_ready = SLOT_CONNECTED[SLOT_LEFT].load(Ordering::Relaxed);
+            let up_ready = SLOT_CONNECTED[SLOT_UP].load(Ordering::Relaxed);
+            let down_ready = SLOT_CONNECTED[SLOT_DOWN].load(Ordering::Relaxed);
 
-            if near_edge && IS_CONNECTED.load(Ordering::Relaxed) {
-                show_edge_overlay();
+            let near_slot: Option<u8> = if right_ready
+                && x >= rc.right - 45
+                && MonitorFromPoint(POINT { x: rc.right + 4, y }, MONITOR_DEFAULTTONULL) == 0
+            {
+                Some(SLOT_RIGHT as u8)
+            } else if left_ready
+                && x <= rc.left + 45
+                && MonitorFromPoint(POINT { x: rc.left - 4, y }, MONITOR_DEFAULTTONULL) == 0
+            {
+                Some(SLOT_LEFT as u8)
+            } else if up_ready
+                && y <= rc.top + 45
+                && MonitorFromPoint(POINT { x, y: rc.top - 4 }, MONITOR_DEFAULTTONULL) == 0
+            {
+                Some(SLOT_UP as u8)
+            } else if down_ready
+                && y >= rc.bottom - 45
+                && MonitorFromPoint(POINT { x, y: rc.bottom + 4 }, MONITOR_DEFAULTTONULL) == 0
+            {
+                Some(SLOT_DOWN as u8)
+            } else {
+                None
+            };
+
+            if let Some(s) = near_slot {
+                show_edge_overlay(s, rc);
             } else {
                 hide_edge_overlay();
             }
 
-            // Detect which boundary is crossed
-            let mut triggered_dir: Option<EdgeDirection> = None;
-            if has_right_peer && x >= screen_w - 3 && !(y <= 50 || y >= screen_h - 50) {
-                triggered_dir = Some(EdgeDirection::Right);
-            } else if has_left_peer && x <= 3 && !(y <= 50 || y >= screen_h - 50) {
-                triggered_dir = Some(EdgeDirection::Left);
-            } else if has_up_peer && y <= 3 && !(x <= 50 || x >= screen_w - 50) {
-                triggered_dir = Some(EdgeDirection::Up);
-            } else if has_down_peer && y >= screen_h - 3 && !(x <= 50 || x >= screen_w - 50) {
-                triggered_dir = Some(EdgeDirection::Down);
+            // Detect outer boundary crossing (excluding 50px corner deadzones)
+            let mut triggered_slot: Option<usize> = None;
+            if near_slot == Some(SLOT_RIGHT as u8)
+                && x >= rc.right - 3
+                && y > rc.top + 50
+                && y < rc.bottom - 50
+            {
+                triggered_slot = Some(SLOT_RIGHT);
+            } else if near_slot == Some(SLOT_LEFT as u8)
+                && x <= rc.left + 3
+                && y > rc.top + 50
+                && y < rc.bottom - 50
+            {
+                triggered_slot = Some(SLOT_LEFT);
+            } else if near_slot == Some(SLOT_UP as u8)
+                && y <= rc.top + 3
+                && x > rc.left + 50
+                && x < rc.right - 50
+            {
+                triggered_slot = Some(SLOT_UP);
+            } else if near_slot == Some(SLOT_DOWN as u8)
+                && y >= rc.bottom - 3
+                && x > rc.left + 50
+                && x < rc.right - 50
+            {
+                triggered_slot = Some(SLOT_DOWN);
             }
 
-            if let Some(edge) = triggered_dir {
-                if IS_CONNECTED.load(Ordering::Relaxed) {
-                    let dir_val = match edge {
-                        EdgeDirection::Right => 0,
-                        EdgeDirection::Left => 1,
-                        EdgeDirection::Up => 2,
-                        EdgeDirection::Down => 3,
-                    };
-                    EDGE_DIRECTION.store(dir_val, Ordering::SeqCst);
+            if let Some(slot_idx) = triggered_slot {
+                let held = LBUTTON_DOWN.load(Ordering::SeqCst);
+                let was_dragging = if slot_idx == SLOT_UP || slot_idx == SLOT_DOWN {
+                    let dy_drag = (y - DRAG_START_Y.load(Ordering::Relaxed)).abs();
+                    held && dy_drag >= 35
+                } else {
+                    let dx_drag = (x - DRAG_START_X.load(Ordering::Relaxed)).abs();
+                    held && dx_drag >= 35
+                };
 
-                    // Reconnect to slot peer if dynamically re-routed via GUI
-                    let slot_key = match edge {
-                        EdgeDirection::Right => "right",
-                        EdgeDirection::Left => "left",
-                        EdgeDirection::Up => "up",
-                        EdgeDirection::Down => "down",
-                    };
-                    if let Some(target_peer_ip) = web_gui::get_slot_peer(slot_key) {
-                        let cur = TARGET_PEER_IP.lock().ok().and_then(|l| l.clone());
-                    if cur.as_deref() != Some(&target_peer_ip) {
-                            switch_active_peer(target_peer_ip);
-                        }
-                    }
+                let (entry_coord, span) = if slot_idx == SLOT_UP || slot_idx == SLOT_DOWN {
+                    ((x - rc.left).max(0), span_w)
+                } else {
+                    ((y - rc.top).max(0), span_h)
+                };
 
-                    let held = LBUTTON_DOWN.load(Ordering::SeqCst);
-                    let was_dragging = if edge == EdgeDirection::Up || edge == EdgeDirection::Down {
-                        let dy_drag = (y - DRAG_START_Y.load(Ordering::Relaxed)).abs();
-                        held && dy_drag >= 35
-                    } else {
-                        let dx_drag = (x - DRAG_START_X.load(Ordering::Relaxed)).abs();
-                        held && dx_drag >= 35
-                    };
-
-                    let entry_coord = if edge == EdgeDirection::Up || edge == EdgeDirection::Down { x } else { y };
-                    switch_to_remote(was_dragging, entry_coord);
+                switch_to_remote_slot(slot_idx, was_dragging, entry_coord, span);
+                if IS_REMOTE.load(Ordering::SeqCst) {
                     return 1;
                 }
             }
@@ -1362,7 +1820,7 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
                 let mut cur = Cursor::new(&mut buf[..]);
                 if writeln!(cur, "M {} {}", dx, dy).is_ok() {
                     let len = cur.position() as usize;
-                    send_fast_bytes(&buf[..len]);
+                    send_to_active_remote(&buf[..len]);
                 }
 
                 IGNORE_WARP.store(true, Ordering::SeqCst);
@@ -1377,7 +1835,7 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
                 WM_RBUTTONDOWN => b"C right down\n",
                 _ => b"C middle down\n",
             };
-            send_fast_bytes(pkt);
+            send_to_active_remote(pkt);
             return 1;
         }
 
@@ -1387,14 +1845,21 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
                 WM_RBUTTONUP => b"C right up\n",
                 _ => b"C middle up\n",
             };
-            send_fast_bytes(pkt);
+            send_to_active_remote(pkt);
             return 1;
         }
 
         if msg == WM_MOUSEWHEEL {
             let delta = (mouse_data.mouseData >> 16) as i16;
             let pkt: &[u8] = if delta > 0 { b"S 0 1\n" } else { b"S 0 -1\n" };
-            send_fast_bytes(pkt);
+            send_to_active_remote(pkt);
+            return 1;
+        }
+
+        if msg == WM_MOUSEHWHEEL {
+            let delta = (mouse_data.mouseData >> 16) as i16;
+            let pkt: &[u8] = if delta > 0 { b"S 1 0\n" } else { b"S -1 0\n" };
+            send_to_active_remote(pkt);
             return 1;
         }
     }
@@ -1423,36 +1888,41 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
             WIN_DOWN.store(is_down, Ordering::SeqCst);
         }
 
-        // Feature 5: Working Directory Teleport (Win + Alt + T)
+        // Working Directory Teleport (Win + Alt + T)
         if !IS_REMOTE.load(Ordering::Relaxed)
             && is_down
             && vk == b'T' as u16
             && WIN_DOWN.load(Ordering::Relaxed)
             && ALT_DOWN.load(Ordering::Relaxed)
-            && IS_CONNECTED.load(Ordering::Relaxed)
         {
-            // Directory teleport hotkey
-            let pkt = "D .\n";
-            send_fast_bytes(pkt.as_bytes());
-            return 1;
+            if let Some(slot_idx) = first_connected_slot() {
+                let _ = send_bytes_to_slot(slot_idx, b"D .\n");
+                return 1;
+            }
         }
 
-        // Hotkey to fling active Browser Tab or selected Explorer File(s): Win + Right Arrow
-        if !IS_REMOTE.load(Ordering::Relaxed)
-            && vk == VK_RIGHT
-            && is_down
-            && WIN_DOWN.load(Ordering::Relaxed)
-            && IS_CONNECTED.load(Ordering::Relaxed)
-        {
-            let fg = GetForegroundWindow();
-            execute_handoff(fg, 0, false);
-            return 1;
+        // Hotkey to fling active Browser Tab or selected Explorer File(s): Win + Arrow Key matching slot
+        if !IS_REMOTE.load(Ordering::Relaxed) && is_down && WIN_DOWN.load(Ordering::Relaxed) {
+            let hotkey_slot = match vk {
+                VK_RIGHT if SLOT_CONNECTED[SLOT_RIGHT].load(Ordering::Relaxed) => Some(SLOT_RIGHT),
+                VK_LEFT if SLOT_CONNECTED[SLOT_LEFT].load(Ordering::Relaxed) => Some(SLOT_LEFT),
+                VK_UP if SLOT_CONNECTED[SLOT_UP].load(Ordering::Relaxed) => Some(SLOT_UP),
+                VK_DOWN if SLOT_CONNECTED[SLOT_DOWN].load(Ordering::Relaxed) => Some(SLOT_DOWN),
+                VK_RIGHT => first_connected_slot(),
+                _ => None,
+            };
+            if let Some(slot_idx) = hotkey_slot {
+                let fg = GetForegroundWindow();
+                execute_handoff(slot_idx, fg, 0, false);
+                return 1;
+            }
         }
 
         // Emergency Release Hotkeys: F12 (0x7B), Pause (0x13), ScrollLock (0x91)
         if vk == 0x7B || vk == 0x13 || vk == 0x91 {
             if IS_REMOTE.load(Ordering::SeqCst) && is_down {
-                switch_to_local(None);
+                let cur_slot = (ACTIVE_REMOTE_SLOT.load(Ordering::Relaxed) as usize).min(3);
+                switch_to_local(cur_slot, None, None);
                 return 1;
             }
         }
@@ -1461,14 +1931,14 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
             return CallNextHookEx(KEYBOARD_HOOK, code, wparam, lparam);
         }
 
-        // In Remote Mode: map and send to Omarchy, swallow on Windows
+        // In Remote Mode: map VK -> evdev and send to active remote slot
         if let Some(evdev_code) = vk_map::translate_vk(vk as u32) {
             let action = if is_down { "down" } else { "up" };
             let mut buf = [0u8; 24];
             let mut cur = Cursor::new(&mut buf[..]);
             if writeln!(cur, "K {} {}", evdev_code, action).is_ok() {
                 let len = cur.position() as usize;
-                send_fast_bytes(&buf[..len]);
+                send_to_active_remote(&buf[..len]);
             }
         }
         return 1;
@@ -1477,17 +1947,15 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
     CallNextHookEx(KEYBOARD_HOOK, code, wparam, lparam)
 }
 
-/// Zero-allocation idle clipboard monitor using GetClipboardSequenceNumber().
-/// Supports both text and image bitmap clipboard synchronization.
-fn start_clipboard_sync() {
-    #[cfg(windows)]
+#[cfg(windows)]
+fn start_windows_clipboard_sync() {
     thread::spawn(|| {
         LAST_CLIP_SEQ.store(unsafe { GetClipboardSequenceNumber() }, Ordering::SeqCst);
 
         loop {
             thread::sleep(Duration::from_millis(500));
 
-            if SUPPRESS_CLIPBOARD_SYNC.load(Ordering::SeqCst) || !IS_CONNECTED.load(Ordering::Relaxed) {
+            if SUPPRESS_CLIPBOARD_SYNC.load(Ordering::SeqCst) || !any_slot_connected() {
                 continue;
             }
 
@@ -1498,94 +1966,98 @@ fn start_clipboard_sync() {
             }
             LAST_CLIP_SEQ.store(cur_seq, Ordering::SeqCst);
 
-            // Feature 2: Image Clipboard Synchronization (Win32 CF_DIB / CF_DIBV5)
             if let Some(dib_bytes) = read_clipboard_dib_bytes() {
                 if !dib_bytes.is_empty() {
-                    stream_image_to_omarchy(dib_bytes);
+                    stream_image_to_connected_receivers(dib_bytes);
                     continue;
                 }
             }
 
-            // Text clipboard sync
             if let Some(text) = read_clipboard_unicode_text() {
                 if !text.is_empty() {
-                    let mut pkt = String::with_capacity(text.len() + 4);
-                    pkt.push_str("T ");
-                    for ch in text.chars() {
-                        match ch {
-                            '\\' => pkt.push_str("\\\\"),
-                            '\n' => pkt.push_str("\\n"),
-                            '\r' => pkt.push_str("\\r"),
-                            c => pkt.push(c),
-                        }
-                    }
-                    pkt.push('\n');
-                    send_fast_bytes(pkt.as_bytes());
+                    broadcast_clipboard_text(&text);
                 }
             }
         }
     });
 }
 
-/// Persistent TCP connection manager with automatic reconnect on disconnect or receiver restart.
-pub fn switch_active_peer(new_ip: String) {
-    println!("[*] Switching active KVM target peer to: {}", new_ip);
-    if let Ok(mut lock) = TARGET_PEER_IP.lock() {
-        *lock = Some(new_ip);
-    }
-    if let Ok(mut lock) = STREAM_SENDER.lock() {
-        *lock = None;
-    }
-    IS_CONNECTED.store(false, Ordering::SeqCst);
-}
+fn spawn_slot_worker(slot_idx: usize) {
+    thread::spawn(move || {
+        let slot_name = web_gui::index_to_slot_name(slot_idx);
+        let chan = &pool()[slot_idx];
 
-fn start_connection_manager() {
-    thread::spawn(move || loop {
-        let current_target = TARGET_PEER_IP.lock().ok().and_then(|l| l.clone());
+        loop {
+            let gen_snapshot = chan.generation.load(Ordering::SeqCst);
+            let target_opt = chan.target_ip.lock().ok().and_then(|g| g.clone());
 
-        if let Some(target_ip) = current_target {
+            let Some(target_ip) = target_opt else {
+                SLOT_CONNECTED[slot_idx].store(false, Ordering::SeqCst);
+                chan.wait_timeout(Duration::from_secs(5));
+                continue;
+            };
+
             if let Some(addr) = resolve_target_addr(&target_ip) {
-                if let Ok(mut stream) = TcpStream::connect_timeout(&addr, Duration::from_secs(2)) {
+                if let Ok(mut stream) = TcpStream::connect_timeout(&addr, Duration::from_millis(1400))
+                {
                     let _ = stream.set_nodelay(true);
                     let _ = stream.set_write_timeout(Some(Duration::from_secs(5)));
 
-                    let dir_val = EDGE_DIRECTION.load(Ordering::Relaxed);
-                    let reciprocal_return_edge = match dir_val {
-                        1 => "right",
-                        2 => "bottom",
-                        3 => "top",
-                        _ => "left",
-                    };
-                    let e_msg = format!("E {}\n", reciprocal_return_edge);
-                    let _ = stream.write_all(e_msg.as_bytes());
+                    // Abort immediately if slot assignment changed during connect handshake
+                    if chan.generation.load(Ordering::SeqCst) != gen_snapshot {
+                        let _ = stream.shutdown(Shutdown::Both);
+                        continue;
+                    }
 
-                    if stream.write_all(b"H control\n").is_ok() {
+                    let reciprocal = EdgeDirection::reciprocal_return_edge(slot_idx);
+                    let handshake = format!("H control\nE {}\n", reciprocal);
+
+                    if stream.write_all(handshake.as_bytes()).is_ok() {
                         if let Ok(reader_stream) = stream.try_clone() {
-                            if let Ok(mut lock) = STREAM_SENDER.lock() {
-                                *lock = Some(stream);
+                            if let Ok(mut w_lock) = chan.writer.lock() {
+                                *w_lock = Some(stream);
                             }
-                            IS_CONNECTED.store(true, Ordering::SeqCst);
-                            println!("[+] Successfully connected to receiver at {} (Port 9876)", target_ip);
+                            SLOT_CONNECTED[slot_idx].store(true, Ordering::SeqCst);
+                            println!(
+                                "[+] Slot [{}] connected to {} (Port 9876, receiver return edge: {})",
+                                slot_name, target_ip, reciprocal
+                            );
 
                             let reader = BufReader::new(reader_stream);
                             for line in reader.lines() {
-                                // Check if target IP has changed while connected
-                                let active_now = TARGET_PEER_IP.lock().ok().and_then(|l| l.clone());
-                                if active_now.as_deref() != Some(&target_ip) {
+                                if chan.generation.load(Ordering::SeqCst) != gen_snapshot {
                                     break;
                                 }
-
                                 match line {
                                     Ok(line_str) => {
-                                        let trimmed = line_str.trim();
+                                        let trimmed = line_str.trim_end_matches(['\r', '\n']);
                                         if trimmed.starts_with("switch_to_local") {
-                                            let target_y = trimmed
-                                                .split_whitespace()
-                                                .nth(1)
-                                                .and_then(|y| y.parse::<i32>().ok());
-                                            switch_to_local(target_y);
+                                            let mut parts = trimmed.split_whitespace().skip(1);
+                                            let coord =
+                                                parts.next().and_then(|v| v.parse::<i32>().ok());
+                                            let span =
+                                                parts.next().and_then(|v| v.parse::<i32>().ok());
+                                            if IS_REMOTE.load(Ordering::SeqCst)
+                                                && (ACTIVE_REMOTE_SLOT.load(Ordering::SeqCst)
+                                                    == slot_idx as u8
+                                                    || ACTIVE_REMOTE_SLOT.load(Ordering::SeqCst)
+                                                        == 255)
+                                            {
+                                                switch_to_local(slot_idx, coord, span);
+                                            }
                                         } else if trimmed == "{\"type\":\"switch_to_local\"}" {
-                                            switch_to_local(None);
+                                            if IS_REMOTE.load(Ordering::SeqCst) {
+                                                switch_to_local(slot_idx, None, None);
+                                            }
+                                        } else if let Some(escaped_clip) =
+                                            trimmed.strip_prefix("T ")
+                                        {
+                                            let text = unescape_text_line(escaped_clip);
+                                            write_host_clipboard_text(&text);
+                                        } else if let Some(url) = trimmed.strip_prefix("U ") {
+                                            open_url_on_host(url.trim());
+                                        } else if let Some(dir_p) = trimmed.strip_prefix("D ") {
+                                            open_terminal_on_host(dir_p.trim());
                                         }
                                     }
                                     Err(_) => break,
@@ -1595,87 +2067,196 @@ fn start_connection_manager() {
                     }
                 }
             }
-        }
 
-        IS_CONNECTED.store(false, Ordering::SeqCst);
-        if let Ok(mut lock) = STREAM_SENDER.lock() {
-            *lock = None;
+            if chan.generation.load(Ordering::SeqCst) == gen_snapshot {
+                SLOT_CONNECTED[slot_idx].store(false, Ordering::SeqCst);
+                if let Ok(mut w_lock) = chan.writer.lock() {
+                    *w_lock = None;
+                }
+                if IS_REMOTE.load(Ordering::SeqCst)
+                    && ACTIVE_REMOTE_SLOT.load(Ordering::SeqCst) == slot_idx as u8
+                {
+                    switch_to_local(slot_idx, None, None);
+                }
+                chan.wait_timeout(Duration::from_millis(850));
+            }
         }
-        if IS_REMOTE.load(Ordering::SeqCst) {
-            switch_to_local(None);
-        }
-
-        thread::sleep(Duration::from_millis(800));
     });
 }
 
-fn main() {
-    let dir = get_config_direction();
-    let dir_val = match dir {
-        EdgeDirection::Left => 1,
-        EdgeDirection::Up => 2,
-        EdgeDirection::Down => 3,
-        EdgeDirection::Right => 0,
-    };
-    EDGE_DIRECTION.store(dir_val, Ordering::SeqCst);
-
-    let target_ip = get_config_ip();
-    if let Ok(mut lock) = TARGET_PEER_IP.lock() {
-        *lock = Some(target_ip.clone());
+fn start_all_slot_workers() {
+    for idx in 0..4 {
+        spawn_slot_worker(idx);
     }
+}
+
+pub fn shutdown_and_exit() {
+    println!("[*] Shutting down Tailscale KVM Host cleanly...");
+    hide_edge_overlay();
+    #[cfg(windows)]
+    unsafe {
+        ClipCursor(std::ptr::null());
+        if MOUSE_HOOK != 0 {
+            UnhookWindowsHookEx(MOUSE_HOOK);
+        }
+        if KEYBOARD_HOOK != 0 {
+            UnhookWindowsHookEx(KEYBOARD_HOOK);
+        }
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let cx = CENTER_X.load(Ordering::Relaxed);
+        let cy = CENTER_Y.load(Ordering::Relaxed);
+        macos_host::set_macos_remote_capture(false, cx, cy);
+    }
+    std::process::exit(0);
+}
+
+fn resolve_initial_layout() -> ([Option<String>; 4], bool) {
+    let dir = get_config_direction();
+    // 1. Explicit CLI flags (--target / -t) take highest priority
+    if let Some(cli_ip) = explicit_cli_target() {
+        let mut slots = [None, None, None, None];
+        slots[dir.to_slot_index()] = Some(cli_ip);
+        return (slots, false);
+    }
+
+    // 2. Saved GUI layout (kvm_layout.json) takes priority over legacy config.txt
+    if let Some(saved) = load_layout_file() {
+        return (saved, false);
+    }
+
+    // 3. Legacy env / config.txt fallback
+    if let Some(cfg_ip) = legacy_env_or_config_target() {
+        let mut slots = [None, None, None, None];
+        slots[dir.to_slot_index()] = Some(cfg_ip);
+        return (slots, true);
+    }
+
+    // 4. Smart zero-config startup: scan Tailscale peers and ONLY auto-assign a peer
+    // that actually has KVM Receiver listening on TCP port 9876!
+    let peers = web_gui::refresh_tailscale_peers();
+    let mut slots = [None, None, None, None];
+    if let Some(ready_peer) = peers.iter().find(|p| p.kvm_ready) {
+        println!(
+            "[*] Smart auto-discovery found active KVM Receiver: {} ({}) -> placed on {:?} screen",
+            ready_peer.name, ready_peer.ip, dir
+        );
+        slots[dir.to_slot_index()] = Some(ready_peer.ip.clone());
+        return (slots, true);
+    }
+
+    (slots, false)
+}
+
+fn print_usage() {
+    println!("Tailscale Universal KVM — Host Controller");
+    println!("Usage: tailscale-kvm-host [OPTIONS]");
+    println!();
+    println!("Options:");
+    println!("  -t, --target <IP>       Optional initial receiver Tailscale IP (can also be arranged in Web GUI)");
+    println!("  -d, --direction <SIDE>  Screen side for --target: right | left | up | down (default: right)");
+    println!("      --no-browser        Do not auto-open http://localhost:9877 in browser on startup");
+    println!("  -h, --help              Show this help message");
+}
+
+fn main() {
+    let _ = monotonic_ms();
+    let args: Vec<String> = env::args().collect();
+    if args.iter().any(|a| a == "--help" || a == "-h") {
+        print_usage();
+        return;
+    }
+    let auto_open_browser = !args.iter().any(|a| a == "--no-browser");
 
     println!("=== Tailscale KVM Universal Host Controller ===");
-    println!("[*] Configured Host Screen Edge Trigger: {:?} (move cursor past this edge to control remote)", dir);
-    println!("[*] Target Receiver Peer: {}", target_ip);
 
-    // Seed initial slot in web GUI
-    match dir {
-        EdgeDirection::Left => web_gui::set_slot_peer("left", Some(target_ip.clone())),
-        EdgeDirection::Up => web_gui::set_slot_peer("up", Some(target_ip.clone())),
-        EdgeDirection::Down => web_gui::set_slot_peer("down", Some(target_ip.clone())),
-        EdgeDirection::Right => web_gui::set_slot_peer("right", Some(target_ip.clone())),
-    }
+    start_all_slot_workers();
+    let (initial_slots, save_initial) = resolve_initial_layout();
+    apply_slot_layout(initial_slots, save_initial);
 
-    // Launch multi-receiver web management GUI dashboard on port 9877
-    web_gui::start_gui_server(9877);
+    // Launch Web GUI server on http://localhost:9877
+    web_gui::start_gui_server(9877, auto_open_browser);
+    start_reverse_transfer_listener();
 
     #[cfg(windows)]
-    unsafe {
-        let sw = GetSystemMetrics(SM_CXSCREEN);
-        let sh = GetSystemMetrics(SM_CYSCREEN);
-        SCREEN_WIDTH.store(sw, Ordering::SeqCst);
-        SCREEN_HEIGHT.store(sh, Ordering::SeqCst);
-        CENTER_X.store(sw / 2, Ordering::SeqCst);
-        CENTER_Y.store(sh / 2, Ordering::SeqCst);
-    }
-
-    #[cfg(windows)]
-    init_edge_overlay();
-
-    start_windows_server_listener();
-    start_connection_manager();
-    start_clipboard_sync();
-
-    #[cfg(windows)]
-    unsafe {
-        MOUSE_HOOK = SetWindowsHookExW(WH_MOUSE_LL, Some(mouse_hook_proc), 0, 0);
-        KEYBOARD_HOOK = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_hook_proc), 0, 0);
-
-        let mut msg: MSG = std::mem::zeroed();
-        while GetMessageW(&mut msg, 0, 0, 0) > 0 {
-            TranslateMessage(&msg);
-            DispatchMessageW(&msg);
-        }
-
-        UnhookWindowsHookEx(MOUSE_HOOK);
-        UnhookWindowsHookEx(KEYBOARD_HOOK);
-    }
-
-    #[cfg(not(windows))]
     {
-        // On non-Windows platforms, keep background threads and Web GUI active
+        update_windows_screen_bounds();
+        println!(
+            "[*] Windows Host virtual screen bounds: X=[{}, {}], Y=[{}, {}] (Emergency release: F12)",
+            HOST_MIN_X.load(Ordering::SeqCst),
+            HOST_MAX_X.load(Ordering::SeqCst),
+            HOST_MIN_Y.load(Ordering::SeqCst),
+            HOST_MAX_Y.load(Ordering::SeqCst)
+        );
+        start_windows_bounds_refresher();
+        init_edge_overlay();
+        start_windows_clipboard_sync();
+
+        unsafe {
+            MOUSE_HOOK = SetWindowsHookExW(WH_MOUSE_LL, Some(mouse_hook_proc), 0, 0);
+            KEYBOARD_HOOK = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_hook_proc), 0, 0);
+
+            let mut msg: MSG = std::mem::zeroed();
+            while GetMessageW(&mut msg, 0, 0, 0) > 0 {
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+
+            UnhookWindowsHookEx(MOUSE_HOOK);
+            UnhookWindowsHookEx(KEYBOARD_HOOK);
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        linux_host::run_linux_host_loop();
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        macos_host::run_macos_host_loop();
+    }
+
+    #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
+    {
         loop {
             thread::sleep(Duration::from_secs(3600));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_edge_direction_and_reciprocals() {
+        assert_eq!(EdgeDirection::parse("right").to_slot_index(), SLOT_RIGHT);
+        assert_eq!(EdgeDirection::parse("left").to_slot_index(), SLOT_LEFT);
+        assert_eq!(EdgeDirection::parse("top").to_slot_index(), SLOT_UP);
+        assert_eq!(EdgeDirection::parse("bottom").to_slot_index(), SLOT_DOWN);
+
+        assert_eq!(EdgeDirection::reciprocal_return_edge(SLOT_RIGHT), "left");
+        assert_eq!(EdgeDirection::reciprocal_return_edge(SLOT_LEFT), "right");
+        assert_eq!(EdgeDirection::reciprocal_return_edge(SLOT_UP), "bottom");
+        assert_eq!(EdgeDirection::reciprocal_return_edge(SLOT_DOWN), "top");
+    }
+
+    #[test]
+    fn test_layout_deduplication() {
+        apply_slot_layout(
+            [
+                Some("100.99.142.70".to_string()),
+                Some("100.99.142.70".to_string()),
+                None,
+                None,
+            ],
+            false,
+        );
+        let mirrored = web_gui::get_all_slots();
+        assert_eq!(mirrored[0].as_deref(), Some("100.99.142.70"));
+        assert_eq!(mirrored[1], None);
+        apply_slot_layout([None, None, None, None], false);
     }
 }

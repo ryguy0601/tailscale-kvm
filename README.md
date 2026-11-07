@@ -61,17 +61,17 @@ tailscale-kvm/
 ```text
                +---------------------------+
                |        RECEIVER 1         |
-               |      "omovieboi" (Linux)  |
-               |         (Top Edge)        |
+               |   "linux-workstation"     |
+               |        (Top Edge)         |
                +---------------------------+
                              ^
                              |
 +---------------------+      |      +---------------------+
 |     RECEIVER 2      | <----+----> |     RECEIVER 3      |
-|    "MacBook Air"    |             |  "not-a-gabe-cube"  |
-|     (Left Edge)     |             |    (Windows 11)     |
-+---------------------+             |    (Right Edge)     |
-                             |      +---------------------+
+|    "macbook-air"    |             |  "windows-desktop"  |
+|     (Left Edge)     |             |    (Right Edge)     |
++---------------------+             +---------------------+
+                             |
                              v
                +---------------------------+
                |     HOST CONTROLLER       |
@@ -97,24 +97,24 @@ tailscale-kvm/
 
 ---
 
-### 2. Launch the Receiver (The device being controlled)
+### 2. Launch the Receiver (Each device to be controlled)
 
-Run on the client machine:
+Run on any receiver machine — no flags needed (its return edge automatically syncs whenever you arrange screens in the Host GUI):
 
 - **Linux / macOS:**
   ```bash
-  ./run-receiver.sh --edge left
+  ./run-receiver.sh
   ```
 - **Windows (PowerShell):**
   ```powershell
-  .\run-receiver.ps1 --edge left
+  .\run-receiver.ps1
   ```
 
-*Options for `--edge`: `left` | `right` | `top` | `bottom` (default: `left`).*
+*(Optional CLI override: `--edge left|right|top|bottom`.)*
 
 ---
 
-### 3. Launch the Host (The device with your keyboard & mouse)
+### 3. Launch the Host (The device with your physical keyboard & mouse)
 
 Run on your main machine:
 
@@ -127,21 +127,17 @@ Run on your main machine:
   .\run-host.ps1
   ```
 
-*The host automatically discovers active peers on your Tailscale network and immediately opens the **Visual Management Dashboard** in your default browser at `http://localhost:9877`.*
+*The host probes your Tailscale peers for active KVM receivers (`:9876`), restores your saved `kvm_layout.json` arrangement (if any), and opens the **Visual Management Dashboard** at `http://localhost:9877`. You can also pass optional CLI flags (`--target <IP> --direction right|left|up|down`, `--no-browser`).*
 
 ---
 
 ## 🖥️ Visual Web Dashboard & Multi-Receiver Layout
 
-When the host is running, navigate to `http://localhost:9877` (or let it auto-open):
+When the host is running, `http://localhost:9877` lets you control everything live:
 
-1. **Auto-Discovered Peer Pool:** Displays all detected devices on your Tailnet with live status indicators.
-2. **Interactive 2D Grid Canvas:** Drag and drop any peer onto:
-   - ⬆️ **Top Screen**
-   - ⬅️ **Left Screen**
-   - ➡️ **Right Screen**
-   - ⬇️ **Bottom Screen**
-3. **Instant Live Routing:** Moving your cursor past any edge dynamically routes inputs to the assigned receiver peer without restarting the daemon.
+1. **Auto-Discovered Peer Pool:** Lists your Tailscale peers and badges which ones have an active KVM Receiver listening on `:9876`.
+2. **Drag & Reposition Anywhere:** Drag peers from the pool onto **Top**, **Left**, **Right**, or **Bottom** — and drag **already-connected screens** directly from one slot to another (moving or swapping them).
+3. **Two-Way Live Edge Sync:** Dropping a screen onto a new side immediately updates **both** the Host edge trigger and the Receiver's reciprocal return edge without restarting either daemon, and persists your layout to `kvm_layout.json`.
 
 ---
 

@@ -60,15 +60,14 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 <div class="container">
 
 <h1>tailscale-kvm — Complete Call Flow &amp; Architecture Documentation</h1>
-<p class="subtitle">Generated from graphify knowledge graph: 270 nodes, 437 edges, 33 communities. Commit: 8aaba00</p>
+<p class="subtitle">Generated from graphify knowledge graph: 436 nodes, 848 edges, 32 communities. Commit: 607beeb</p>
 
 <div class="nav">
     <a href="#overview">Architecture Overview</a>
     <a href="#build-graph">Graph Build</a>
     <a href="#cli-skills">CLI &amp; Skill Installers</a>
-    <a href="#input-adapterrs-receiver">Input Adapterrs Receiver</a>
-    <a href="#run-hostsh-script">Run Hostsh Script</a>
-    <a href="#run-receiversh-script">Run Receiversh Script</a>
+    <a href="#tests-fixtures">Tests &amp; Fixtures</a>
+    <a href="#maprs-host-translate">Maprs Host Translate</a>
     <a href="#host-tailscale-kvm">Host Tailscale Kvm</a>
     <a href="#receiver-tailscale-kvm">Receiver Tailscale Kvm</a>
     <a href="#run-hostps1">Run Hostps1</a>
@@ -82,16 +81,14 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    BUILD_GRAPH_321CBB04("Graph Build<br/><small>20 nodes</small>")
+    BUILD_GRAPH_321CBB04("Graph Build<br/><small>51 nodes</small>")
     class BUILD_GRAPH_321CBB04 module;
-    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>228 nodes</small>")
+    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>328 nodes</small>")
     class CLI_SKILLS_9964CBB8 module;
-    INPUT_ADAPTERRS_RECEIVER_BE9A3D9B("Input Adapterrs Receiver<br/><small>14 nodes</small>")
-    class INPUT_ADAPTERRS_RECEIVER_BE9A3D9B module;
-    RUN_HOSTSH_SCRIPT_336292B9("Run Hostsh Script<br/><small>2 nodes</small>")
-    class RUN_HOSTSH_SCRIPT_336292B9 module;
-    RUN_RECEIVERSH_SCRIPT_DEBDB906("Run Receiversh Script<br/><small>2 nodes</small>")
-    class RUN_RECEIVERSH_SCRIPT_DEBDB906 module;
+    TESTS_FIXTURES_B84B1DCC("Tests &amp; Fixtures<br/><small>51 nodes</small>")
+    class TESTS_FIXTURES_B84B1DCC module;
+    MAPRS_HOST_TRANSLATE_9DB65DBE("Maprs Host Translate<br/><small>2 nodes</small>")
+    class MAPRS_HOST_TRANSLATE_9DB65DBE module;
     HOST_TAILSCALE_KVM_5F916E6E("Host Tailscale Kvm<br/><small>1 nodes</small>")
     class HOST_TAILSCALE_KVM_5F916E6E module;
     RECEIVER_TAILSCALE_KVM_389A10DC("Receiver Tailscale Kvm<br/><small>1 nodes</small>")
@@ -100,8 +97,9 @@ flowchart LR
     class RUN_HOSTPS1_87DC0170 module;
     RUN_RECEIVERPS1_80A96601("Run Receiverps1<br/><small>1 nodes</small>")
     class RUN_RECEIVERPS1_80A96601 module;
-    CLI_SKILLS_9964CBB8 -->|references x2| INPUT_ADAPTERRS_RECEIVER_BE9A3D9B
-    CLI_SKILLS_9964CBB8 -->|contains x2| BUILD_GRAPH_321CBB04
+    CLI_SKILLS_9964CBB8 -->|calls x11| BUILD_GRAPH_321CBB04
+    CLI_SKILLS_9964CBB8 -->|imports x7| TESTS_FIXTURES_B84B1DCC
+    BUILD_GRAPH_321CBB04 -->|imports x7| CLI_SKILLS_9964CBB8
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -118,92 +116,91 @@ flowchart LR
     <h4>Architecture Layers</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>Layer</th><th>Nodes</th><th>Communities</th></tr>
-      <tr><td>Graph Build</td><td>20</td><td><code>5, 23, 26, 28, 31</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>228</td><td><code>2, 3, 22, 6, 7, 1, 15, 0, 10, 4, 8, 13, 14, 17, 18, 19, 21, 25, 16, 9, 34</code></td></tr><tr><td>Input Adapterrs Receiver</td><td>14</td><td><code>20</code></td></tr><tr><td>Run Hostsh Script</td><td>2</td><td><code>29</code></td></tr><tr><td>Run Receiversh Script</td><td>2</td><td><code>30</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr><tr><td>Run Hostps1</td><td>1</td><td><code>32</code></td></tr><tr><td>Run Receiverps1</td><td>1</td><td><code>33</code></td></tr>
+      <tr><td>Graph Build</td><td>51</td><td><code>22, 5, 28, 23, 27</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>328</td><td><code>7, 2, 3, 10, 6, 1, 4, 25, 14, 18, 0, 16, 8, 15, 17, 19, 24, 13, 21, 9, 34</code></td></tr><tr><td>Tests &amp; Fixtures</td><td>51</td><td><code>20</code></td></tr><tr><td>Maprs Host Translate</td><td>2</td><td><code>26</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr><tr><td>Run Hostps1</td><td>1</td><td><code>32</code></td></tr><tr><td>Run Receiverps1</td><td>1</td><td><code>33</code></td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Core Flow</h4>
-    <div class="arrow-chain">CLI &amp; Skill Installers -&gt; Input Adapterrs Receiver -&gt; Graph Build -&gt; Run Hostsh Script -&gt; Run Receiversh Script -&gt; Host Tailscale Kvm -&gt; Receiver Tailscale Kvm</div>
+    <div class="arrow-chain">Maprs Host Translate -&gt; Graph Build -&gt; CLI &amp; Skill Installers -&gt; Tests &amp; Fixtures -&gt; Host Tailscale Kvm -&gt; Receiver Tailscale Kvm -&gt; Run Hostps1</div>
   </div>
 </div>
 <div class="grid">
   <div class="card">
     <h4>Graph Report Highlights</h4>
     <ul>
-      <li>270 nodes · 437 edges · 33 communities (18 shown, 15 thin omitted)</li>
-      <li>Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS</li>
+      <li>436 nodes · 848 edges · 32 communities (22 shown, 10 thin omitted)</li>
+      <li>Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 10 edges (avg confidence: 0.85)</li>
       <li>Token cost: 0 input · 0 output</li>
-      <li>1. `handle_connection()` - 19 edges</li>
+      <li>1. `handle_connection()` - 25 edges</li>
       <li>2. `execute_handoff()` - 14 edges</li>
-      <li>3. `mouse_hook_proc()` - 10 edges</li>
+      <li>3. `main()` - 14 edges</li>
     </ul>
   </div>
 </div>
 <hr>
 <!-- ====== 2. Graph Build ====== -->
 <h2 id="build-graph">2. Graph Build</h2>
-<p>Graph Build groups implementation around readmemd, multi, buildsh, receiver, mostly in README.md, build.sh, receiver/src/main.rs. This section covers 20 nodes and 15 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>Graph Build groups implementation around web, host, guirs, readmemd, mostly in host/src/web_gui.rs, README.md, build.sh. This section covers 51 nodes and 76 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Graph Build (20 nodes, 15 edges)
-    subgraph build_graph_README_md_df5bf028["README.md"]
-        readme_tailscale_software_kvm_universal_multi_di_a21c53b1("⚡ Tailscale Software KVM: Universal Mul...<br/><small>README.md</small>")
-        readme_quick_start_bb6875fc("🚀 Quick Start<br/><small>README.md</small>")
-        readme_f78a71af("README.md")
-        readme_1_build_the_workspace_e892a050("1. Build the Workspace<br/><small>README.md</small>")
-        readme_2_launch_the_receiver_the_device_being_co_bc8650b6("2. Launch the Receiver (The device bein...<br/><small>README.md</small>")
-        readme_3_launch_the_host_the_device_with_your_ke_c44847ce("3. Launch the Host (The device with you...<br/><small>README.md</small>")
-        readme_key_features_fae64a16("🌟 Key Features<br/><small>README.md</small>")
-        readme_controls_shortcuts_2e97bc93("🎮 Controls &amp; Shortcuts<br/><small>README.md</small>")
-        readme_architecture_multi_screen_mesh_b07b0176("🏗 Architecture &amp; Multi-Screen Mesh<br/><small>README.md</small>")
-        readme_repository_structure_895860fe("📁 Repository Structure<br/><small>README.md</small>")
-        readme_license_edbe4ad9("📄 License<br/><small>README.md</small>")
-    end
-    subgraph build_graph_External_generated_653891f5["External / generated"]
-        receiver_src_main_rs_atomicu8_1fb402b0("AtomicU8")
-        host_src_main_rs_atomicu8_0b591eb8("AtomicU8")
-    end
-    subgraph build_graph_build_sh_4d78c334["build.sh"]
-        build_sh_build_2c509fe1("build.sh")
-        build_sh_entry_ed350c5c("build.sh script<br/><small>build.sh</small>")
-    end
-    build_ps1_build_af6fd22d("build.ps1")
-    host_src_main_edge_direction_ecf9c5a6("EDGE_DIRECTION<br/><small>host/src/main.rs</small>")
-    receiver_src_main_return_edge_bd77a7d0("RETURN_EDGE<br/><small>receiver/src/main.rs</small>")
-    receiver_src_main_return_edge_bd77a7d0 -->|references| receiver_src_main_rs_atomicu8_1fb402b0
-    host_src_main_edge_direction_ecf9c5a6 -->|references| host_src_main_rs_atomicu8_0b591eb8
-    build_sh_build_2c509fe1 -->|contains| build_sh_entry_ed350c5c
-    readme_f78a71af -->|contains| readme_tailscale_software_kvm_universal_multi_di_a21c53b1
-    readme_quick_start_bb6875fc -->|contains| readme_2_launch_the_receiver_the_device_being_co_bc8650b6
-    readme_quick_start_bb6875fc -->|contains| readme_3_launch_the_host_the_device_with_your_ke_c44847ce
-    readme_quick_start_bb6875fc -->|contains| readme_1_build_the_workspace_e892a050
-    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_controls_shortcuts_2e97bc93
-    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_license_edbe4ad9
-    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_key_features_fae64a16
-    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_repository_structure_895860fe
-    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_architecture_multi_screen_mesh_b07b0176
-    readme_tailscale_software_kvm_universal_multi_di_a21c53b1 -->|contains| readme_quick_start_bb6875fc
-    %% Omitted for readability: 2 nodes, 0 edges
-    class readme_tailscale_software_kvm_universal_multi_di_a21c53b1 concept;
-    class readme_quick_start_bb6875fc concept;
-    class readme_f78a71af concept;
-    class readme_1_build_the_workspace_e892a050 concept;
-    class readme_2_launch_the_receiver_the_device_being_co_bc8650b6 concept;
-    class readme_3_launch_the_host_the_device_with_your_ke_c44847ce concept;
-    class readme_key_features_fae64a16 concept;
-    class readme_controls_shortcuts_2e97bc93 concept;
-    class readme_architecture_multi_screen_mesh_b07b0176 concept;
-    class readme_repository_structure_895860fe concept;
-    class readme_license_edbe4ad9 concept;
-    class receiver_src_main_rs_atomicu8_1fb402b0 klass;
-    class host_src_main_rs_atomicu8_0b591eb8 klass;
-    class build_sh_build_2c509fe1 function;
-    class build_sh_entry_ed350c5c function;
-    class build_ps1_build_af6fd22d function;
-    class host_src_main_edge_direction_ecf9c5a6 klass;
-    class receiver_src_main_return_edge_bd77a7d0 klass;
+    %% Section: Graph Build (51 nodes, 76 edges)
+    host_src_web_gui_16ccde2b("web_gui.rs")
+    host_src_web_gui_handle_http_client_20f6aea7("handle_http_client()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_start_gui_server_9512f502("start_gui_server()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_build_status_json_fb1174ae("build_status_json()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_refresh_tailscale_peers_306770d6("refresh_tailscale_peers()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_set_all_slots_mirror_c5caf572("set_all_slots_mirror()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_get_all_slots_f0248782("get_all_slots()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_index_to_slot_name_8f8951c0("index_to_slot_name()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_peers_store_2faa650f("peers_store()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_slots_store_59b1fc90("slots_store()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_write_http_response_a913a66d("write_http_response()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_normalize_slot_ip_40a04a12("normalize_slot_ip()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_percent_decode_4682286e("percent_decode()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_slot_name_to_index_19ca8d02("slot_name_to_index()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_probe_kvm_receiver_port_0d58eb72("probe_kvm_receiver_port()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_start_peer_discovery_worker_60725f9c("peer discovery worker()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_takeover_or_bind_c7f21444("takeover_or_bind()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_open_browser_6f1b17f7("open_browser()<br/><small>host/src/web_gui.rs</small>")
+    host_src_web_gui_build_status_json_fb1174ae -->|calls| host_src_web_gui_get_all_slots_f0248782
+    host_src_web_gui_build_status_json_fb1174ae -->|calls| host_src_web_gui_index_to_slot_name_8f8951c0
+    host_src_web_gui_build_status_json_fb1174ae -->|calls| host_src_web_gui_peers_store_2faa650f
+    host_src_web_gui_get_all_slots_f0248782 -->|calls| host_src_web_gui_slots_store_59b1fc90
+    host_src_web_gui_handle_http_client_20f6aea7 -->|calls| host_src_web_gui_write_http_response_a913a66d
+    host_src_web_gui_handle_http_client_20f6aea7 -->|calls| host_src_web_gui_build_status_json_fb1174ae
+    host_src_web_gui_handle_http_client_20f6aea7 -->|calls| host_src_web_gui_normalize_slot_ip_40a04a12
+    host_src_web_gui_handle_http_client_20f6aea7 -->|calls| host_src_web_gui_percent_decode_4682286e
+    host_src_web_gui_handle_http_client_20f6aea7 -->|calls| host_src_web_gui_slot_name_to_index_19ca8d02
+    host_src_web_gui_handle_http_client_20f6aea7 -->|calls| host_src_web_gui_get_all_slots_f0248782
+    host_src_web_gui_refresh_tailscale_peers_306770d6 -->|calls| host_src_web_gui_probe_kvm_receiver_port_0d58eb72
+    host_src_web_gui_refresh_tailscale_peers_306770d6 -->|calls| host_src_web_gui_peers_store_2faa650f
+    host_src_web_gui_set_all_slots_mirror_c5caf572 -->|calls| host_src_web_gui_slots_store_59b1fc90
+    host_src_web_gui_start_gui_server_9512f502 -->|calls| host_src_web_gui_start_peer_discovery_worker_60725f9c
+    host_src_web_gui_start_gui_server_9512f502 -->|calls| host_src_web_gui_takeover_or_bind_c7f21444
+    host_src_web_gui_start_gui_server_9512f502 -->|calls| host_src_web_gui_open_browser_6f1b17f7
+    host_src_web_gui_start_gui_server_9512f502 -->|calls| host_src_web_gui_handle_http_client_20f6aea7
+    host_src_web_gui_start_peer_discovery_worker_60725f9c -->|calls| host_src_web_gui_refresh_tailscale_peers_306770d6
+    %% Omitted for readability: 33 nodes, 0 edges
+    class host_src_web_gui_16ccde2b module;
+    class host_src_web_gui_handle_http_client_20f6aea7 entry;
+    class host_src_web_gui_start_gui_server_9512f502 function;
+    class host_src_web_gui_build_status_json_fb1174ae function;
+    class host_src_web_gui_refresh_tailscale_peers_306770d6 function;
+    class host_src_web_gui_set_all_slots_mirror_c5caf572 function;
+    class host_src_web_gui_get_all_slots_f0248782 function;
+    class host_src_web_gui_index_to_slot_name_8f8951c0 function;
+    class host_src_web_gui_peers_store_2faa650f ui;
+    class host_src_web_gui_slots_store_59b1fc90 ui;
+    class host_src_web_gui_write_http_response_a913a66d function;
+    class host_src_web_gui_normalize_slot_ip_40a04a12 function;
+    class host_src_web_gui_percent_decode_4682286e function;
+    class host_src_web_gui_slot_name_to_index_19ca8d02 function;
+    class host_src_web_gui_probe_kvm_receiver_port_0d58eb72 function;
+    class host_src_web_gui_start_peer_discovery_worker_60725f9c function;
+    class host_src_web_gui_takeover_or_bind_c7f21444 function;
+    class host_src_web_gui_open_browser_6f1b17f7 function;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -227,164 +224,244 @@ flowchart LR
 </tr>
 <tr>
   <td>1</td>
+  <td><code>PeerInfo</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>PeerInfo node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>bufread</code><br><code>bufreader</code><br><code>duration</code><br>+12 more</td>
+  <td>web_gui.rs node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>build_status_json()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><code>get_all_slots()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>index_to_slot_name()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>peers_store()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>build_status_json() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>CACHED_PEERS</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Caches analysis results or computes cache keys.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>get_all_slots()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>build_status_json()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>test_layout_deduplication()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>slots_store()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>get_all_slots() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>GUI_SLOTS</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>GUI_SLOTS node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-cmd">Entry</span></td>
+  <td><code>start_gui_server()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><code>build_status_json()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>get_all_slots()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>normalize_slot_ip()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br>+3 more</td>
+  <td>handle_http_client() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>index_to_slot_name()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>build_status_json()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>spawn_slot_worker()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>index_to_slot_name() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>normalize_slot_ip()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>normalize_slot_ip() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>open_browser()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>start_gui_server()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>open_browser() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>peers_store()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td><code>build_status_json()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>refresh_tailscale_peers()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>peers_store() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>percent_decode()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>percent_decode() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>probe_kvm_receiver_port()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>refresh_tailscale_peers()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>probe_kvm_receiver_port() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>refresh_tailscale_peers()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>peer discovery worker()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>resolve_initial_layout()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>peers_store()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>probe_kvm_receiver_port()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>refresh_tailscale_peers() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>Mutex</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>Mutex node in project.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>OnceLock</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>OnceLock node in project.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>TcpStream</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>TcpStream node in project.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>set_all_slots_mirror()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>apply_slot_layout()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>slots_store()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>set_all_slots_mirror() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>slot_name_to_index()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>slot_name_to_index() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>slots_store()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td><code>get_all_slots()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>set_all_slots_mirror()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>slots_store() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>start_gui_server()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>open_browser()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>peer discovery worker()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br>+1 more</td>
+  <td>start_gui_server() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>start_peer_discovery_worker()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>start_gui_server()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><code>refresh_tailscale_peers()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>start_peer_discovery_worker() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>takeover_or_bind()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>start_gui_server()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>takeover_or_bind() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>write_http_response()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>write_http_response() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>TcpListener</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">receiver/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>TcpListener node in project.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>bufread</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>bufread node in project.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>json</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>json node in project.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>shutdown</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>shutdown node in project.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>tosocketaddrs</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>tosocketaddrs node in project.</td>
+</tr>
+<tr>
+  <td>30</td>
   <td><code>README.md</code><br><small style="color:var(--muted)">README.md</small></td>
   <td><span class="tag tag-func">Concept</span></td>
   <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
   <td>Documentation node describing README.md.</td>
 </tr>
-<tr>
-  <td>2</td>
-  <td><code>1. Build the Workspace</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 1. Build the Workspace.</td>
-</tr>
-<tr>
-  <td>3</td>
-  <td><code>2. Launch the Receiver (The device being controlled)</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 2. Launch the Receiver (The device being controlled).</td>
-</tr>
-<tr>
-  <td>4</td>
-  <td><code>3. Launch the Host (The device with your keyboard &amp; mouse)</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 3. Launch the Host (The device with your keyboard &amp; mouse).</td>
-</tr>
-<tr>
-  <td>5</td>
-  <td><code>🏗 Architecture &amp; Multi-Screen Mesh</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 🏗 Architecture &amp; Multi-Screen Mesh.</td>
-</tr>
-<tr>
-  <td>6</td>
-  <td><code>🎮 Controls &amp; Shortcuts</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 🎮 Controls &amp; Shortcuts.</td>
-</tr>
-<tr>
-  <td>7</td>
-  <td><code>🕸 Graphify Knowledge Graph</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 🕸 Graphify Knowledge Graph.</td>
-</tr>
-<tr>
-  <td>8</td>
-  <td><code>🌟 Key Features</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 🌟 Key Features.</td>
-</tr>
-<tr>
-  <td>9</td>
-  <td><code>📄 License</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 📄 License.</td>
-</tr>
-<tr>
-  <td>10</td>
-  <td><code>🚀 Quick Start</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 🚀 Quick Start.</td>
-</tr>
-<tr>
-  <td>11</td>
-  <td><code>📁 Repository Structure</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 📁 Repository Structure.</td>
-</tr>
-<tr>
-  <td>12</td>
-  <td><code>⚡ Tailscale Software KVM: Universal Multi-Directional &amp; Multi-Platform Mesh (Pure Rust)</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing ⚡ Tailscale Software KVM: Universal Multi-Directional &amp; Multi-Platform Mesh (Pure Rust).</td>
-</tr>
-<tr>
-  <td>13</td>
-  <td><code>🖥️ Visual Web Dashboard &amp; Multi-Receiver Layout</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing 🖥️ Visual Web Dashboard &amp; Multi-Receiver Layout.</td>
-</tr>
-<tr>
-  <td>14</td>
-  <td><code>RETURN_EDGE</code><br><small style="color:var(--muted)">receiver/src/main.rs</small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>RETURN_EDGE node in receiver/src/main.rs.</td>
-</tr>
-<tr>
-  <td>15</td>
-  <td><code>AtomicU8</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>AtomicU8 node in project.</td>
-</tr>
-<tr>
-  <td>16</td>
-  <td><code>EDGE_DIRECTION</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>EDGE_DIRECTION node in host/src/main.rs.</td>
-</tr>
-<tr>
-  <td>17</td>
-  <td><code>AtomicU8</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>AtomicU8 node in project.</td>
-</tr>
-<tr>
-  <td>18</td>
-  <td><code>build.sh script</code><br><small style="color:var(--muted)">build.sh</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>build.sh script node in build.sh.</td>
-</tr>
-<tr>
-  <td>19</td>
-  <td><code>build.sh</code><br><small style="color:var(--muted)">build.sh</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>build.sh node in build.sh.</td>
-</tr>
-<tr>
-  <td>20</td>
-  <td><code>build.ps1</code><br><small style="color:var(--muted)">build.ps1</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>build.ps1 node in build.ps1.</td>
-</tr>
 </table>
 
 <div class="grid">
@@ -392,80 +469,84 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>README.md</code></td><td>13 nodes</td></tr>
+      <tr><td><code>host/src/web_gui.rs</code></td><td>21 nodes</td></tr>
+<tr><td><code>README.md</code></td><td>13 nodes</td></tr>
 <tr><td><code>build.sh</code></td><td>2 nodes</td></tr>
+<tr><td><code>run-host.sh</code></td><td>2 nodes</td></tr>
+<tr><td><code>run-receiver.sh</code></td><td>2 nodes</td></tr>
 <tr><td><code>build.ps1</code></td><td>1 nodes</td></tr>
-<tr><td><code>host/src/main.rs</code></td><td>1 nodes</td></tr>
 <tr><td><code>receiver/src/main.rs</code></td><td>1 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: contains x13, references x2. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x35, calls x20, references x13, imports x8. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
 
 <!-- ====== 3. CLI & Skill Installers ====== -->
 <h2 id="cli-skills">3. CLI &amp; Skill Installers</h2>
-<p>CLI &amp; Skill Installers groups implementation around mainrs, host, receiver, web, mostly in host/src/main.rs, receiver/src/main.rs, host/src/web_gui.rs. This section covers 228 nodes and 402 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>CLI &amp; Skill Installers groups implementation around mainrs, host, receiver, hostrs, mostly in host/src/main.rs, receiver/src/main.rs, host/src/macos_host.rs. This section covers 328 nodes and 652 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: CLI &amp; Skill Installers (228 nodes, 402 edges)
+    %% Section: CLI &amp; Skill Installers (328 nodes, 652 edges)
+    subgraph cli_skills_host_src_main_rs_73a5450b["host/src/main.rs"]
+        host_src_main_2cf1d6ba("main.rs")
+        host_src_main_main_87004234("main()<br/><small>host/src/main.rs</small>")
+        host_src_main_edgedirection_19e25450("EdgeDirection<br/><small>host/src/main.rs</small>")
+        host_src_main_edgedirection_parse_9c2a7180("parse()<br/><small>host/src/main.rs</small>")
+        host_src_main_edgedirection_to_slot_index_1de4a372("to_slot_index()<br/><small>host/src/main.rs</small>")
+        host_src_main_edgedirection_reciprocal_return_ed_c956ecd4("reciprocal_return_edge()<br/><small>host/src/main.rs</small>")
+        host_src_main_slotchannel_cf19c057("SlotChannel<br/><small>host/src/main.rs</small>")
+        host_src_main_slotchannel_new_42aeb78c("new()<br/><small>host/src/main.rs</small>")
+        host_src_main_slotchannel_notify_change_13d48a70("notify_change()<br/><small>host/src/main.rs</small>")
+        host_src_main_slotchannel_wait_timeout_928e5907("wait_timeout()<br/><small>host/src/main.rs</small>")
+    end
     subgraph cli_skills_receiver_src_main_rs_687ecddc["receiver/src/main.rs"]
         receiver_src_main_27e70eb4("main.rs")
         receiver_src_main_handle_connection_6d2ddb88("handle_connection()<br/><small>receiver/src/main.rs</small>")
         receiver_src_main_returnedge_725f957f("ReturnEdge<br/><small>receiver/src/main.rs</small>")
         receiver_src_main_returnedge_parse_e483e4ee("parse()<br/><small>receiver/src/main.rs</small>")
-        receiver_src_main_mark_control_session_6e9b477e("mark_control_session()<br/><small>receiver/src/main.rs</small>")
-        receiver_src_main_receive_binary_file_226f6b1d("receive_binary_file()<br/><small>receiver/src/main.rs</small>")
-        receiver_src_main_receive_image_to_clipboard_a3e78681("receive_image_to_clipboard()<br/><small>receiver/src/main.rs</small>")
-        receiver_src_main_open_terminal_at_path_8ca1461c("open_terminal_at_path()<br/><small>receiver/src/main.rs</small>")
-        receiver_src_main_execute_reverse_handoff_3ddcd6e2("execute_reverse_handoff()<br/><small>receiver/src/main.rs</small>")
-        receiver_src_main_open_url_in_browser_25d40946("open_url_in_browser()<br/><small>receiver/src/main.rs</small>")
-        receiver_src_main_unescape_text_line_cfe48a2a("unescape_text_line()<br/><small>receiver/src/main.rs</small>")
-        receiver_src_main_copy_text_to_wayland_clipboard_00090a52("to wayland clipboard()<br/><small>receiver/src/main.rs</small>")
+        receiver_src_main_returnedge_from_u8_80874c07("from_u8()<br/><small>receiver/src/main.rs</small>")
+        receiver_src_main_returnedge_to_u8_2ccd001c("to_u8()<br/><small>receiver/src/main.rs</small>")
     end
-    subgraph cli_skills_host_src_main_rs_73a5450b["host/src/main.rs"]
-        host_src_main_2cf1d6ba("main.rs")
-        host_src_main_execute_handoff_87404872("execute_handoff()<br/><small>host/src/main.rs</small>")
-        host_src_main_main_87004234("main()<br/><small>host/src/main.rs</small>")
-        host_src_main_edgedirection_19e25450("EdgeDirection<br/><small>host/src/main.rs</small>")
-        host_src_main_edgedirection_parse_9c2a7180("parse()<br/><small>host/src/main.rs</small>")
-    end
-    host_src_web_gui_16ccde2b("web_gui.rs")
+    host_src_linux_host_77dd91d3("linux_host.rs")
+    host_src_macos_host_eab07beb("macos_host.rs")
     host_src_main_edgedirection_19e25450 -->|method| host_src_main_edgedirection_parse_9c2a7180
+    host_src_main_edgedirection_19e25450 -->|method| host_src_main_edgedirection_to_slot_index_1de4a372
+    host_src_main_edgedirection_19e25450 -->|method| host_src_main_edgedirection_reciprocal_return_ed_c956ecd4
     receiver_src_main_returnedge_725f957f -->|method| receiver_src_main_returnedge_parse_e483e4ee
-    receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_mark_control_session_6e9b477e
+    receiver_src_main_returnedge_725f957f -->|method| receiver_src_main_returnedge_from_u8_80874c07
+    receiver_src_main_returnedge_725f957f -->|method| receiver_src_main_returnedge_to_u8_2ccd001c
+    host_src_main_slotchannel_cf19c057 -->|method| host_src_main_slotchannel_new_42aeb78c
+    host_src_main_slotchannel_cf19c057 -->|method| host_src_main_slotchannel_notify_change_13d48a70
+    host_src_main_slotchannel_cf19c057 -->|method| host_src_main_slotchannel_wait_timeout_928e5907
     receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_returnedge_parse_e483e4ee
-    receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_receive_binary_file_226f6b1d
-    receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_receive_image_to_clipboard_a3e78681
-    receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_open_terminal_at_path_8ca1461c
-    receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_execute_reverse_handoff_3ddcd6e2
-    receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_open_url_in_browser_25d40946
-    receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_unescape_text_line_cfe48a2a
-    receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_copy_text_to_wayland_clipboard_00090a52
-    %% Omitted for readability: 210 nodes, 0 edges
+    receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_returnedge_to_u8_2ccd001c
+    receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_returnedge_from_u8_80874c07
+    host_src_linux_host_77dd91d3 -->|imports| host_src_main_edgedirection_19e25450
+    %% Omitted for readability: 310 nodes, 0 edges
+    class host_src_main_2cf1d6ba module;
+    class host_src_main_main_87004234 function;
+    class host_src_main_edgedirection_19e25450 klass;
+    class host_src_main_edgedirection_parse_9c2a7180 function;
+    class host_src_main_edgedirection_to_slot_index_1de4a372 function;
+    class host_src_main_edgedirection_reciprocal_return_ed_c956ecd4 function;
+    class host_src_main_slotchannel_cf19c057 klass;
+    class host_src_main_slotchannel_new_42aeb78c function;
+    class host_src_main_slotchannel_notify_change_13d48a70 function;
+    class host_src_main_slotchannel_wait_timeout_928e5907 function;
     class receiver_src_main_27e70eb4 module;
     class receiver_src_main_handle_connection_6d2ddb88 function;
     class receiver_src_main_returnedge_725f957f klass;
     class receiver_src_main_returnedge_parse_e483e4ee function;
-    class receiver_src_main_mark_control_session_6e9b477e function;
-    class receiver_src_main_receive_binary_file_226f6b1d function;
-    class receiver_src_main_receive_image_to_clipboard_a3e78681 entry;
-    class receiver_src_main_open_terminal_at_path_8ca1461c function;
-    class receiver_src_main_execute_reverse_handoff_3ddcd6e2 function;
-    class receiver_src_main_open_url_in_browser_25d40946 function;
-    class receiver_src_main_unescape_text_line_cfe48a2a function;
-    class receiver_src_main_copy_text_to_wayland_clipboard_00090a52 entry;
-    class host_src_main_2cf1d6ba module;
-    class host_src_main_execute_handoff_87404872 function;
-    class host_src_main_main_87004234 function;
-    class host_src_main_edgedirection_19e25450 klass;
-    class host_src_main_edgedirection_parse_9c2a7180 function;
-    class host_src_web_gui_16ccde2b module;
+    class receiver_src_main_returnedge_from_u8_80874c07 function;
+    class receiver_src_main_returnedge_to_u8_2ccd001c function;
+    class host_src_linux_host_77dd91d3 module;
+    class host_src_macos_host_eab07beb module;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -489,243 +570,243 @@ flowchart LR
 </tr>
 <tr>
   <td>1</td>
-  <td><code>AtomicU32</code><br><small style="color:var(--muted)"></small></td>
+  <td><code>CGPoint</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>AtomicU32 node in project.</td>
+  <td>CGPoint node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>2</td>
-  <td><code>host/src/main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td><span class="tag tag-class">Module</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>AtomicBool</code><br><code>AtomicI32</code><br><code>AtomicIsize</code><br>+39 more</td>
-  <td>host/src/main.rs node in host/src/main.rs.</td>
+  <td><code>warp_linux_cursor()</code><br><small style="color:var(--muted)">host/src/linux_host.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>switch_to_local()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>warp_linux_cursor() node in host/src/linux_host.rs.</td>
 </tr>
 <tr>
   <td>3</td>
-  <td><code>CF_DIB_FMT</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td><span class="tag tag-class">Class</span></td>
+  <td><code>macos_host.rs</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-class">Module</span></td>
   <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>CF_DIB_FMT node in host/src/main.rs.</td>
+  <td><code>ACTIVE_REMOTE_SLOT</code><br><small style="color:var(--muted)">host/src/main.rs</small><br><code>c_void</code><br><code>command</code><br>+17 more</td>
+  <td>macos_host.rs node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>4</td>
-  <td><code>CF_DIBV5_FMT</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
+  <td><code>CFMachPortCreateRunLoopSource()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>run_macos_host_loop()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>CF_DIBV5_FMT node in host/src/main.rs.</td>
+  <td>CFMachPortCreateRunLoopSource() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>5</td>
-  <td><code>CF_HDROP_FMT</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
+  <td><code>CFRunLoopAddSource()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>run_macos_host_loop()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>CF_HDROP_FMT node in host/src/main.rs.</td>
+  <td>CFRunLoopAddSource() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>6</td>
-  <td><code>CF_UNICODETEXT_FMT</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
+  <td><code>CFRunLoopGetCurrent()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>run_macos_host_loop()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>CF_UNICODETEXT_FMT node in host/src/main.rs.</td>
+  <td>CFRunLoopGetCurrent() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>7</td>
-  <td><code>FILE_CHUNK_SIZE</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
+  <td><code>CFRunLoopRun()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>run_macos_host_loop()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>FILE_CHUNK_SIZE node in host/src/main.rs.</td>
+  <td>CFRunLoopRun() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>8</td>
-  <td><code>LAST_CLIP_SEQ</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td><span class="tag tag-cmd">Entry</span></td>
-  <td>External entry / no inbound edge</td>
+  <td><code>CGAssociateMouseAndMouseCursorPosition()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>set_macos_remote_capture()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>LAST_CLIP_SEQ node in host/src/main.rs.</td>
+  <td>CGAssociateMouseAndMouseCursorPosition() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>9</td>
-  <td><code>MAX_CLIPBOARD_TEXT_BYTES</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td><span class="tag tag-cmd">Entry</span></td>
-  <td>External entry / no inbound edge</td>
+  <td><code>CGDisplayPixelsHigh()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>update_macos_screen_bounds()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>MAX_CLIPBOARD_TEXT_BYTES node in host/src/main.rs.</td>
+  <td>CGDisplayPixelsHigh() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>10</td>
-  <td><code>MAX_IMAGE_BYTES</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
+  <td><code>CGDisplayPixelsWide()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>update_macos_screen_bounds()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>MAX_IMAGE_BYTES node in host/src/main.rs.</td>
+  <td>CGDisplayPixelsWide() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>11</td>
-  <td><code>closeclipboard</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-cmd">Entry</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>CGEventGetIntegerValueField()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>macos_tap_callback()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>closeclipboard node in project.</td>
+  <td>CGEventGetIntegerValueField() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>12</td>
-  <td><code>cursor</code><br><small style="color:var(--muted)"></small></td>
+  <td><code>CGEventGetLocation()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>macos_tap_callback()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>cursor node in project.</td>
+  <td>CGEventGetLocation() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>13</td>
-  <td><code>dragqueryfilew</code><br><small style="color:var(--muted)"></small></td>
+  <td><code>CGEventTapCreate()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>run_macos_host_loop()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>CGEventTapCreate() node in host/src/macos_host.rs.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>CGEventTapEnable()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>macos_tap_callback()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small><br><code>run_macos_host_loop()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>CGEventTapEnable() node in host/src/macos_host.rs.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>CGMainDisplayID()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>update_macos_screen_bounds()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>CGMainDisplayID() node in host/src/macos_host.rs.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>CGWarpMouseCursorPosition()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>set_macos_remote_capture()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>CGWarpMouseCursorPosition() node in host/src/macos_host.rs.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>EVENT_TAP_PORT</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>EVENT_TAP_PORT node in host/src/macos_host.rs.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>K_CG_EVENT_KEY_DOWN</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>K_CG_EVENT_KEY_DOWN node in host/src/macos_host.rs.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>K_CG_EVENT_KEY_UP</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>K_CG_EVENT_KEY_UP node in host/src/macos_host.rs.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>K_CG_EVENT_LEFT_MOUSE_DOWN</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>K_CG_EVENT_LEFT_MOUSE_DOWN node in host/src/macos_host.rs.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>K_CG_EVENT_LEFT_MOUSE_DRAGGED</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
   <td>Supports retrieval-augmented Q&amp;A or streaming chat.</td>
 </tr>
 <tr>
-  <td>14</td>
-  <td><code>emptyclipboard</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-cmd">Entry</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>emptyclipboard node in project.</td>
-</tr>
-<tr>
-  <td>15</td>
-  <td><code>foundation</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>foundation node in project.</td>
-</tr>
-<tr>
-  <td>16</td>
-  <td><code>gdi</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>gdi node in project.</td>
-</tr>
-<tr>
-  <td>17</td>
-  <td><code>getclipboarddata</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-cmd">Entry</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>getclipboarddata node in project.</td>
-</tr>
-<tr>
-  <td>18</td>
-  <td><code>getclipboardsequencenumber</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-cmd">Entry</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>getclipboardsequencenumber node in project.</td>
-</tr>
-<tr>
-  <td>19</td>
-  <td><code>globalalloc</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>globalalloc node in project.</td>
-</tr>
-<tr>
-  <td>20</td>
-  <td><code>globallock</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>globallock node in project.</td>
-</tr>
-<tr>
-  <td>21</td>
-  <td><code>globalsize</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>globalsize node in project.</td>
-</tr>
-<tr>
   <td>22</td>
-  <td><code>globalunlock</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>K_CG_EVENT_LEFT_MOUSE_UP</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>globalunlock node in project.</td>
+  <td>K_CG_EVENT_LEFT_MOUSE_UP node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>23</td>
-  <td><code>gmem_moveable</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>K_CG_EVENT_MOUSE_MOVED</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>gmem_moveable node in project.</td>
+  <td>K_CG_EVENT_MOUSE_MOVED node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>24</td>
-  <td><code>instant</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>K_CG_EVENT_OTHER_MOUSE_DOWN</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>instant node in project.</td>
+  <td>K_CG_EVENT_OTHER_MOUSE_DOWN node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>25</td>
-  <td><code>isclipboardformatavailable</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-cmd">Entry</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>K_CG_EVENT_OTHER_MOUSE_DRAGGED</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>isclipboardformatavailable node in project.</td>
+  <td>Supports retrieval-augmented Q&amp;A or streaming chat.</td>
 </tr>
 <tr>
   <td>26</td>
-  <td><code>keyboardandmouse</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>K_CG_EVENT_OTHER_MOUSE_UP</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>keyboardandmouse node in project.</td>
+  <td>K_CG_EVENT_OTHER_MOUSE_UP node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>27</td>
-  <td><code>openclipboard</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-cmd">Entry</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>K_CG_EVENT_RIGHT_MOUSE_DOWN</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>openclipboard node in project.</td>
+  <td>K_CG_EVENT_RIGHT_MOUSE_DOWN node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>28</td>
-  <td><code>openprocess</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>K_CG_EVENT_RIGHT_MOUSE_DRAGGED</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>openprocess node in project.</td>
+  <td>Supports retrieval-augmented Q&amp;A or streaming chat.</td>
 </tr>
 <tr>
   <td>29</td>
-  <td><code>osstringext</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>K_CG_EVENT_RIGHT_MOUSE_UP</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>osstringext node in project.</td>
+  <td>K_CG_EVENT_RIGHT_MOUSE_UP node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
   <td>30</td>
-  <td><code>process_query_limited_information</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>K_CG_EVENT_SCROLL_WHEEL</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>process_query_limited_information node in project.</td>
+  <td>K_CG_EVENT_SCROLL_WHEEL node in host/src/macos_host.rs.</td>
 </tr>
 </table>
 
@@ -734,72 +815,85 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>host/src/main.rs</code></td><td>81 nodes</td></tr>
-<tr><td><code>receiver/src/main.rs</code></td><td>60 nodes</td></tr>
-<tr><td><code>host/src/web_gui.rs</code></td><td>12 nodes</td></tr>
-<tr><td><code>host/src/vk_map.rs</code></td><td>2 nodes</td></tr>
+      <tr><td><code>host/src/main.rs</code></td><td>116 nodes</td></tr>
+<tr><td><code>receiver/src/main.rs</code></td><td>78 nodes</td></tr>
+<tr><td><code>host/src/macos_host.rs</code></td><td>46 nodes</td></tr>
+<tr><td><code>host/src/linux_host.rs</code></td><td>11 nodes</td></tr>
 <tr><td><code>host/install_background_service.ps1</code></td><td>1 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: contains x134, calls x100, references x78, imports x73. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x223, calls x182, imports x114, references x109. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
 
-<!-- ====== 4. Input Adapterrs Receiver ====== -->
-<h2 id="input-adapterrs-receiver">4. Input Adapterrs Receiver</h2>
-<p>Input Adapterrs Receiver groups implementation around input, adapterrs, receiver, emit, mostly in receiver/src/input_adapter.rs. This section covers 14 nodes and 14 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<!-- ====== 4. Tests & Fixtures ====== -->
+<h2 id="tests-fixtures">4. Tests &amp; Fixtures</h2>
+<p>Tests &amp; Fixtures groups implementation around input, adapterrs, receiver, mouse, mostly in receiver/src/input_adapter.rs. This section covers 51 nodes and 94 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Input Adapterrs Receiver (14 nodes, 14 edges)
-    subgraph input_adapterrs_receiver_External_generated_e36e9632["External / generated"]
-        virtualdevice_502b93eb("VirtualDevice")
-        virtualdevicebuilder_6e941ad7("virtualdevicebuilder")
-        attributeset_c151133c("attributeset")
-        eventtype_aea96519("eventtype")
-        inputevent_925bce7d("inputevent")
-        key_a62f2225("key")
-        relativeaxistype_e8ba3446("relativeaxistype")
-    end
-    subgraph input_adapterrs_receiver_receiver_src_input_adap_c0dd4415["receiver/src/input_adapter.rs"]
-        receiver_src_input_adapter_6fe877f0("input_adapter.rs")
-        receiver_src_input_adapter_inputadapter_4cbcd1aa("InputAdapter<br/><small>receiver/src/input_adapter.rs</small>")
-        receiver_src_input_adapter_inputadapter_emit_mou_47c9e68d("emit_mouse_click()<br/><small>receiver/src/input_adapter.rs</small>")
-        receiver_src_input_adapter_inputadapter_new_6ef6d95c("new()<br/><small>receiver/src/input_adapter.rs</small>")
-        receiver_src_input_adapter_inputadapter_emit_key_860da4c7("emit_key()<br/><small>receiver/src/input_adapter.rs</small>")
-        receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca("emit_mouse_move()<br/><small>receiver/src/input_adapter.rs</small>")
-        receiver_src_input_adapter_inputadapter_emit_mou_05efa197("emit_mouse_wheel()<br/><small>receiver/src/input_adapter.rs</small>")
-    end
-    receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_emit_mou_47c9e68d
-    receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_new_6ef6d95c
-    receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_emit_key_860da4c7
+    %% Section: Tests &amp; Fixtures (51 nodes, 94 edges)
+    receiver_src_input_adapter_6fe877f0("input_adapter.rs")
+    receiver_src_input_adapter_inputadapter_4cbcd1aa("InputAdapter<br/><small>receiver/src/input_adapter.rs</small>")
+    receiver_src_input_adapter_move_mouse_relative_039f9eb0("move_mouse_relative()<br/><small>receiver/src/input_adapter.rs</small>")
+    receiver_src_input_adapter_mouse_click_de295e21("mouse_click()<br/><small>receiver/src/input_adapter.rs</small>")
+    receiver_src_input_adapter_display_bounds_6684322f("display_bounds()<br/><small>receiver/src/input_adapter.rs</small>")
+    receiver_src_input_adapter_inputadapter_emit_key_860da4c7("emit_key()<br/><small>receiver/src/input_adapter.rs</small>")
+    receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca("emit_mouse_move()<br/><small>receiver/src/input_adapter.rs</small>")
+    receiver_src_input_adapter_inputadapter_emit_mou_05efa197("emit_mouse_wheel()<br/><small>receiver/src/input_adapter.rs</small>")
+    receiver_src_input_adapter_inputadapter_new_6ef6d95c("new()<br/><small>receiver/src/input_adapter.rs</small>")
+    receiver_src_input_adapter_inputadapter_emit_mou_47c9e68d("emit_mouse_click()<br/><small>receiver/src/input_adapter.rs</small>")
+    receiver_src_input_adapter_inputadapter_warp_cur_0a03f935("warp_cursor()<br/><small>receiver/src/input_adapter.rs</small>")
+    receiver_src_input_adapter_cursor_pos_eb35a0b1("cursor_pos()<br/><small>receiver/src/input_adapter.rs</small>")
+    receiver_src_input_adapter_cgeventcreate_80bf0789("CGEventCreate()<br/><small>receiver/src/input_adapter.rs</small>")
+    receiver_src_input_adapter_cgeventgetlocation_8eab799e("CGEventGetLocation()<br/><small>receiver/src/input_adapter.rs</small>")
+    receiver_src_input_adapter_cfrelease_a4b91423("CFRelease()<br/><small>receiver/src/input_adapter.rs</small>")
+    receiver_src_input_adapter_cgmaindisplayid_6cdc73e4("CGMainDisplayID()<br/><small>receiver/src/input_adapter.rs</small>")
+    receiver_src_input_adapter_cgdisplaypixelswide_4fb7472b("CGDisplayPixelsWide()<br/><small>receiver/src/input_adapter.rs</small>")
+    receiver_src_input_adapter_cgdisplaypixelshigh_2411fbf4("CGDisplayPixelsHigh()<br/><small>receiver/src/input_adapter.rs</small>")
     receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca
     receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_emit_mou_05efa197
-    receiver_src_input_adapter_6fe877f0 -->|imports| virtualdevice_502b93eb
-    receiver_src_input_adapter_6fe877f0 -->|imports| virtualdevicebuilder_6e941ad7
-    receiver_src_input_adapter_6fe877f0 -->|imports| attributeset_c151133c
-    receiver_src_input_adapter_6fe877f0 -->|imports| eventtype_aea96519
-    receiver_src_input_adapter_6fe877f0 -->|imports| inputevent_925bce7d
-    receiver_src_input_adapter_6fe877f0 -->|imports| key_a62f2225
-    receiver_src_input_adapter_6fe877f0 -->|imports| relativeaxistype_e8ba3446
-    class virtualdevice_502b93eb klass;
-    class virtualdevicebuilder_6e941ad7 function;
-    class attributeset_c151133c function;
-    class eventtype_aea96519 function;
-    class inputevent_925bce7d function;
-    class key_a62f2225 function;
-    class relativeaxistype_e8ba3446 function;
+    receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_new_6ef6d95c
+    receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_emit_mou_47c9e68d
+    receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_emit_key_860da4c7
+    receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_warp_cur_0a03f935
+    receiver_src_input_adapter_cursor_pos_eb35a0b1 -->|calls| receiver_src_input_adapter_cgeventcreate_80bf0789
+    receiver_src_input_adapter_cursor_pos_eb35a0b1 -->|calls| receiver_src_input_adapter_cgeventgetlocation_8eab799e
+    receiver_src_input_adapter_cursor_pos_eb35a0b1 -->|calls| receiver_src_input_adapter_cfrelease_a4b91423
+    receiver_src_input_adapter_display_bounds_6684322f -->|calls| receiver_src_input_adapter_cgmaindisplayid_6cdc73e4
+    receiver_src_input_adapter_display_bounds_6684322f -->|calls| receiver_src_input_adapter_cgdisplaypixelswide_4fb7472b
+    receiver_src_input_adapter_display_bounds_6684322f -->|calls| receiver_src_input_adapter_cgdisplaypixelshigh_2411fbf4
+    receiver_src_input_adapter_inputadapter_emit_mou_47c9e68d -->|calls| receiver_src_input_adapter_mouse_click_de295e21
+    receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca -->|calls| receiver_src_input_adapter_move_mouse_relative_039f9eb0
+    receiver_src_input_adapter_inputadapter_warp_cur_0a03f935 -->|calls| receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca
+    receiver_src_input_adapter_mouse_click_de295e21 -->|calls| receiver_src_input_adapter_cursor_pos_eb35a0b1
+    receiver_src_input_adapter_mouse_click_de295e21 -->|calls| receiver_src_input_adapter_cfrelease_a4b91423
+    receiver_src_input_adapter_move_mouse_relative_039f9eb0 -->|calls| receiver_src_input_adapter_display_bounds_6684322f
+    receiver_src_input_adapter_move_mouse_relative_039f9eb0 -->|calls| receiver_src_input_adapter_cursor_pos_eb35a0b1
+    receiver_src_input_adapter_move_mouse_relative_039f9eb0 -->|calls| receiver_src_input_adapter_cfrelease_a4b91423
+    %% Omitted for readability: 33 nodes, 0 edges
     class receiver_src_input_adapter_6fe877f0 module;
     class receiver_src_input_adapter_inputadapter_4cbcd1aa klass;
-    class receiver_src_input_adapter_inputadapter_emit_mou_47c9e68d entry;
-    class receiver_src_input_adapter_inputadapter_new_6ef6d95c function;
+    class receiver_src_input_adapter_move_mouse_relative_039f9eb0 function;
+    class receiver_src_input_adapter_mouse_click_de295e21 entry;
+    class receiver_src_input_adapter_display_bounds_6684322f function;
     class receiver_src_input_adapter_inputadapter_emit_key_860da4c7 function;
     class receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca function;
     class receiver_src_input_adapter_inputadapter_emit_mou_05efa197 function;
+    class receiver_src_input_adapter_inputadapter_new_6ef6d95c function;
+    class receiver_src_input_adapter_inputadapter_emit_mou_47c9e68d entry;
+    class receiver_src_input_adapter_inputadapter_warp_cur_0a03f935 function;
+    class receiver_src_input_adapter_cursor_pos_eb35a0b1 function;
+    class receiver_src_input_adapter_cgeventcreate_80bf0789 function;
+    class receiver_src_input_adapter_cgeventgetlocation_8eab799e function;
+    class receiver_src_input_adapter_cfrelease_a4b91423 function;
+    class receiver_src_input_adapter_cgmaindisplayid_6cdc73e4 function;
+    class receiver_src_input_adapter_cgdisplaypixelswide_4fb7472b function;
+    class receiver_src_input_adapter_cgdisplaypixelshigh_2411fbf4 function;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -823,54 +917,182 @@ flowchart LR
 </tr>
 <tr>
   <td>1</td>
-  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><code>CGPoint</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">receiver/src/main.rs</small></td>
-  <td><code>emit_key()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>emit_mouse_click()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>emit_mouse_move()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br>+2 more</td>
-  <td>InputAdapter node in receiver/src/input_adapter.rs.</td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>CGPoint node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
   <td>2</td>
-  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
-  <td><span class="tag tag-class">Module</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>attributeset</code><br><code>eventtype</code><br><code>inputevent</code><br>+4 more</td>
-  <td>input_adapter.rs node in receiver/src/input_adapter.rs.</td>
+  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">receiver/src/main.rs</small></td>
+  <td><code>emit_key()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>emit_mouse_click()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>emit_mouse_move()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br>+3 more</td>
+  <td>InputAdapter node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
   <td>3</td>
-  <td><code>.emit_key()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>.emit_key() node in receiver/src/input_adapter.rs.</td>
+  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>attributeset</code><br><code>c_void</code><br><code>eventtype</code><br>+6 more</td>
+  <td>input_adapter.rs node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
   <td>4</td>
-  <td><code>.emit_mouse_click()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
-  <td><span class="tag tag-cmd">Entry</span></td>
-  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><code>CFRelease()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>cursor_pos()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>key_event()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>mouse_click()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br>+2 more</td>
   <td>No direct outbound edge</td>
-  <td>.emit_mouse_click() node in receiver/src/input_adapter.rs.</td>
+  <td>CFRelease() node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
   <td>5</td>
-  <td><code>.emit_mouse_move()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><code>CGDisplayPixelsHigh()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
-  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><code>display_bounds()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>.emit_mouse_move() node in receiver/src/input_adapter.rs.</td>
+  <td>CGDisplayPixelsHigh() node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
   <td>6</td>
-  <td><code>.emit_mouse_wheel()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><code>CGDisplayPixelsWide()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
-  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><code>display_bounds()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>.emit_mouse_wheel() node in receiver/src/input_adapter.rs.</td>
+  <td>CGDisplayPixelsWide() node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
   <td>7</td>
+  <td><code>CGEventCreate()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>cursor_pos()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>CGEventCreate() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>CGEventCreateKeyboardEvent()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>key_event()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>CGEventCreateKeyboardEvent() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>CGEventCreateMouseEvent()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>mouse_click()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>move_mouse_relative()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>CGEventCreateMouseEvent() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>CGEventCreateScrollWheelEvent()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>scroll_wheel()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>CGEventCreateScrollWheelEvent() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>CGEventGetLocation()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>cursor_pos()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>CGEventGetLocation() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>CGEventPost()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>key_event()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>mouse_click()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>move_mouse_relative()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br>+1 more</td>
+  <td>No direct outbound edge</td>
+  <td>CGEventPost() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>CGMainDisplayID()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>display_bounds()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>CGMainDisplayID() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>CGWarpMouseCursorPosition()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>warp_cursor()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>CGWarpMouseCursorPosition() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>cursor_pos()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>mouse_click()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>move_mouse_relative()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><code>CFRelease()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>CGEventCreate()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>CGEventGetLocation()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>cursor_pos() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>display_bounds()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>move_mouse_relative()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><code>CGDisplayPixelsHigh()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>CGDisplayPixelsWide()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>CGMainDisplayID()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>display_bounds() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>evdev_to_macos_keycode()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>emit_key()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>to macos keycode()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>evdev_to_macos_keycode() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>evdev_to_windows_vk()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>emit_key()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>navigation and letters()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>evdev_to_windows_vk() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>.emit_key()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><code>evdev_to_macos_keycode()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>evdev_to_windows_vk()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>key_event()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>.emit_key() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>.emit_mouse_click()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-cmd">Entry</span></td>
+  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><code>mouse_click()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>.emit_mouse_click() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>.emit_mouse_move()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>warp_cursor()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><code>move_mouse_relative()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>.emit_mouse_move() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>.emit_mouse_wheel()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><code>scroll_wheel()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>.emit_mouse_wheel() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>23</td>
   <td><code>.new()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
@@ -878,60 +1100,60 @@ flowchart LR
   <td>.new() node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
-  <td>8</td>
-  <td><code>VirtualDevice</code><br><small style="color:var(--muted)"></small></td>
+  <td>24</td>
+  <td><code>.warp_cursor()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><code>emit_mouse_move()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>warp_cursor()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>warp_hyprland_cursor()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>.warp_cursor() node in receiver/src/input_adapter.rs.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>K_CG_EVENT_LEFT_MOUSE_DOWN</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
-  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>VirtualDevice node in project.</td>
+  <td>K_CG_EVENT_LEFT_MOUSE_DOWN node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
-  <td>9</td>
-  <td><code>attributeset</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>26</td>
+  <td><code>K_CG_EVENT_LEFT_MOUSE_DRAGGED</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>attributeset node in project.</td>
+  <td>Supports retrieval-augmented Q&amp;A or streaming chat.</td>
 </tr>
 <tr>
-  <td>10</td>
-  <td><code>eventtype</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>27</td>
+  <td><code>K_CG_EVENT_LEFT_MOUSE_UP</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>eventtype node in project.</td>
+  <td>K_CG_EVENT_LEFT_MOUSE_UP node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
-  <td>11</td>
-  <td><code>inputevent</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>28</td>
+  <td><code>K_CG_EVENT_MOUSE_MOVED</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>inputevent node in project.</td>
+  <td>K_CG_EVENT_MOUSE_MOVED node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
-  <td>12</td>
-  <td><code>key</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>29</td>
+  <td><code>K_CG_EVENT_OTHER_MOUSE_DOWN</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>key node in project.</td>
+  <td>K_CG_EVENT_OTHER_MOUSE_DOWN node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
-  <td>13</td>
-  <td><code>relativeaxistype</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>30</td>
+  <td><code>K_CG_EVENT_OTHER_MOUSE_UP</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>relativeaxistype node in project.</td>
-</tr>
-<tr>
-  <td>14</td>
-  <td><code>virtualdevicebuilder</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>virtualdevicebuilder node in project.</td>
+  <td>K_CG_EVENT_OTHER_MOUSE_UP node in receiver/src/input_adapter.rs.</td>
 </tr>
 </table>
 
@@ -940,29 +1162,29 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>receiver/src/input_adapter.rs</code></td><td>7 nodes</td></tr>
+      <tr><td><code>receiver/src/input_adapter.rs</code></td><td>42 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: imports x7, method x5, references x1, contains x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x35, calls x33, references x11, imports x9. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
 
-<!-- ====== 5. Run Hostsh Script ====== -->
-<h2 id="run-hostsh-script">5. Run Hostsh Script</h2>
-<p>Run Hostsh Script groups implementation around run, hostsh, script, mostly in run-host.sh. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<!-- ====== 5. Maprs Host Translate ====== -->
+<h2 id="maprs-host-translate">5. Maprs Host Translate</h2>
+<p>Maprs Host Translate groups implementation around maprs, host, translate, mostly in host/src/vk_map.rs. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Run Hostsh Script (2 nodes, 1 edges)
-    run_host_sh_run_host_739c688d("run-host.sh")
-    run_host_sh_entry_cba216b5("run-host.sh script<br/><small>run-host.sh</small>")
-    run_host_sh_run_host_739c688d -->|contains| run_host_sh_entry_cba216b5
-    class run_host_sh_run_host_739c688d function;
-    class run_host_sh_entry_cba216b5 function;
+    %% Section: Maprs Host Translate (2 nodes, 1 edges)
+    host_src_vk_map_e00ee964("vk_map.rs")
+    host_src_vk_map_translate_vk_f3eae25d("translate_vk()<br/><small>host/src/vk_map.rs</small>")
+    host_src_vk_map_e00ee964 -->|contains| host_src_vk_map_translate_vk_f3eae25d
+    class host_src_vk_map_e00ee964 module;
+    class host_src_vk_map_translate_vk_f3eae25d function;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -986,19 +1208,19 @@ flowchart LR
 </tr>
 <tr>
   <td>1</td>
-  <td><code>run-host.sh script</code><br><small style="color:var(--muted)">run-host.sh</small></td>
-  <td><span class="tag tag-func">Function</span></td>
+  <td><code>vk_map.rs</code><br><small style="color:var(--muted)">host/src/vk_map.rs</small></td>
+  <td><span class="tag tag-class">Module</span></td>
   <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>run-host.sh script node in run-host.sh.</td>
+  <td>vk_map.rs node in host/src/vk_map.rs.</td>
 </tr>
 <tr>
   <td>2</td>
-  <td><code>run-host.sh</code><br><small style="color:var(--muted)">run-host.sh</small></td>
+  <td><code>translate_vk()</code><br><small style="color:var(--muted)">host/src/vk_map.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>run-host.sh node in run-host.sh.</td>
+  <td>translate_vk() node in host/src/vk_map.rs.</td>
 </tr>
 </table>
 
@@ -1007,7 +1229,7 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>run-host.sh</code></td><td>2 nodes</td></tr>
+      <tr><td><code>host/src/vk_map.rs</code></td><td>2 nodes</td></tr>
     </table>
   </div>
   <div class="card">
@@ -1017,75 +1239,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 6. Run Receiversh Script ====== -->
-<h2 id="run-receiversh-script">6. Run Receiversh Script</h2>
-<p>Run Receiversh Script groups implementation around run, receiversh, script, mostly in run-receiver.sh. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
-
-<div class="mermaid">
-%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
-flowchart LR
-    %% Section: Run Receiversh Script (2 nodes, 1 edges)
-    run_receiver_sh_run_receiver_f14e95e0("run-receiver.sh")
-    run_receiver_sh_entry_c5fc00b8("run-receiver.sh script<br/><small>run-receiver.sh</small>")
-    run_receiver_sh_run_receiver_f14e95e0 -->|contains| run_receiver_sh_entry_c5fc00b8
-    class run_receiver_sh_run_receiver_f14e95e0 function;
-    class run_receiver_sh_entry_c5fc00b8 function;
-    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
-    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
-    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
-    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
-    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
-    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
-    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
-    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
-    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
-</div>
-
-<h3>Call Details</h3>
-<table class="call-table">
-<tr>
-  <th style="width:5%">#</th>
-  <th style="width:28%">Node</th>
-  <th style="width:10%">Type</th>
-  <th style="width:17%">Caller</th>
-  <th style="width:20%">Callees</th>
-  <th style="width:20%">Description</th>
-</tr>
-<tr>
-  <td>1</td>
-  <td><code>run-receiver.sh script</code><br><small style="color:var(--muted)">run-receiver.sh</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>run-receiver.sh script node in run-receiver.sh.</td>
-</tr>
-<tr>
-  <td>2</td>
-  <td><code>run-receiver.sh</code><br><small style="color:var(--muted)">run-receiver.sh</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>run-receiver.sh node in run-receiver.sh.</td>
-</tr>
-</table>
-
-<div class="grid">
-  <div class="card">
-    <h4>Key Files</h4>
-    <table style="width:100%;font-size:0.85rem;">
-      <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>run-receiver.sh</code></td><td>2 nodes</td></tr>
-    </table>
-  </div>
-  <div class="card">
-    <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: contains x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
-  </div>
-</div>
-<hr>
-
-<!-- ====== 7. Host Tailscale Kvm ====== -->
-<h2 id="host-tailscale-kvm">7. Host Tailscale Kvm</h2>
+<!-- ====== 6. Host Tailscale Kvm ====== -->
+<h2 id="host-tailscale-kvm">6. Host Tailscale Kvm</h2>
 <p>Host Tailscale Kvm groups implementation around host, tailscale, kvm, cargotoml, mostly in host/Cargo.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1140,8 +1295,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 8. Receiver Tailscale Kvm ====== -->
-<h2 id="receiver-tailscale-kvm">8. Receiver Tailscale Kvm</h2>
+<!-- ====== 7. Receiver Tailscale Kvm ====== -->
+<h2 id="receiver-tailscale-kvm">7. Receiver Tailscale Kvm</h2>
 <p>Receiver Tailscale Kvm groups implementation around receiver, tailscale, kvm, cargotoml, mostly in receiver/Cargo.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1196,8 +1351,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 9. Run Hostps1 ====== -->
-<h2 id="run-hostps1">9. Run Hostps1</h2>
+<!-- ====== 8. Run Hostps1 ====== -->
+<h2 id="run-hostps1">8. Run Hostps1</h2>
 <p>Run Hostps1 groups implementation around run, hostps1, mostly in run-host.ps1. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1252,8 +1407,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 10. Run Receiverps1 ====== -->
-<h2 id="run-receiverps1">10. Run Receiverps1</h2>
+<!-- ====== 9. Run Receiverps1 ====== -->
+<h2 id="run-receiverps1">9. Run Receiverps1</h2>
 <p>Run Receiverps1 groups implementation around run, receiverps1, mostly in run-receiver.ps1. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1314,18 +1469,18 @@ flowchart LR
   <div class="card">
     <h4>Graph</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>Nodes</td><td>270</td></tr>
-      <tr><td>Edges</td><td>437</td></tr>
+      <tr><td>Nodes</td><td>436</td></tr>
+      <tr><td>Edges</td><td>848</td></tr>
       <tr><td>Hyperedges</td><td>0</td></tr>
-      <tr><td>Communities</td><td>33</td></tr>
-      <tr><td>Documented Sections</td><td>9</td></tr>
+      <tr><td>Communities</td><td>32</td></tr>
+      <tr><td>Documented Sections</td><td>8</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Edge Confidence</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>EXTRACTED</td><td>437</td></tr>
-      <tr><td>INFERRED</td><td>0</td></tr>
+      <tr><td>EXTRACTED</td><td>838</td></tr>
+      <tr><td>INFERRED</td><td>10</td></tr>
       <tr><td>AMBIGUOUS</td><td>0</td></tr>
     </table>
   </div>
@@ -1333,7 +1488,7 @@ flowchart LR
 
 <div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
   <p>tailscale-kvm — Architecture Documentation</p>
-  <p>Generated: 2026-11-07 04:12 UTC · graphify callflow-html</p>
+  <p>Generated: 2026-11-07 04:43 UTC · graphify callflow-html</p>
 </div>
 
 </div><!-- .container -->

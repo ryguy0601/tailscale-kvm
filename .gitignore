@@ -1,6 +1,8 @@
 /target
 **/*.rs.bk
 Cargo.lock
+kvm_layout.json
+config.txt
 
 # System / IDE
 .DS_Store
