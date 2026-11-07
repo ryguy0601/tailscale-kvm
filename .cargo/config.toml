@@ -1,0 +1,6 @@
+[target.x86_64-pc-windows-gnu]
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+[target.x86_64-pc-windows-gnullvm]
+linker = "rust-lld"
+rustflags = ["-Z", "gcc-ld=lld"]
