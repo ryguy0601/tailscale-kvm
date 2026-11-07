@@ -96,9 +96,9 @@
     "semantic_hash": ""
   },
   "windows-host/src/web_gui.rs": {
-    "mtime": 1794022508.273108,
-    "seen": 1794022609.0488575,
-    "ast_hash": "19f32c14db100c9c749b8752ff7ac324",
+    "mtime": 1794022673.4798603,
+    "seen": 1794022679.2777085,
+    "ast_hash": "96990145963a77cdd6ccedfd78bc79be",
     "semantic_hash": ""
   },
   "windows-host/gui_static/index.html": {

@@ -34,7 +34,9 @@ pub fn start_gui_server(port: u16) {
         let Ok(listener) = TcpListener::bind(&addr) else {
             return;
         };
-        println!("[*] KVM Visual Web Management Dashboard active at http://localhost:{}", port);
+        let url = format!("http://localhost:{}", port);
+        println!("[*] KVM Visual Web Management Dashboard active at {}", url);
+        open_browser(&url);
 
         for stream in listener.incoming().flatten() {
             thread::spawn(|| handle_http_client(stream));
@@ -145,4 +147,29 @@ fn get_tailscale_peers_json() -> String {
         }
     }
     "[]".to_string()
+}
+
+fn open_browser(url: &str) {
+    let u = url.to_string();
+    thread::spawn(move || {
+        thread::sleep(std::time::Duration::from_millis(500));
+        #[cfg(target_os = "windows")]
+        {
+            let _ = std::process::Command::new("cmd")
+                .args(["/C", "start", &u])
+                .spawn();
+        }
+        #[cfg(target_os = "macos")]
+        {
+            let _ = std::process::Command::new("open")
+                .arg(&u)
+                .spawn();
+        }
+        #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+        {
+            let _ = std::process::Command::new("xdg-open")
+                .arg(&u)
+                .spawn();
+        }
+    });
 }

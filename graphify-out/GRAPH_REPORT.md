@@ -1,17 +1,17 @@
 # Graph Report - tailscale-kvm  (2026-11-06)
 
 ## Corpus Check
-- 15 files · ~12,279 words
+- 15 files · ~12,337 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 4 file(s) not represented in the graph (top: (none) 3, .toml 1)
 
 ## Summary
-- 261 nodes · 426 edges · 35 communities (21 shown, 14 thin omitted)
+- 262 nodes · 428 edges · 34 communities (20 shown, 14 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `1146579a`
+- Built from commit: `47ed5894`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -35,7 +35,6 @@
 - start_windows_server_listener
 - AtomicBool
 - ReturnEdge
-- keyboard_hook_proc
 - main
 - web_gui.rs
 - RETURN_EDGE
@@ -73,7 +72,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (35 total, 14 thin omitted)
+## Communities (34 total, 14 thin omitted)
 
 ### Community 1 - "AtomicI32"
 Cohesion: 0.22
@@ -96,8 +95,8 @@ Cohesion: 0.18
 Nodes (10): 1. Starting the Receiver (Client Machine), 2. Starting the Host Controller, 🏗 Architecture & Tech Stack, Configuration File (`config.txt`), 🕸 Graphify Knowledge Graph, 🎮 How to Control, 🌟 Key Features, 📄 License (+2 more)
 
 ### Community 6 - "execute_handoff"
-Cohesion: 0.17
-Nodes (14): cancel_active_drag_and_release_mouse(), classify_window(), DragKind, Browser, Explorer, Other, execute_handoff(), looks_like_url() (+6 more)
+Cohesion: 0.11
+Nodes (25): cancel_active_drag_and_release_mouse(), classify_window(), DragKind, Browser, Explorer, Other, execute_handoff(), hide_edge_overlay() (+17 more)
 
 ### Community 7 - "main"
 Cohesion: 0.29
@@ -131,17 +130,13 @@ Nodes (3): REMOTE_HANDOFF_BUSY, REMOTE_MOUSE_LBUTTON, SWITCHED_SINGLE_MONITOR
 Cohesion: 0.33
 Nodes (6): parse_return_edge(), ReturnEdge, Bottom, Left, Right, Top
 
-### Community 20 - "keyboard_hook_proc"
-Cohesion: 0.23
-Nodes (11): hide_edge_overlay(), keyboard_hook_proc(), mouse_hook_proc(), overlay_wnd_proc(), send_fast_bytes(), show_edge_overlay(), start_connection_manager(), switch_active_peer() (+3 more)
-
 ### Community 21 - "main"
 Cohesion: 0.50
 Nodes (4): escape_text_for_transmission(), main(), start_cursorpos_worker(), start_wayland_clipboard_monitor()
 
 ### Community 22 - "web_gui.rs"
-Cohesion: 0.16
-Nodes (10): get_slot(), get_slot_peer(), get_tailscale_peers_json(), GUI_ACTIVE_DOWN, GUI_ACTIVE_LEFT, GUI_ACTIVE_RIGHT, GUI_ACTIVE_UP, handle_http_client() (+2 more)
+Cohesion: 0.15
+Nodes (11): get_slot(), get_slot_peer(), get_tailscale_peers_json(), GUI_ACTIVE_DOWN, GUI_ACTIVE_LEFT, GUI_ACTIVE_RIGHT, GUI_ACTIVE_UP, handle_http_client() (+3 more)
 
 ### Community 24 - "resolve_target_addr"
 Cohesion: 0.40
@@ -179,3 +174,5 @@ _Questions this graph is uniquely positioned to answer:_
   _Cohesion score 0.08 - nodes in this community are weakly interconnected._
 - **Why does `ActiveApp` connect `ActiveApp` to `linux-receiver/src/main.rs`?**
   _High betweenness centrality (0.024) - this node is a cross-community bridge._
+- **Should `execute_handoff` be split into smaller, more focused modules?**
+  _Cohesion score 0.1053763440860215 - nodes in this community are weakly interconnected._
