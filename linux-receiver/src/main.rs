@@ -1,6 +1,9 @@
 use evdev::uinput::VirtualDeviceBuilder;
 use evdev::{AttributeSet, EventType, InputEvent, Key, RelativeAxisType};
 use std::env;
+use std::fs::File;
+use std::io::Write as StdWrite;
+use std::path::PathBuf;
 use std::process::Command;
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;
@@ -71,10 +74,66 @@ fn open_url_in_browser(url: String) {
         } else {
             url
         };
-        let _ = tokio::process::Command::new("xdg-open")
-            .arg(formatted)
-            .spawn();
+        // Prefer firefox if present, fallback to xdg-open
+        let mut cmd = tokio::process::Command::new("firefox");
+        cmd.arg(&formatted);
+        if cmd.spawn().is_err() {
+            let _ = tokio::process::Command::new("xdg-open")
+                .arg(&formatted)
+                .spawn();
+        }
     });
+}
+
+fn save_transferred_file(filename: String, b64_data: String) {
+    tokio::spawn(async move {
+        let home = env::var("HOME").unwrap_or_else(|_| "/home/ryguy".to_string());
+        let downloads_dir = PathBuf::from(&home).join("Downloads");
+        let _ = std::fs::create_dir_all(&downloads_dir);
+        let target_path = downloads_dir.join(&filename);
+
+        // Simple base64 decode
+        if let Ok(data) = decode_base64(&b64_data) {
+            if let Ok(mut f) = File::create(&target_path) {
+                let _ = f.write_all(&data);
+                let _ = Command::new("notify-send")
+                    .args([
+                        "-a",
+                        "Tailscale KVM",
+                        "File Received",
+                        &format!("Saved {} to Downloads", filename),
+                    ])
+                    .spawn();
+            }
+        }
+    });
+}
+
+fn decode_base64(s: &str) -> Result<Vec<u8>, ()> {
+    let mut out = Vec::with_capacity(s.len() * 3 / 4);
+    let mut buf = 0u32;
+    let mut bits = 0;
+
+    for &b in s.as_bytes() {
+        if b == b'=' {
+            break;
+        }
+        let val = match b {
+            b'A'..=b'Z' => b - b'A',
+            b'a'..=b'z' => b - b'a' + 26,
+            b'0'..=b'9' => b - b'0' + 52,
+            b'+' => 62,
+            b'/' => 63,
+            _ => continue,
+        };
+        buf = (buf << 6) | (val as u32);
+        bits += 6;
+        if bits >= 8 {
+            bits -= 8;
+            out.push((buf >> bits) as u8);
+        }
+    }
+    Ok(out)
 }
 
 async fn handle_connection(
@@ -122,6 +181,18 @@ async fn handle_connection(
                     let url = line[2..].trim().to_string();
                     if !url.is_empty() {
                         open_url_in_browser(url);
+                    }
+                }
+            }
+
+            // "F <filename> <base64_data>" -> Incoming File Transfer
+            b'F' => {
+                let rest = line[2..].trim();
+                if let Some(idx) = rest.find(' ') {
+                    let filename = rest[..idx].to_string();
+                    let b64_data = rest[idx + 1..].trim().to_string();
+                    if !filename.is_empty() && !b64_data.is_empty() {
+                        save_transferred_file(filename, b64_data);
                     }
                 }
             }

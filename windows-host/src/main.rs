@@ -6,6 +6,8 @@ use std::env;
 use std::fs;
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
+use std::os::windows::ffi::OsStringExt;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::thread;
@@ -14,7 +16,11 @@ use std::time::Duration;
 #[cfg(windows)]
 use windows_sys::Win32::Foundation::*;
 #[cfg(windows)]
+use windows_sys::Win32::System::DataExchange::{CloseClipboard, GetClipboardData, IsClipboardFormatAvailable, OpenClipboard};
+#[cfg(windows)]
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::*;
+#[cfg(windows)]
+use windows_sys::Win32::UI::Shell::DragQueryFileW;
 #[cfg(windows)]
 use windows_sys::Win32::UI::WindowsAndMessaging::*;
 
@@ -35,6 +41,9 @@ static mut KEYBOARD_HOOK: HHOOK = 0;
 static LBUTTON_DOWN: AtomicBool = AtomicBool::new(false);
 static CTRL_DOWN: AtomicBool = AtomicBool::new(false);
 static ALT_DOWN: AtomicBool = AtomicBool::new(false);
+static WIN_DOWN: AtomicBool = AtomicBool::new(false);
+
+const CF_HDROP_FORMAT: u32 = 15;
 
 fn get_config_ip() -> String {
     let args: Vec<String> = env::args().collect();
@@ -72,14 +81,104 @@ fn send_fast_bytes(bytes: &[u8]) {
     }
 }
 
-/// Grabs the active browser URL using WindowFromPoint + rapid keystrokes
+fn encode_base64(input: &[u8]) -> String {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut result = String::with_capacity((input.len() + 2) / 3 * 4);
+
+    for chunk in input.chunks(3) {
+        let b0 = chunk[0] as usize;
+        let b1 = *chunk.get(1).unwrap_or(&0) as usize;
+        let b2 = *chunk.get(2).unwrap_or(&0) as usize;
+
+        let triple = (b0 << 16) | (b1 << 8) | b2;
+
+        let i0 = (triple >> 18) & 0x3F;
+        let i1 = (triple >> 12) & 0x3F;
+        let i2 = (triple >> 6) & 0x3F;
+        let i3 = triple & 0x3F;
+
+        result.push(TABLE[i0] as char);
+        result.push(TABLE[i1] as char);
+
+        if chunk.len() > 1 {
+            result.push(TABLE[i2] as char);
+        } else {
+            result.push('=');
+        }
+
+        if chunk.len() > 2 {
+            result.push(TABLE[i3] as char);
+        } else {
+            result.push('=');
+        }
+    }
+
+    result
+}
+
+/// Retrieve file paths from clipboard if CF_HDROP is present
+fn get_clipboard_files() -> Vec<PathBuf> {
+    #[cfg(windows)]
+    unsafe {
+        if IsClipboardFormatAvailable(CF_HDROP_FORMAT) == 0 {
+            return Vec::new();
+        }
+
+        if OpenClipboard(0) == 0 {
+            return Vec::new();
+        }
+
+        let mut paths = Vec::new();
+        let h_drop = GetClipboardData(CF_HDROP_FORMAT);
+        if h_drop != 0 {
+            let file_count = DragQueryFileW(h_drop as _, 0xFFFFFFFF, std::ptr::null_mut(), 0);
+            for i in 0..file_count {
+                let char_len = DragQueryFileW(h_drop as _, i, std::ptr::null_mut(), 0);
+                if char_len == 0 {
+                    continue;
+                }
+                let mut buffer: Vec<u16> = vec![0; (char_len + 1) as usize];
+                let copied = DragQueryFileW(h_drop as _, i, buffer.as_mut_ptr(), buffer.len() as u32);
+                if copied > 0 {
+                    buffer.truncate(copied as usize);
+                    let os_str = std::ffi::OsString::from_wide(&buffer);
+                    paths.push(PathBuf::from(os_str));
+                }
+            }
+        }
+        CloseClipboard();
+        paths
+    }
+    #[cfg(not(windows))]
+    Vec::new()
+}
+
+/// Send files to Omarchy Linux ~/Downloads folder
+fn send_files_to_omarchy(paths: Vec<PathBuf>) {
+    thread::spawn(move || {
+        for path in paths {
+            if path.is_file() {
+                if let Ok(bytes) = fs::read(&path) {
+                    if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
+                        let clean_filename = filename.replace(' ', "_");
+                        let b64 = encode_base64(&bytes);
+                        let pkt = format!("F {} {}\n", clean_filename, b64);
+                        send_fast_bytes(pkt.as_bytes());
+                    }
+                }
+            }
+        }
+    });
+}
+
+/// Grabs the active browser URL using address bar selection keystrokes
 fn try_get_active_browser_url() -> Option<String> {
     #[cfg(windows)]
     unsafe {
-        // If left button is down, release it briefly so keystrokes register
+        // If left mouse button was being held (dragging title bar / tab), release it cleanly
         if LBUTTON_DOWN.load(Ordering::SeqCst) {
             keybd_event(VK_LBUTTON as u8, 0, KEYEVENTF_KEYUP, 0);
-            thread::sleep(Duration::from_millis(20));
+            thread::sleep(Duration::from_millis(30));
         }
 
         let mut pt: POINT = std::mem::zeroed();
@@ -89,7 +188,6 @@ fn try_get_active_browser_url() -> Option<String> {
         if target_hwnd == 0 {
             target_hwnd = GetForegroundWindow();
         } else {
-            // Find root top-level window
             let ancestor = GetAncestor(target_hwnd, GA_ROOT);
             if ancestor != 0 {
                 target_hwnd = ancestor;
@@ -101,9 +199,17 @@ fn try_get_active_browser_url() -> Option<String> {
             return None;
         }
 
+        thread::sleep(Duration::from_millis(40));
+
+        // 1. Try Alt + D (works universally across Firefox, Chrome, Edge to highlight URL)
+        keybd_event(VK_MENU as u8, 0, 0, 0);
+        keybd_event(b'D', 0, 0, 0);
+        keybd_event(b'D', 0, KEYEVENTF_KEYUP, 0);
+        keybd_event(VK_MENU as u8, 0, KEYEVENTF_KEYUP, 0);
+
         thread::sleep(Duration::from_millis(50));
 
-        // Send Ctrl + L (Focus address bar)
+        // 2. Also send Ctrl + L as backup
         keybd_event(VK_CONTROL as u8, 0, 0, 0);
         keybd_event(b'L', 0, 0, 0);
         keybd_event(b'L', 0, KEYEVENTF_KEYUP, 0);
@@ -111,13 +217,13 @@ fn try_get_active_browser_url() -> Option<String> {
 
         thread::sleep(Duration::from_millis(60));
 
-        // Send Ctrl + C (Copy address)
+        // 3. Send Ctrl + C (Copy URL to clipboard)
         keybd_event(VK_CONTROL as u8, 0, 0, 0);
         keybd_event(b'C', 0, 0, 0);
         keybd_event(b'C', 0, KEYEVENTF_KEYUP, 0);
         keybd_event(VK_CONTROL as u8, 0, KEYEVENTF_KEYUP, 0);
 
-        thread::sleep(Duration::from_millis(60));
+        thread::sleep(Duration::from_millis(70));
 
         // Read URL from clipboard
         if let Ok(mut clip) = arboard::Clipboard::new() {
@@ -146,12 +252,22 @@ pub fn fling_browser_to_omarchy() {
     });
 }
 
-pub fn switch_to_remote() {
-    // If left mouse button was held while crossing the right edge,
-    // trigger the browser fling!
+pub fn handle_edge_drag_or_transfer() {
+    // 1. Check if files are copied in clipboard (CF_HDROP)
+    let files = get_clipboard_files();
+    if !files.is_empty() {
+        send_files_to_omarchy(files);
+        return;
+    }
+
+    // 2. If left button was held (dragging window / tab) or browser is active, fling URL
     if LBUTTON_DOWN.load(Ordering::SeqCst) {
         fling_browser_to_omarchy();
     }
+}
+
+pub fn switch_to_remote() {
+    handle_edge_drag_or_transfer();
 
     IS_REMOTE.store(true, Ordering::SeqCst);
     IGNORE_WARP.store(true, Ordering::SeqCst);
@@ -263,12 +379,19 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
             CTRL_DOWN.store(is_down, Ordering::SeqCst);
         } else if vk == VK_MENU || vk == VK_LMENU || vk == VK_RMENU {
             ALT_DOWN.store(is_down, Ordering::SeqCst);
+        } else if vk == VK_LWIN || vk == VK_RWIN {
+            WIN_DOWN.store(is_down, Ordering::SeqCst);
         }
 
-        // Hotkey: Ctrl + Alt + RightArrow -> Instantly Fling Active Tab to Omarchy!
-        if vk == VK_RIGHT && is_down && CTRL_DOWN.load(Ordering::SeqCst) && ALT_DOWN.load(Ordering::SeqCst) {
-            fling_browser_to_omarchy();
-            return 1;
+        // Non-conflicting Hotkeys to instantly Fling Tab / File:
+        // Win + Right Arrow  OR  Ctrl + Alt + Right Arrow
+        if vk == VK_RIGHT && is_down {
+            if WIN_DOWN.load(Ordering::SeqCst)
+                || (CTRL_DOWN.load(Ordering::SeqCst) && ALT_DOWN.load(Ordering::SeqCst))
+            {
+                handle_edge_drag_or_transfer();
+                return 1;
+            }
         }
 
         // Emergency Release Hotkeys: F12 (0x7B), Pause (0x13), ScrollLock (0x91)
