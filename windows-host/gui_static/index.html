@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tailscale KVM — Multi-Screen Topology Dashboard</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --accent: #00c7b7;
+      --accent-glow: rgba(0, 199, 183, 0.2);
+      --text: #c9d1d9;
+      --text-bright: #f0f6fc;
+      --online: #3fb950;
+      --offline: #8b949e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 30px 20px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    h1 {
+      color: var(--text-bright);
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .badge {
+      background: var(--accent);
+      color: #000;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 3px 8px;
+      border-radius: 12px;
+      text-transform: uppercase;
+    }
+    p.subtitle {
+      color: #8b949e;
+      font-size: 14px;
+      margin-top: 6px;
+    }
+
+    /* Grid Canvas */
+    .canvas-container {
+      background: #090d13;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+      display: grid;
+      grid-template-columns: 220px 220px 220px;
+      grid-template-rows: 150px 150px 150px;
+      gap: 20px;
+      align-items: center;
+      justify-items: center;
+      margin-bottom: 40px;
+      position: relative;
+    }
+
+    .slot-card {
+      width: 100%;
+      height: 100%;
+      background: var(--card-bg);
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      text-align: center;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .slot-card.active {
+      border: 2px solid var(--accent);
+      background: #111e24;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    .slot-card.dragover {
+      border-color: #58a6ff;
+      background: #152238;
+      transform: scale(1.02);
+    }
+    .slot-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #8b949e;
+      margin-bottom: 8px;
+    }
+
+    .host-card {
+      grid-column: 2;
+      grid-row: 2;
+      border: 2px solid #58a6ff;
+      background: #0f1c2e;
+      box-shadow: 0 0 25px rgba(88, 166, 255, 0.25);
+    }
+    .host-card .host-title {
+      color: #58a6ff;
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .slot-top    { grid-column: 2; grid-row: 1; }
+    .slot-left   { grid-column: 1; grid-row: 2; }
+    .slot-right  { grid-column: 3; grid-row: 2; }
+    .slot-bottom { grid-column: 2; grid-row: 3; }
+
+    /* Assigned peer badge inside slot */
+    .assigned-peer {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .peer-name {
+      font-weight: 600;
+      color: var(--text-bright);
+      font-size: 14px;
+    }
+    .peer-ip {
+      font-size: 12px;
+      color: #8b949e;
+      font-family: monospace;
+    }
+    .remove-btn {
+      margin-top: 8px;
+      background: rgba(248, 81, 73, 0.15);
+      border: 1px solid rgba(248, 81, 73, 0.4);
+      color: #ff7b72;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .remove-btn:hover {
+      background: rgba(248, 81, 73, 0.3);
+    }
+
+    /* Detected Peers Pool */
+    .peers-section {
+      width: 100%;
+      max-width: 720px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .peers-header {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-bright);
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .peers-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .peer-chip {
+      background: #21262d;
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: grab;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.15s ease;
+    }
+    .peer-chip:hover {
+      border-color: #58a6ff;
+      background: #263040;
+      transform: translateY(-2px);
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--offline);
+    }
+    .status-dot.online {
+      background: var(--online);
+      box-shadow: 0 0 8px var(--online);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>⚡ Tailscale KVM <span class="badge">Multi-Screen Mesh</span></h1>
+    <p class="subtitle">Drag & Drop any detected Tailscale device to configure multi-screen boundaries</p>
+  </header>
+
+  <!-- 2D Screen Arrangement Canvas -->
+  <div class="canvas-container">
+    <!-- TOP SLOT -->
+    <div class="slot-card slot-top" id="slot-up" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, 'up')">
+      <div class="slot-label">⬆️ Top Screen</div>
+      <div class="slot-content" id="content-up"><span style="color:#6e7681; font-size:12px;">Empty Slot</span></div>
+    </div>
+
+    <!-- LEFT SLOT -->
+    <div class="slot-card slot-left" id="slot-left" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, 'left')">
+      <div class="slot-label">⬅️ Left Screen</div>
+      <div class="slot-content" id="content-left"><span style="color:#6e7681; font-size:12px;">Empty Slot</span></div>
+    </div>
+
+    <!-- CENTER HOST -->
+    <div class="slot-card host-card">
+      <div class="slot-label" style="color: #58a6ff;">Primary Controller</div>
+      <div class="host-title">🖥️ Host (You)</div>
+      <div style="font-size: 11px; color:#8b949e; margin-top:4px;">Mouse & Keyboard Center</div>
+    </div>
+
+    <!-- RIGHT SLOT -->
+    <div class="slot-card slot-right" id="slot-right" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, 'right')">
+      <div class="slot-label">➡️ Right Screen</div>
+      <div class="slot-content" id="content-right"><span style="color:#6e7681; font-size:12px;">Empty Slot</span></div>
+    </div>
+
+    <!-- BOTTOM SLOT -->
+    <div class="slot-card slot-bottom" id="slot-bottom" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, 'down')">
+      <div class="slot-label">⬇️ Bottom Screen</div>
+      <div class="slot-content" id="content-down"><span style="color:#6e7681; font-size:12px;">Empty Slot</span></div>
+    </div>
+  </div>
+
+  <!-- Detected Tailscale Peers -->
+  <div class="peers-section">
+    <div class="peers-header">
+      <span>🌐 Detected Tailscale Peers</span>
+      <span style="font-size: 12px; color: #8b949e;" id="peer-count">Scanning...</span>
+    </div>
+    <div class="peers-list" id="peers-pool">
+      <!-- Injected dynamically -->
+    </div>
+  </div>
+
+  <script>
+    let peersData = [];
+    let currentSlots = { right: '', left: '', up: '', down: '' };
+
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        peersData = data.peers || [];
+        currentSlots = data.slots || {};
+        renderPeers();
+        renderSlots();
+      } catch (err) {
+        console.error("Failed to fetch status:", err);
+      }
+    }
+
+    function renderPeers() {
+      const container = document.getElementById('peers-pool');
+      document.getElementById('peer-count').innerText = `${peersData.length} devices found`;
+      container.innerHTML = '';
+
+      peersData.forEach(peer => {
+        const div = document.createElement('div');
+        div.className = 'peer-chip';
+        div.draggable = true;
+        div.ondragstart = (e) => e.dataTransfer.setData('text/plain', JSON.stringify(peer));
+
+        div.innerHTML = `
+          <div class="status-dot ${peer.online ? 'online' : ''}"></div>
+          <div>
+            <div style="font-weight:600; font-size:13px; color:#f0f6fc;">${peer.name}</div>
+            <div style="font-size:11px; color:#8b949e; font-family:monospace;">${peer.ip} · ${peer.os}</div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function renderSlots() {
+      ['right', 'left', 'up', 'down'].forEach(slot => {
+        const container = document.getElementById(`content-${slot}`);
+        const card = document.getElementById(`slot-${slot}`);
+        const ip = currentSlots[slot];
+
+        if (ip && ip.trim()) {
+          const peer = peersData.find(p => p.ip === ip) || { name: ip, ip: ip };
+          card.classList.add('active');
+          container.innerHTML = `
+            <div class="assigned-peer">
+              <span class="peer-name">${peer.name}</span>
+              <span class="peer-ip">${peer.ip}</span>
+              <button class="remove-btn" onclick="assignSlot('${slot}', 'none')">Disconnect</button>
+            </div>
+          `;
+        } else {
+          card.classList.remove('active');
+          container.innerHTML = '<span style="color:#6e7681; font-size:12px;">Drag device here</span>';
+        }
+      });
+    }
+
+    function onDragOver(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('dragover');
+    }
+
+    function onDragLeave(e) {
+      e.currentTarget.classList.remove('dragover');
+    }
+
+    async function onDrop(e, slot) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('dragover');
+      try {
+        const raw = e.dataTransfer.getData('text/plain');
+        const peer = JSON.parse(raw);
+        if (peer && peer.ip) {
+          await assignSlot(slot, peer.ip);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function assignSlot(slot, ip) {
+      await fetch(`/api/assign?slot=${slot}&ip=${encodeURIComponent(ip)}`, { method: 'POST' });
+      currentSlots[slot] = ip === 'none' ? '' : ip;
+      renderSlots();
+    }
+
+    fetchStatus();
+    setInterval(fetchStatus, 4000);
+  </script>
+</body>
+</html>

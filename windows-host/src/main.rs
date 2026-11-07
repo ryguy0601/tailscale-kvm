@@ -2,6 +2,7 @@
 #![cfg_attr(not(windows), allow(dead_code, unused_imports, unused_variables))]
 
 mod vk_map;
+mod web_gui;
 
 use std::env;
 use std::fs;
@@ -1252,13 +1253,16 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
             let screen_w = SCREEN_WIDTH.load(Ordering::Relaxed);
             let screen_h = SCREEN_HEIGHT.load(Ordering::Relaxed);
 
-            let dir = EDGE_DIRECTION.load(Ordering::Relaxed);
-            let near_edge = match dir {
-                1 => x <= 45,
-                2 => y <= 45,
-                3 => y >= screen_h - 45,
-                _ => x >= screen_w - 45,
-            };
+            // Check active GUI multi-receiver slots or fall back to CLI configured direction
+            let has_left_peer = web_gui::get_slot_peer("left").is_some() || EDGE_DIRECTION.load(Ordering::Relaxed) == 1;
+            let has_up_peer = web_gui::get_slot_peer("up").is_some() || EDGE_DIRECTION.load(Ordering::Relaxed) == 2;
+            let has_down_peer = web_gui::get_slot_peer("down").is_some() || EDGE_DIRECTION.load(Ordering::Relaxed) == 3;
+            let has_right_peer = web_gui::get_slot_peer("right").is_some() || EDGE_DIRECTION.load(Ordering::Relaxed) == 0;
+
+            let near_edge = (has_right_peer && x >= screen_w - 45)
+                || (has_left_peer && x <= 45)
+                || (has_up_peer && y <= 45)
+                || (has_down_peer && y >= screen_h - 45);
 
             if near_edge && IS_CONNECTED.load(Ordering::Relaxed) {
                 show_edge_overlay();
@@ -1266,32 +1270,54 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
                 hide_edge_overlay();
             }
 
-            let in_corner_deadzone = if dir == 2 || dir == 3 {
-                x <= 50 || x >= screen_w - 50
-            } else {
-                y <= 50 || y >= screen_h - 50
-            };
+            // Detect which boundary is crossed
+            let mut triggered_dir: Option<EdgeDirection> = None;
+            if has_right_peer && x >= screen_w - 3 && !(y <= 50 || y >= screen_h - 50) {
+                triggered_dir = Some(EdgeDirection::Right);
+            } else if has_left_peer && x <= 3 && !(y <= 50 || y >= screen_h - 50) {
+                triggered_dir = Some(EdgeDirection::Left);
+            } else if has_up_peer && y <= 3 && !(x <= 50 || x >= screen_w - 50) {
+                triggered_dir = Some(EdgeDirection::Up);
+            } else if has_down_peer && y >= screen_h - 3 && !(x <= 50 || x >= screen_w - 50) {
+                triggered_dir = Some(EdgeDirection::Down);
+            }
 
-            let at_trigger_boundary = match dir {
-                1 => x <= 3,
-                2 => y <= 3,
-                3 => y >= screen_h - 3,
-                _ => x >= screen_w - 3,
-            };
+            if let Some(edge) = triggered_dir {
+                if IS_CONNECTED.load(Ordering::Relaxed) {
+                    let dir_val = match edge {
+                        EdgeDirection::Right => 0,
+                        EdgeDirection::Left => 1,
+                        EdgeDirection::Up => 2,
+                        EdgeDirection::Down => 3,
+                    };
+                    EDGE_DIRECTION.store(dir_val, Ordering::SeqCst);
 
-            if at_trigger_boundary && IS_CONNECTED.load(Ordering::Relaxed) && !in_corner_deadzone {
-                let held = LBUTTON_DOWN.load(Ordering::SeqCst);
-                let was_dragging = if dir == 2 || dir == 3 {
-                    let dy_drag = (y - DRAG_START_Y.load(Ordering::Relaxed)).abs();
-                    held && dy_drag >= 35
-                } else {
-                    let dx_drag = (x - DRAG_START_X.load(Ordering::Relaxed)).abs();
-                    held && dx_drag >= 35
-                };
+                    // Reconnect to slot peer if dynamically re-routed via GUI
+                    let slot_key = match edge {
+                        EdgeDirection::Right => "right",
+                        EdgeDirection::Left => "left",
+                        EdgeDirection::Up => "up",
+                        EdgeDirection::Down => "down",
+                    };
+                    if let Some(target_peer_ip) = web_gui::get_slot_peer(slot_key) {
+                        if TARGET_IP.get().map(|s| s.as_str()) != Some(&target_peer_ip) {
+                            switch_active_peer(target_peer_ip);
+                        }
+                    }
 
-                let entry_coord = if dir == 2 || dir == 3 { x } else { y };
-                switch_to_remote(was_dragging, entry_coord);
-                return 1;
+                    let held = LBUTTON_DOWN.load(Ordering::SeqCst);
+                    let was_dragging = if edge == EdgeDirection::Up || edge == EdgeDirection::Down {
+                        let dy_drag = (y - DRAG_START_Y.load(Ordering::Relaxed)).abs();
+                        held && dy_drag >= 35
+                    } else {
+                        let dx_drag = (x - DRAG_START_X.load(Ordering::Relaxed)).abs();
+                        held && dx_drag >= 35
+                    };
+
+                    let entry_coord = if edge == EdgeDirection::Up || edge == EdgeDirection::Down { x } else { y };
+                    switch_to_remote(was_dragging, entry_coord);
+                    return 1;
+                }
             }
             return CallNextHookEx(MOUSE_HOOK, code, wparam, lparam);
         }
@@ -1478,6 +1504,14 @@ fn start_clipboard_sync() {
 }
 
 /// Persistent TCP connection manager with automatic reconnect on disconnect or receiver restart.
+fn switch_active_peer(new_ip: String) {
+    if let Ok(mut lock) = STREAM_SENDER.lock() {
+        *lock = None;
+    }
+    IS_CONNECTED.store(false, Ordering::SeqCst);
+    start_connection_manager(new_ip);
+}
+
 fn start_connection_manager(target_ip: String) {
     thread::spawn(move || loop {
         if let Some(addr) = resolve_target_addr(&target_ip) {
@@ -1544,6 +1578,17 @@ fn main() {
     println!("[*] Configured Host Screen Edge Trigger: {:?} (move cursor past this edge to control remote)", dir);
     println!("[*] Target Receiver Peer: {}", target_ip);
 
+    // Seed initial slot in web GUI
+    match dir {
+        EdgeDirection::Left => web_gui::set_slot_peer("left", Some(target_ip.clone())),
+        EdgeDirection::Up => web_gui::set_slot_peer("up", Some(target_ip.clone())),
+        EdgeDirection::Down => web_gui::set_slot_peer("down", Some(target_ip.clone())),
+        EdgeDirection::Right => web_gui::set_slot_peer("right", Some(target_ip.clone())),
+    }
+
+    // Launch multi-receiver web management GUI dashboard on port 9877
+    web_gui::start_gui_server(9877);
+
     #[cfg(windows)]
     unsafe {
         let sw = GetSystemMetrics(SM_CXSCREEN);
@@ -1574,5 +1619,13 @@ fn main() {
 
         UnhookWindowsHookEx(MOUSE_HOOK);
         UnhookWindowsHookEx(KEYBOARD_HOOK);
+    }
+
+    #[cfg(not(windows))]
+    {
+        // On non-Windows platforms, keep background threads and Web GUI active
+        loop {
+            thread::sleep(Duration::from_secs(3600));
+        }
     }
 }

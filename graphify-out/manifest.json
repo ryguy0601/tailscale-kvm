@@ -42,9 +42,9 @@
     "semantic_hash": ""
   },
   "windows-host/src/main.rs": {
-    "mtime": 1794022119.7363157,
-    "seen": 1794022142.8127465,
-    "ast_hash": "99a0f11da4bd6de833e673225847f1b9",
+    "mtime": 1794022586.164686,
+    "seen": 1794022609.0488553,
+    "ast_hash": "462ab1b7ae20b64d71f9fd4febcdc068",
     "semantic_hash": ""
   },
   "windows-host/src/vk_map.rs": {
@@ -93,6 +93,18 @@
     "mtime": 1794022123.9908755,
     "seen": 1794022142.812744,
     "ast_hash": "f039385ad8cf8af30851ef8ffdaf8d1b",
+    "semantic_hash": ""
+  },
+  "windows-host/src/web_gui.rs": {
+    "mtime": 1794022508.273108,
+    "seen": 1794022609.0488575,
+    "ast_hash": "19f32c14db100c9c749b8752ff7ac324",
+    "semantic_hash": ""
+  },
+  "windows-host/gui_static/index.html": {
+    "mtime": 1794022530.6803067,
+    "seen": 1794022609.048859,
+    "ast_hash": "153536f8201d7ee8329277dc50bb07c2",
     "semantic_hash": ""
   }
 }
