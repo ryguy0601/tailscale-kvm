@@ -60,7 +60,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 <div class="container">
 
 <h1>tailscale-kvm — Complete Call Flow &amp; Architecture Documentation</h1>
-<p class="subtitle">Generated from graphify knowledge graph: 236 nodes, 379 edges, 29 communities. Commit: 669cffa</p>
+<p class="subtitle">Generated from graphify knowledge graph: 236 nodes, 380 edges, 26 communities. Commit: 435d12e</p>
 
 <div class="nav">
     <a href="#overview">Architecture Overview</a>
@@ -70,7 +70,6 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
     <a href="#mutex-tcpstream-stream">Mutex Tcpstream Stream</a>
     <a href="#atomicu32-last-clip">Atomicu32 Last Clip</a>
     <a href="#oncelock-target-windows">Oncelock Target Windows</a>
-    <a href="#maprs-windows-host">Maprs Windows Host</a>
     <a href="#host-tailscale-kvm">Host Tailscale Kvm</a>
     <a href="#receiver-tailscale-kvm">Receiver Tailscale Kvm</a>
 </div>
@@ -84,7 +83,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 flowchart LR
     BUILD_GRAPH_321CBB04("Graph Build<br/><small>4 nodes</small>")
     class BUILD_GRAPH_321CBB04 module;
-    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>210 nodes</small>")
+    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>212 nodes</small>")
     class CLI_SKILLS_9964CBB8 module;
     READMEMD_STARTING_MULTI_A3F54AAD("Readmemd Starting Multi<br/><small>11 nodes</small>")
     class READMEMD_STARTING_MULTI_A3F54AAD module;
@@ -94,8 +93,6 @@ flowchart LR
     class ATOMICU32_LAST_CLIP_A6666AFC module;
     ONCELOCK_TARGET_WINDOWS_DCC24742("Oncelock Target Windows<br/><small>2 nodes</small>")
     class ONCELOCK_TARGET_WINDOWS_DCC24742 module;
-    MAPRS_WINDOWS_HOST_3F46C29E("Maprs Windows Host<br/><small>2 nodes</small>")
-    class MAPRS_WINDOWS_HOST_3F46C29E module;
     HOST_TAILSCALE_KVM_5F916E6E("Host Tailscale Kvm<br/><small>1 nodes</small>")
     class HOST_TAILSCALE_KVM_5F916E6E module;
     RECEIVER_TAILSCALE_KVM_389A10DC("Receiver Tailscale Kvm<br/><small>1 nodes</small>")
@@ -120,19 +117,19 @@ flowchart LR
     <h4>Architecture Layers</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>Layer</th><th>Nodes</th><th>Communities</th></tr>
-      <tr><td>Graph Build</td><td>4</td><td><code>23, 25</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>210</td><td><code>2, 3, 6, 10, 7, 8, 1, 15, 17, 13, 19, 20, 4, 26, 18, 21, 27, 16, 9, 14</code></td></tr><tr><td>Readmemd Starting Multi</td><td>11</td><td><code>5</code></td></tr><tr><td>Mutex Tcpstream Stream</td><td>3</td><td><code>0</code></td></tr><tr><td>Atomicu32 Last Clip</td><td>2</td><td><code>22</code></td></tr><tr><td>Oncelock Target Windows</td><td>2</td><td><code>24</code></td></tr><tr><td>Maprs Windows Host</td><td>2</td><td><code>28</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr>
+      <tr><td>Graph Build</td><td>4</td><td><code>23, 25</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>212</td><td><code>2, 3, 6, 15, 10, 7, 8, 1, 17, 13, 19, 20, 4, 18, 21, 16, 9, 14</code></td></tr><tr><td>Readmemd Starting Multi</td><td>11</td><td><code>5</code></td></tr><tr><td>Mutex Tcpstream Stream</td><td>3</td><td><code>0</code></td></tr><tr><td>Atomicu32 Last Clip</td><td>2</td><td><code>22</code></td></tr><tr><td>Oncelock Target Windows</td><td>2</td><td><code>24</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Core Flow</h4>
-    <div class="arrow-chain">CLI &amp; Skill Installers -&gt; Mutex Tcpstream Stream -&gt; Graph Build -&gt; Readmemd Starting Multi -&gt; Atomicu32 Last Clip -&gt; Oncelock Target Windows -&gt; Maprs Windows Host</div>
+    <div class="arrow-chain">CLI &amp; Skill Installers -&gt; Mutex Tcpstream Stream -&gt; Graph Build -&gt; Readmemd Starting Multi -&gt; Atomicu32 Last Clip -&gt; Oncelock Target Windows -&gt; Host Tailscale Kvm</div>
   </div>
 </div>
 <div class="grid">
   <div class="card">
     <h4>Graph Report Highlights</h4>
     <ul>
-      <li>236 nodes · 379 edges · 29 communities (18 shown, 11 thin omitted)</li>
+      <li>236 nodes · 380 edges · 26 communities (16 shown, 10 thin omitted)</li>
       <li>Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS</li>
       <li>Token cost: 0 input · 0 output</li>
       <li>1. `handle_connection()` - 18 edges</li>
@@ -235,12 +232,12 @@ flowchart LR
 
 <!-- ====== 3. CLI & Skill Installers ====== -->
 <h2 id="cli-skills">3. CLI &amp; Skill Installers</h2>
-<p>CLI &amp; Skill Installers groups implementation around mainrs, windows, host, linux, mostly in windows-host/src/main.rs, linux-receiver/src/main.rs, windows-host/install_background_service.ps1. This section covers 210 nodes and 353 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>CLI &amp; Skill Installers groups implementation around mainrs, windows, host, linux, mostly in windows-host/src/main.rs, linux-receiver/src/main.rs, windows-host/src/vk_map.rs. This section covers 212 nodes and 355 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: CLI &amp; Skill Installers (210 nodes, 353 edges)
+    %% Section: CLI &amp; Skill Installers (212 nodes, 355 edges)
     subgraph cli_skills_linux_receiver_src_main_rs_51402838["linux-receiver/src/main.rs"]
         linux_receiver_src_main_375adb53("main.rs")
         linux_receiver_src_main_handle_connection_36d5c981("handle_connection()<br/><small>linux-receiver/src/main.rs</small>")
@@ -275,7 +272,7 @@ flowchart LR
     linux_receiver_src_main_handle_connection_36d5c981 -->|calls| linux_receiver_src_main_sanitize_relative_path_2ba90219
     linux_receiver_src_main_receive_binary_file_2c450941 -->|calls| linux_receiver_src_main_sanitize_relative_path_2ba90219
     linux_receiver_src_main_main_33397fdb -->|calls| linux_receiver_src_main_handle_connection_36d5c981
-    %% Omitted for readability: 192 nodes, 0 edges
+    %% Omitted for readability: 194 nodes, 0 edges
     class linux_receiver_src_main_375adb53 module;
     class linux_receiver_src_main_handle_connection_36d5c981 function;
     class linux_receiver_src_main_main_33397fdb function;
@@ -564,12 +561,13 @@ flowchart LR
       <tr><th>File</th><th>Coverage</th></tr>
       <tr><td><code>windows-host/src/main.rs</code></td><td>76 nodes</td></tr>
 <tr><td><code>linux-receiver/src/main.rs</code></td><td>60 nodes</td></tr>
+<tr><td><code>windows-host/src/vk_map.rs</code></td><td>2 nodes</td></tr>
 <tr><td><code>windows-host/install_background_service.ps1</code></td><td>1 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: contains x117, calls x86, imports x68, references x65. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x118, calls x87, imports x68, references x65. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
@@ -954,75 +952,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 8. Maprs Windows Host ====== -->
-<h2 id="maprs-windows-host">8. Maprs Windows Host</h2>
-<p>Maprs Windows Host groups implementation around maprs, windows, host, translate, mostly in windows-host/src/vk_map.rs. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
-
-<div class="mermaid">
-%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
-flowchart LR
-    %% Section: Maprs Windows Host (2 nodes, 1 edges)
-    windows_host_src_vk_map_1f59c869("vk_map.rs")
-    windows_host_src_vk_map_translate_vk_b3a26f3c("translate_vk()<br/><small>windows-host/src/vk_map.rs</small>")
-    windows_host_src_vk_map_1f59c869 -->|contains| windows_host_src_vk_map_translate_vk_b3a26f3c
-    class windows_host_src_vk_map_1f59c869 module;
-    class windows_host_src_vk_map_translate_vk_b3a26f3c function;
-    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
-    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
-    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
-    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
-    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
-    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
-    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
-    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
-    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
-</div>
-
-<h3>Call Details</h3>
-<table class="call-table">
-<tr>
-  <th style="width:5%">#</th>
-  <th style="width:28%">Node</th>
-  <th style="width:10%">Type</th>
-  <th style="width:17%">Caller</th>
-  <th style="width:20%">Callees</th>
-  <th style="width:20%">Description</th>
-</tr>
-<tr>
-  <td>1</td>
-  <td><code>vk_map.rs</code><br><small style="color:var(--muted)">windows-host/src/vk_map.rs</small></td>
-  <td><span class="tag tag-class">Module</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>vk_map.rs node in windows-host/src/vk_map.rs.</td>
-</tr>
-<tr>
-  <td>2</td>
-  <td><code>translate_vk()</code><br><small style="color:var(--muted)">windows-host/src/vk_map.rs</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>translate_vk() node in windows-host/src/vk_map.rs.</td>
-</tr>
-</table>
-
-<div class="grid">
-  <div class="card">
-    <h4>Key Files</h4>
-    <table style="width:100%;font-size:0.85rem;">
-      <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>windows-host/src/vk_map.rs</code></td><td>2 nodes</td></tr>
-    </table>
-  </div>
-  <div class="card">
-    <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: contains x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
-  </div>
-</div>
-<hr>
-
-<!-- ====== 9. Host Tailscale Kvm ====== -->
-<h2 id="host-tailscale-kvm">9. Host Tailscale Kvm</h2>
+<!-- ====== 8. Host Tailscale Kvm ====== -->
+<h2 id="host-tailscale-kvm">8. Host Tailscale Kvm</h2>
 <p>Host Tailscale Kvm groups implementation around host, tailscale, kvm, windows, mostly in windows-host/Cargo.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1077,8 +1008,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 10. Receiver Tailscale Kvm ====== -->
-<h2 id="receiver-tailscale-kvm">10. Receiver Tailscale Kvm</h2>
+<!-- ====== 9. Receiver Tailscale Kvm ====== -->
+<h2 id="receiver-tailscale-kvm">9. Receiver Tailscale Kvm</h2>
 <p>Receiver Tailscale Kvm groups implementation around receiver, tailscale, kvm, linux, mostly in linux-receiver/Cargo.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1140,16 +1071,16 @@ flowchart LR
     <h4>Graph</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><td>Nodes</td><td>236</td></tr>
-      <tr><td>Edges</td><td>379</td></tr>
+      <tr><td>Edges</td><td>380</td></tr>
       <tr><td>Hyperedges</td><td>0</td></tr>
-      <tr><td>Communities</td><td>29</td></tr>
-      <tr><td>Documented Sections</td><td>9</td></tr>
+      <tr><td>Communities</td><td>26</td></tr>
+      <tr><td>Documented Sections</td><td>8</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Edge Confidence</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>EXTRACTED</td><td>379</td></tr>
+      <tr><td>EXTRACTED</td><td>380</td></tr>
       <tr><td>INFERRED</td><td>0</td></tr>
       <tr><td>AMBIGUOUS</td><td>0</td></tr>
     </table>
@@ -1158,7 +1089,7 @@ flowchart LR
 
 <div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
   <p>tailscale-kvm — Architecture Documentation</p>
-  <p>Generated: 2026-11-07 03:20 UTC · graphify callflow-html</p>
+  <p>Generated: 2026-11-07 03:22 UTC · graphify callflow-html</p>
 </div>
 
 </div><!-- .container -->
