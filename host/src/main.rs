@@ -220,6 +220,17 @@ fn get_config_ip() -> String {
 }
 
 #[inline(always)]
+pub fn sync_receiver_return_edge(slot: &str) {
+    let reciprocal = match slot {
+        "left" => "right",
+        "up" | "top" => "bottom",
+        "down" | "bottom" => "top",
+        _ => "left",
+    };
+    let pkt = format!("E {}\n", reciprocal);
+    send_fast_bytes(pkt.as_bytes());
+}
+
 fn send_fast_bytes(bytes: &[u8]) {
     let mut disconnected = false;
     if let Ok(mut lock) = STREAM_SENDER.lock() {
@@ -1517,7 +1528,7 @@ fn start_clipboard_sync() {
 }
 
 /// Persistent TCP connection manager with automatic reconnect on disconnect or receiver restart.
-fn switch_active_peer(new_ip: String) {
+pub fn switch_active_peer(new_ip: String) {
     println!("[*] Switching active KVM target peer to: {}", new_ip);
     if let Ok(mut lock) = TARGET_PEER_IP.lock() {
         *lock = Some(new_ip);
@@ -1537,6 +1548,16 @@ fn start_connection_manager() {
                 if let Ok(mut stream) = TcpStream::connect_timeout(&addr, Duration::from_secs(2)) {
                     let _ = stream.set_nodelay(true);
                     let _ = stream.set_write_timeout(Some(Duration::from_secs(5)));
+
+                    let dir_val = EDGE_DIRECTION.load(Ordering::Relaxed);
+                    let reciprocal_return_edge = match dir_val {
+                        1 => "right",
+                        2 => "bottom",
+                        3 => "top",
+                        _ => "left",
+                    };
+                    let e_msg = format!("E {}\n", reciprocal_return_edge);
+                    let _ = stream.write_all(e_msg.as_bytes());
 
                     if stream.write_all(b"H control\n").is_ok() {
                         if let Ok(reader_stream) = stream.try_clone() {

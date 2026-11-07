@@ -102,8 +102,13 @@ fn handle_http_client(mut stream: TcpStream) {
                 }
             }
             if !slot.is_empty() {
-                let target = if ip.is_empty() || ip == "none" { None } else { Some(ip) };
+                let target = if ip.is_empty() || ip == "none" { None } else { Some(ip.clone()) };
                 set_slot_peer(&slot, target);
+
+                if !ip.is_empty() && ip != "none" {
+                    crate::switch_active_peer(ip);
+                    crate::sync_receiver_return_edge(&slot);
+                }
             }
         }
         let body = r#"{"status":"ok"}"#;

@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "host/src/main.rs": {
-    "mtime": 1794023849.0262399,
-    "seen": 1794023859.275602,
-    "ast_hash": "858f054ae8ed36a24be04788def500d3",
+    "mtime": 1794024522.2113225,
+    "seen": 1794024542.2805138,
+    "ast_hash": "9887440fed292237b90e70e9c14d8c4e",
     "semantic_hash": ""
   },
   "host/src/vk_map.rs": {
@@ -84,9 +84,9 @@
     "semantic_hash": ""
   },
   "host/src/web_gui.rs": {
-    "mtime": 1794023807.6059632,
-    "seen": 1794023859.275604,
-    "ast_hash": "1e2aa8f652f8e3f780fdcdc2cde8ab48",
+    "mtime": 1794024516.060397,
+    "seen": 1794024542.280516,
+    "ast_hash": "a53e92e7a4bac9720973f843a6227ac1",
     "semantic_hash": ""
   },
   "receiver/Cargo.toml": {
@@ -96,9 +96,9 @@
     "semantic_hash": ""
   },
   "receiver/src/main.rs": {
-    "mtime": 1794023275.0747578,
-    "seen": 1794023308.4275823,
-    "ast_hash": "ab21a14e8252ea9b8da75083f7560f21",
+    "mtime": 1794024503.678174,
+    "seen": 1794024542.2805192,
+    "ast_hash": "efb97b10528de47c0ccc9c4c238d9039",
     "semantic_hash": ""
   },
   "host/gui_static/index.html": {

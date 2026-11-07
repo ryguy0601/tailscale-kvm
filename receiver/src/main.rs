@@ -1026,6 +1026,22 @@ async fn handle_connection(
                 }
             }
 
+            // "E <edge>" -> Dynamic return edge configuration from Host GUI
+            b'E' => {
+                if trimmed.len() > 2 {
+                    let edge_str = trimmed[2..].trim();
+                    let new_edge = ReturnEdge::parse(edge_str);
+                    let edge_val = match new_edge {
+                        ReturnEdge::Right => 1,
+                        ReturnEdge::Top => 2,
+                        ReturnEdge::Bottom => 3,
+                        ReturnEdge::Left => 0,
+                    };
+                    RETURN_EDGE.store(edge_val, Ordering::SeqCst);
+                    println!("[*] Dynamically synced return edge to: {:?} (exit this edge to return to host)", new_edge);
+                }
+            }
+
             // "B <byte_len> <relative_path>\n<raw_bytes>" -> Zero-RAM-spike binary file stream
             b'B' => {
                 if trimmed.len() > 2 {
