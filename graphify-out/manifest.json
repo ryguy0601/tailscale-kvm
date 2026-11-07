@@ -102,9 +102,9 @@
     "semantic_hash": ""
   },
   "host/gui_static/index.html": {
-    "mtime": 1794022530.6803067,
-    "seen": 1794022773.281534,
-    "ast_hash": "153536f8201d7ee8329277dc50bb07c2",
+    "mtime": 1794024748.3812408,
+    "seen": 1794024756.9701695,
+    "ast_hash": "1a2e5c082702761ace3c5f35a7bc9c14",
     "semantic_hash": ""
   },
   "receiver/src/input_adapter.rs": {

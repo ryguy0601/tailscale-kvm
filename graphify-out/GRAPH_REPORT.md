@@ -1,7 +1,7 @@
 # Graph Report - tailscale-kvm  (2026-11-06)
 
 ## Corpus Check
-- 16 files · ~13,173 words
+- 16 files · ~13,333 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 4 file(s) not represented in the graph (top: (none) 3, .toml 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c7d3026b`
+- Built from commit: `8aaba007`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -24,7 +24,7 @@
 - ⚡ Tailscale Software KVM: Universal Multi-Directional & Multi-Platform Mesh (Pure Rust)
 - execute_handoff
 - mouse_hook_proc
-- main
+- start_clipboard_sync
 - HHOOK
 - AtomicI32
 - tailscale-kvm-host
@@ -107,7 +107,7 @@ Nodes (14): cancel_active_drag_and_release_mouse(), classify_window(), DragKind,
 Cohesion: 0.20
 Nodes (12): hide_edge_overlay(), keyboard_hook_proc(), mouse_hook_proc(), overlay_wnd_proc(), send_fast_bytes(), show_edge_overlay(), start_connection_manager(), switch_active_peer() (+4 more)
 
-### Community 8 - "main"
+### Community 8 - "start_clipboard_sync"
 Cohesion: 0.25
 Nodes (7): collect_transfer_entries(), read_clipboard_dib_bytes(), read_clipboard_unicode_text(), resolve_target_addr(), start_clipboard_sync(), stream_files_to_omarchy(), stream_image_to_omarchy()
 

@@ -10,7 +10,7 @@
       --card-bg: #161b22;
       --border: #30363d;
       --accent: #00c7b7;
-      --accent-glow: rgba(0, 199, 183, 0.2);
+      --accent-glow: rgba(0, 199, 183, 0.25);
       --text: #c9d1d9;
       --text-bright: #f0f6fc;
       --online: #3fb950;
@@ -28,7 +28,7 @@
     }
     header {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 25px;
     }
     h1 {
       color: var(--text-bright);
@@ -55,12 +55,12 @@
       margin-top: 6px;
     }
 
-    /* Grid Canvas */
+    /* 2D Canvas Grid */
     .canvas-container {
       background: #090d13;
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 40px;
+      padding: 35px;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
       display: grid;
       grid-template-columns: 220px 220px 220px;
@@ -68,7 +68,7 @@
       gap: 20px;
       align-items: center;
       justify-items: center;
-      margin-bottom: 40px;
+      margin-bottom: 35px;
       position: relative;
     }
 
@@ -84,7 +84,7 @@
       justify-content: center;
       padding: 12px;
       text-align: center;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
     }
     .slot-card.active {
@@ -95,7 +95,7 @@
     .slot-card.dragover {
       border-color: #58a6ff;
       background: #152238;
-      transform: scale(1.02);
+      transform: scale(1.03);
     }
     .slot-label {
       font-size: 12px;
@@ -103,6 +103,7 @@
       text-transform: uppercase;
       color: #8b949e;
       margin-bottom: 8px;
+      user-select: none;
     }
 
     .host-card {
@@ -123,11 +124,25 @@
     .slot-right  { grid-column: 3; grid-row: 2; }
     .slot-bottom { grid-column: 2; grid-row: 3; }
 
-    /* Assigned peer badge inside slot */
+    /* Draggable assigned card inside a slot */
     .assigned-peer {
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: 4px;
+      cursor: grab;
+      user-select: none;
+      width: 100%;
+      padding: 6px;
+      border-radius: 8px;
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+    .assigned-peer:active {
+      cursor: grabbing;
+      transform: scale(0.97);
+    }
+    .assigned-peer:hover {
+      background: rgba(0, 199, 183, 0.1);
     }
     .peer-name {
       font-weight: 600;
@@ -139,15 +154,24 @@
       color: #8b949e;
       font-family: monospace;
     }
+    .slot-hint {
+      font-size: 10px;
+      color: var(--accent);
+      margin-top: 2px;
+      text-transform: uppercase;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
     .remove-btn {
-      margin-top: 8px;
+      margin-top: 6px;
       background: rgba(248, 81, 73, 0.15);
       border: 1px solid rgba(248, 81, 73, 0.4);
       color: #ff7b72;
-      padding: 4px 8px;
+      padding: 3px 8px;
       border-radius: 6px;
       font-size: 11px;
       cursor: pointer;
+      transition: all 0.15s;
     }
     .remove-btn:hover {
       background: rgba(248, 81, 73, 0.3);
@@ -193,6 +217,9 @@
       background: #263040;
       transform: translateY(-2px);
     }
+    .peer-chip:active {
+      cursor: grabbing;
+    }
     .status-dot {
       width: 8px;
       height: 8px;
@@ -209,7 +236,7 @@
 
   <header>
     <h1>⚡ Tailscale KVM <span class="badge">Multi-Screen Mesh</span></h1>
-    <p class="subtitle">Drag & Drop any detected Tailscale device to configure multi-screen boundaries</p>
+    <p class="subtitle">Drag & Drop any connected screen to rearrange its physical position around your host</p>
   </header>
 
   <!-- 2D Screen Arrangement Canvas -->
@@ -283,7 +310,12 @@
         const div = document.createElement('div');
         div.className = 'peer-chip';
         div.draggable = true;
-        div.ondragstart = (e) => e.dataTransfer.setData('text/plain', JSON.stringify(peer));
+        div.ondragstart = (e) => {
+          e.dataTransfer.setData('text/plain', JSON.stringify({
+            peer: peer,
+            sourceSlot: null
+          }));
+        };
 
         div.innerHTML = `
           <div class="status-dot ${peer.online ? 'online' : ''}"></div>
@@ -305,16 +337,30 @@
         if (ip && ip.trim()) {
           const peer = peersData.find(p => p.ip === ip) || { name: ip, ip: ip };
           card.classList.add('active');
-          container.innerHTML = `
-            <div class="assigned-peer">
-              <span class="peer-name">${peer.name}</span>
-              <span class="peer-ip">${peer.ip}</span>
-              <button class="remove-btn" onclick="assignSlot('${slot}', 'none')">Disconnect</button>
-            </div>
+
+          const div = document.createElement('div');
+          div.className = 'assigned-peer';
+          div.draggable = true;
+          div.ondragstart = (e) => {
+            e.stopPropagation();
+            e.dataTransfer.setData('text/plain', JSON.stringify({
+              peer: peer,
+              sourceSlot: slot
+            }));
+          };
+
+          div.innerHTML = `
+            <span class="peer-name">${peer.name}</span>
+            <span class="peer-ip">${peer.ip}</span>
+            <span class="slot-hint">⠿ Drag to move</span>
+            <button class="remove-btn" onclick="assignSlot('${slot}', 'none')">Disconnect</button>
           `;
+
+          container.innerHTML = '';
+          container.appendChild(div);
         } else {
           card.classList.remove('active');
-          container.innerHTML = '<span style="color:#6e7681; font-size:12px;">Drag device here</span>';
+          container.innerHTML = '<span style="color:#6e7681; font-size:12px;">Drag screen here</span>';
         }
       });
     }
@@ -328,17 +374,30 @@
       e.currentTarget.classList.remove('dragover');
     }
 
-    async function onDrop(e, slot) {
+    async function onDrop(e, targetSlot) {
       e.preventDefault();
       e.currentTarget.classList.remove('dragover');
       try {
         const raw = e.dataTransfer.getData('text/plain');
-        const peer = JSON.parse(raw);
+        if (!raw) return;
+        const payload = JSON.parse(raw);
+
+        const peer = payload.peer || payload;
+        const sourceSlot = payload.sourceSlot;
+
         if (peer && peer.ip) {
-          await assignSlot(slot, peer.ip);
+          // If dragging from an existing slot to a new slot:
+          if (sourceSlot && sourceSlot !== targetSlot) {
+            // Swap or clear old slot
+            const existingInTarget = currentSlots[targetSlot];
+            await assignSlot(sourceSlot, existingInTarget || 'none');
+            await assignSlot(targetSlot, peer.ip);
+          } else {
+            await assignSlot(targetSlot, peer.ip);
+          }
         }
       } catch (err) {
-        console.error(err);
+        console.error("Drop handler error:", err);
       }
     }
 
