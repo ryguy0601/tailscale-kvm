@@ -587,6 +587,13 @@ async fn execute_reverse_handoff() {
                         .args(["-k", "Escape"])
                         .status()
                         .await;
+                    sleep(Duration::from_millis(30)).await;
+
+                    // Close the originating tab/window on Linux so it continues seamlessly on Windows
+                    let _ = tokio::process::Command::new("wtype")
+                        .args(["-M", "ctrl", "-k", "w", "-m", "ctrl"])
+                        .status()
+                        .await;
                 }
 
                 ActiveApp::FileManager => {

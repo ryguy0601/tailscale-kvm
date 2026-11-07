@@ -742,6 +742,12 @@ fn execute_handoff(source_hwnd: HWND, fallback_hwnd: HWND, from_drag: bool) {
 
                     // Close the address bar dropdown cleanly on Windows
                     tap_key(VK_ESCAPE);
+                    thread::sleep(Duration::from_millis(30));
+
+                    // When dragging a tab or window across, close the originating tab on Windows (Ctrl+W)
+                    if from_drag {
+                        tap_chord(VK_CONTROL, b'W' as u16);
+                    }
 
                     let final_url = copied_url
                         .as_deref()
