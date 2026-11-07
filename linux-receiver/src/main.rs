@@ -64,6 +64,19 @@ fn start_cursorpos_worker() {
     });
 }
 
+fn open_url_in_browser(url: String) {
+    tokio::spawn(async move {
+        let formatted = if !url.starts_with("http://") && !url.starts_with("https://") {
+            format!("https://{}", url)
+        } else {
+            url
+        };
+        let _ = tokio::process::Command::new("xdg-open")
+            .arg(formatted)
+            .spawn();
+    });
+}
+
 async fn handle_connection(
     stream: TcpStream,
     device: Arc<Mutex<evdev::uinput::VirtualDevice>>,
@@ -81,7 +94,6 @@ async fn handle_connection(
             continue;
         }
 
-        // Fast zero-copy token parser
         match bytes[0] {
             // "M dx dy" -> Mouse Move
             b'M' => {
@@ -100,6 +112,16 @@ async fn handle_connection(
                                 let _ = writer.write_all(b"switch_to_local\n").await;
                             }
                         }
+                    }
+                }
+            }
+
+            // "U <url>" -> Instant Browser Handoff / Open URL
+            b'U' => {
+                if line.len() > 2 {
+                    let url = line[2..].trim().to_string();
+                    if !url.is_empty() {
+                        open_url_in_browser(url);
                     }
                 }
             }
@@ -186,9 +208,8 @@ async fn handle_connection(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("=== Tailscale KVM Rust Receiver Daemon (High-Speed Engine) ===");
+    println!("=== Tailscale KVM Rust Receiver Daemon ===");
 
-    // Initialize virtual keyboard keys
     let mut key_set = AttributeSet::<Key>::new();
     for code in 1..248 {
         key_set.insert(Key::new(code));
@@ -199,7 +220,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     key_set.insert(Key::BTN_SIDE);
     key_set.insert(Key::BTN_EXTRA);
 
-    // Initialize relative axes
     let mut rel_set = AttributeSet::<RelativeAxisType>::new();
     rel_set.insert(RelativeAxisType::REL_X);
     rel_set.insert(RelativeAxisType::REL_Y);

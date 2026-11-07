@@ -42,15 +42,21 @@
     "semantic_hash": ""
   },
   "windows-host/src/main.rs": {
-    "mtime": 1794011451.0207083,
-    "seen": 1794011478.5318115,
-    "ast_hash": "a6674820f65e61bc2f7af12dc860361f",
+    "mtime": 1794011617.817933,
+    "seen": 1794011643.7223537,
+    "ast_hash": "b8f878c457dc18364880fbef13b1b83f",
     "semantic_hash": ""
   },
   "windows-host/src/vk_map.rs": {
     "mtime": 1794009394.4097545,
     "seen": 1794009546.4433935,
     "ast_hash": "ff2b2da06cff7f5090cb60aa70be156d",
+    "semantic_hash": ""
+  },
+  "windows-host/install_background_service.ps1": {
+    "mtime": 1794011640.1447992,
+    "seen": 1794011643.7223504,
+    "ast_hash": "e94b683f5b4553734dcf02d2e5f5eb08",
     "semantic_hash": ""
   }
 }

@@ -14,6 +14,8 @@ use std::time::Duration;
 #[cfg(windows)]
 use windows_sys::Win32::Foundation::*;
 #[cfg(windows)]
+use windows_sys::Win32::UI::Input::KeyboardAndMouse::*;
+#[cfg(windows)]
 use windows_sys::Win32::UI::WindowsAndMessaging::*;
 
 static IS_REMOTE: AtomicBool = AtomicBool::new(false);
@@ -29,6 +31,10 @@ static mut CENTER_Y: i32 = 540;
 static mut MOUSE_HOOK: HHOOK = 0;
 #[cfg(windows)]
 static mut KEYBOARD_HOOK: HHOOK = 0;
+
+static LBUTTON_DOWN: AtomicBool = AtomicBool::new(false);
+static CTRL_DOWN: AtomicBool = AtomicBool::new(false);
+static ALT_DOWN: AtomicBool = AtomicBool::new(false);
 
 fn get_config_ip() -> String {
     let args: Vec<String> = env::args().collect();
@@ -66,7 +72,65 @@ fn send_fast_bytes(bytes: &[u8]) {
     }
 }
 
+/// Grabs the active browser URL using rapid Win32 keystrokes (Ctrl+L -> Ctrl+C)
+fn try_get_active_browser_url() -> Option<String> {
+    #[cfg(windows)]
+    unsafe {
+        let hwnd = GetForegroundWindow();
+        if hwnd == 0 {
+            return None;
+        }
+
+        // Simulate Ctrl + L (Focus address bar in Chrome, Edge, Brave, Firefox)
+        keybd_event(VK_CONTROL as u8, 0, 0, 0);
+        keybd_event(b'L', 0, 0, 0);
+        keybd_event(b'L', 0, KEYEVENTF_KEYUP, 0);
+        keybd_event(VK_CONTROL as u8, 0, KEYEVENTF_KEYUP, 0);
+
+        thread::sleep(Duration::from_millis(40));
+
+        // Simulate Ctrl + C (Copy URL to clipboard)
+        keybd_event(VK_CONTROL as u8, 0, 0, 0);
+        keybd_event(b'C', 0, 0, 0);
+        keybd_event(b'C', 0, KEYEVENTF_KEYUP, 0);
+        keybd_event(VK_CONTROL as u8, 0, KEYEVENTF_KEYUP, 0);
+
+        thread::sleep(Duration::from_millis(40));
+
+        // Read URL from clipboard
+        if let Ok(mut clip) = arboard::Clipboard::new() {
+            if let Ok(text) = clip.get_text() {
+                let trimmed = text.trim();
+                if trimmed.starts_with("http://")
+                    || trimmed.starts_with("https://")
+                    || trimmed.starts_with("www.")
+                    || (trimmed.contains('.') && !trimmed.contains(' '))
+                {
+                    return Some(trimmed.to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Fling active browser tab across to Omarchy
+pub fn fling_browser_to_omarchy() {
+    thread::spawn(|| {
+        if let Some(url) = try_get_active_browser_url() {
+            let pkt = format!("U {}\n", url);
+            send_fast_bytes(pkt.as_bytes());
+        }
+    });
+}
+
 pub fn switch_to_remote() {
+    // If the user was dragging a window across to Omarchy (holding Left Mouse Button),
+    // automatically fling their active browser tab to Omarchy!
+    if LBUTTON_DOWN.load(Ordering::SeqCst) {
+        fling_browser_to_omarchy();
+    }
+
     IS_REMOTE.store(true, Ordering::SeqCst);
     IGNORE_WARP.store(true, Ordering::SeqCst);
     #[cfg(windows)]
@@ -92,6 +156,12 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
         let x = mouse_data.pt.x;
         let y = mouse_data.pt.y;
         let msg = wparam as u32;
+
+        if msg == WM_LBUTTONDOWN {
+            LBUTTON_DOWN.store(true, Ordering::SeqCst);
+        } else if msg == WM_LBUTTONUP {
+            LBUTTON_DOWN.store(false, Ordering::SeqCst);
+        }
 
         let remote = IS_REMOTE.load(Ordering::SeqCst);
 
@@ -165,10 +235,23 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
         let kbd_data = *(lparam as *const KBDLLHOOKSTRUCT);
         let vk = kbd_data.vkCode;
         let msg = wparam as u32;
+        let is_down = msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN;
+
+        if vk == VK_CONTROL || vk == VK_LCONTROL || vk == VK_RCONTROL {
+            CTRL_DOWN.store(is_down, Ordering::SeqCst);
+        } else if vk == VK_MENU || vk == VK_LMENU || vk == VK_RMENU {
+            ALT_DOWN.store(is_down, Ordering::SeqCst);
+        }
+
+        // Hotkey: Ctrl + Alt + RightArrow -> Instantly Fling Active Tab to Omarchy!
+        if vk == VK_RIGHT && is_down && CTRL_DOWN.load(Ordering::SeqCst) && ALT_DOWN.load(Ordering::SeqCst) {
+            fling_browser_to_omarchy();
+            return 1;
+        }
 
         // Emergency Release Hotkeys: F12 (0x7B), Pause (0x13), ScrollLock (0x91)
         if vk == 0x7B || vk == 0x13 || vk == 0x91 {
-            if IS_REMOTE.load(Ordering::SeqCst) && (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN) {
+            if IS_REMOTE.load(Ordering::SeqCst) && is_down {
                 switch_to_local();
             }
             return 1;
@@ -180,11 +263,7 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
 
         // In Remote Mode: map and send to Omarchy, swallow on Windows
         if let Some(evdev_code) = vk_map::translate_vk(vk) {
-            let action = if msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN {
-                "down"
-            } else {
-                "up"
-            };
+            let action = if is_down { "down" } else { "up" };
             let pkt = format!("K {} {}\n", evdev_code, action);
             send_fast_bytes(pkt.as_bytes());
         }
