@@ -60,14 +60,15 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 <div class="container">
 
 <h1>tailscale-kvm — Complete Call Flow &amp; Architecture Documentation</h1>
-<p class="subtitle">Generated from graphify knowledge graph: 264 nodes, 430 edges, 33 communities. Commit: a921be0</p>
+<p class="subtitle">Generated from graphify knowledge graph: 270 nodes, 436 edges, 34 communities. Commit: 9bd61d9</p>
 
 <div class="nav">
     <a href="#overview">Architecture Overview</a>
     <a href="#build-graph">Graph Build</a>
     <a href="#cli-skills">CLI &amp; Skill Installers</a>
-    <a href="#web-guirs-host">Web Guirs Host</a>
+    <a href="#input-adapterrs-receiver">Input Adapterrs Receiver</a>
     <a href="#mutex-tcpstream-stream">Mutex Tcpstream Stream</a>
+    <a href="#oncelock-target-host">Oncelock Target Host</a>
     <a href="#run-hostsh-script">Run Hostsh Script</a>
     <a href="#run-receiversh-script">Run Receiversh Script</a>
     <a href="#host-tailscale-kvm">Host Tailscale Kvm</a>
@@ -85,12 +86,14 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 flowchart LR
     BUILD_GRAPH_321CBB04("Graph Build<br/><small>20 nodes</small>")
     class BUILD_GRAPH_321CBB04 module;
-    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>210 nodes</small>")
+    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>223 nodes</small>")
     class CLI_SKILLS_9964CBB8 module;
-    WEB_GUIRS_HOST_60B7092F("Web Guirs Host<br/><small>23 nodes</small>")
-    class WEB_GUIRS_HOST_60B7092F module;
+    INPUT_ADAPTERRS_RECEIVER_BE9A3D9B("Input Adapterrs Receiver<br/><small>14 nodes</small>")
+    class INPUT_ADAPTERRS_RECEIVER_BE9A3D9B module;
     MUTEX_TCPSTREAM_STREAM_9426569D("Mutex Tcpstream Stream<br/><small>3 nodes</small>")
     class MUTEX_TCPSTREAM_STREAM_9426569D module;
+    ONCELOCK_TARGET_HOST_73F7F2E6("Oncelock Target Host<br/><small>2 nodes</small>")
+    class ONCELOCK_TARGET_HOST_73F7F2E6 module;
     RUN_HOSTSH_SCRIPT_336292B9("Run Hostsh Script<br/><small>2 nodes</small>")
     class RUN_HOSTSH_SCRIPT_336292B9 module;
     RUN_RECEIVERSH_SCRIPT_DEBDB906("Run Receiversh Script<br/><small>2 nodes</small>")
@@ -103,8 +106,9 @@ flowchart LR
     class RUN_HOSTPS1_87DC0170 module;
     RUN_RECEIVERPS1_80A96601("Run Receiverps1<br/><small>1 nodes</small>")
     class RUN_RECEIVERPS1_80A96601 module;
-    CLI_SKILLS_9964CBB8 -->|imports x12| WEB_GUIRS_HOST_60B7092F
     CLI_SKILLS_9964CBB8 -->|imports x3| MUTEX_TCPSTREAM_STREAM_9426569D
+    CLI_SKILLS_9964CBB8 -->|references x2| INPUT_ADAPTERRS_RECEIVER_BE9A3D9B
+    CLI_SKILLS_9964CBB8 -->|imports x2| ONCELOCK_TARGET_HOST_73F7F2E6
     CLI_SKILLS_9964CBB8 -->|contains x2| BUILD_GRAPH_321CBB04
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
@@ -122,19 +126,19 @@ flowchart LR
     <h4>Architecture Layers</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>Layer</th><th>Nodes</th><th>Communities</th></tr>
-      <tr><td>Graph Build</td><td>20</td><td><code>5, 26, 27, 28, 31</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>210</td><td><code>2, 3, 6, 10, 7, 15, 0, 1, 4, 13, 14, 17, 18, 8, 19, 24, 21, 16, 9, 34</code></td></tr><tr><td>Web Guirs Host</td><td>23</td><td><code>22</code></td></tr><tr><td>Mutex Tcpstream Stream</td><td>3</td><td><code>25</code></td></tr><tr><td>Run Hostsh Script</td><td>2</td><td><code>29</code></td></tr><tr><td>Run Receiversh Script</td><td>2</td><td><code>30</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr><tr><td>Run Hostps1</td><td>1</td><td><code>32</code></td></tr><tr><td>Run Receiverps1</td><td>1</td><td><code>33</code></td></tr>
+      <tr><td>Graph Build</td><td>20</td><td><code>5, 26, 27, 28, 31</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>223</td><td><code>2, 3, 6, 22, 7, 10, 15, 0, 1, 4, 13, 14, 17, 18, 19, 21, 16, 9, 8, 34</code></td></tr><tr><td>Input Adapterrs Receiver</td><td>14</td><td><code>20</code></td></tr><tr><td>Mutex Tcpstream Stream</td><td>3</td><td><code>25</code></td></tr><tr><td>Oncelock Target Host</td><td>2</td><td><code>23</code></td></tr><tr><td>Run Hostsh Script</td><td>2</td><td><code>29</code></td></tr><tr><td>Run Receiversh Script</td><td>2</td><td><code>30</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr><tr><td>Run Hostps1</td><td>1</td><td><code>32</code></td></tr><tr><td>Run Receiverps1</td><td>1</td><td><code>33</code></td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Core Flow</h4>
-    <div class="arrow-chain">CLI &amp; Skill Installers -&gt; Web Guirs Host -&gt; Graph Build -&gt; Mutex Tcpstream Stream -&gt; Run Hostsh Script -&gt; Run Receiversh Script -&gt; Host Tailscale Kvm</div>
+    <div class="arrow-chain">CLI &amp; Skill Installers -&gt; Mutex Tcpstream Stream -&gt; Graph Build -&gt; Input Adapterrs Receiver -&gt; Oncelock Target Host -&gt; Run Hostsh Script -&gt; Run Receiversh Script</div>
   </div>
 </div>
 <div class="grid">
   <div class="card">
     <h4>Graph Report Highlights</h4>
     <ul>
-      <li>264 nodes · 430 edges · 33 communities (19 shown, 14 thin omitted)</li>
+      <li>270 nodes · 436 edges · 34 communities (17 shown, 17 thin omitted)</li>
       <li>Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS</li>
       <li>Token cost: 0 input · 0 output</li>
       <li>1. `handle_connection()` - 18 edges</li>
@@ -412,17 +416,18 @@ flowchart LR
 
 <!-- ====== 3. CLI & Skill Installers ====== -->
 <h2 id="cli-skills">3. CLI &amp; Skill Installers</h2>
-<p>CLI &amp; Skill Installers groups implementation around mainrs, host, receiver, clipboard, mostly in host/src/main.rs, receiver/src/main.rs, host/src/vk_map.rs. This section covers 210 nodes and 355 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>CLI &amp; Skill Installers groups implementation around mainrs, host, receiver, web, mostly in host/src/main.rs, receiver/src/main.rs, host/src/web_gui.rs. This section covers 223 nodes and 393 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: CLI &amp; Skill Installers (210 nodes, 355 edges)
+    %% Section: CLI &amp; Skill Installers (223 nodes, 393 edges)
     subgraph cli_skills_receiver_src_main_rs_687ecddc["receiver/src/main.rs"]
         receiver_src_main_27e70eb4("main.rs")
         receiver_src_main_handle_connection_6d2ddb88("handle_connection()<br/><small>receiver/src/main.rs</small>")
         receiver_src_main_returnedge_725f957f("ReturnEdge<br/><small>receiver/src/main.rs</small>")
         receiver_src_main_returnedge_parse_e483e4ee("parse()<br/><small>receiver/src/main.rs</small>")
+        receiver_src_main_mark_control_session_6e9b477e("mark_control_session()<br/><small>receiver/src/main.rs</small>")
         receiver_src_main_receive_binary_file_226f6b1d("receive_binary_file()<br/><small>receiver/src/main.rs</small>")
         receiver_src_main_receive_image_to_clipboard_a3e78681("receive_image_to_clipboard()<br/><small>receiver/src/main.rs</small>")
         receiver_src_main_open_terminal_at_path_8ca1461c("open_terminal_at_path()<br/><small>receiver/src/main.rs</small>")
@@ -430,18 +435,18 @@ flowchart LR
         receiver_src_main_open_url_in_browser_25d40946("open_url_in_browser()<br/><small>receiver/src/main.rs</small>")
         receiver_src_main_unescape_text_line_cfe48a2a("unescape_text_line()<br/><small>receiver/src/main.rs</small>")
         receiver_src_main_copy_text_to_wayland_clipboard_00090a52("to wayland clipboard()<br/><small>receiver/src/main.rs</small>")
-        receiver_src_main_sanitize_relative_path_d3a6e1e7("sanitize_relative_path()<br/><small>receiver/src/main.rs</small>")
     end
     subgraph cli_skills_host_src_main_rs_73a5450b["host/src/main.rs"]
         host_src_main_2cf1d6ba("main.rs")
         host_src_main_execute_handoff_87404872("execute_handoff()<br/><small>host/src/main.rs</small>")
         host_src_main_main_87004234("main()<br/><small>host/src/main.rs</small>")
-        host_src_main_mouse_hook_proc_78408bb7("mouse_hook_proc()<br/><small>host/src/main.rs</small>")
         host_src_main_edgedirection_19e25450("EdgeDirection<br/><small>host/src/main.rs</small>")
         host_src_main_edgedirection_parse_9c2a7180("parse()<br/><small>host/src/main.rs</small>")
     end
+    host_src_web_gui_16ccde2b("web_gui.rs")
     host_src_main_edgedirection_19e25450 -->|method| host_src_main_edgedirection_parse_9c2a7180
     receiver_src_main_returnedge_725f957f -->|method| receiver_src_main_returnedge_parse_e483e4ee
+    receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_mark_control_session_6e9b477e
     receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_receive_binary_file_226f6b1d
     receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_receive_image_to_clipboard_a3e78681
     receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_open_terminal_at_path_8ca1461c
@@ -449,13 +454,12 @@ flowchart LR
     receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_open_url_in_browser_25d40946
     receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_unescape_text_line_cfe48a2a
     receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_copy_text_to_wayland_clipboard_00090a52
-    receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_sanitize_relative_path_d3a6e1e7
-    receiver_src_main_receive_binary_file_226f6b1d -->|calls| receiver_src_main_sanitize_relative_path_d3a6e1e7
-    %% Omitted for readability: 192 nodes, 0 edges
+    %% Omitted for readability: 205 nodes, 0 edges
     class receiver_src_main_27e70eb4 module;
     class receiver_src_main_handle_connection_6d2ddb88 function;
     class receiver_src_main_returnedge_725f957f klass;
     class receiver_src_main_returnedge_parse_e483e4ee function;
+    class receiver_src_main_mark_control_session_6e9b477e function;
     class receiver_src_main_receive_binary_file_226f6b1d function;
     class receiver_src_main_receive_image_to_clipboard_a3e78681 entry;
     class receiver_src_main_open_terminal_at_path_8ca1461c function;
@@ -463,13 +467,12 @@ flowchart LR
     class receiver_src_main_open_url_in_browser_25d40946 function;
     class receiver_src_main_unescape_text_line_cfe48a2a function;
     class receiver_src_main_copy_text_to_wayland_clipboard_00090a52 entry;
-    class receiver_src_main_sanitize_relative_path_d3a6e1e7 function;
     class host_src_main_2cf1d6ba module;
     class host_src_main_execute_handoff_87404872 function;
     class host_src_main_main_87004234 function;
-    class host_src_main_mouse_hook_proc_78408bb7 ui;
     class host_src_main_edgedirection_19e25450 klass;
     class host_src_main_edgedirection_parse_9c2a7180 function;
+    class host_src_web_gui_16ccde2b module;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -573,22 +576,6 @@ flowchart LR
 </tr>
 <tr>
   <td>11</td>
-  <td><code>OnceLock</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>OnceLock node in project.</td>
-</tr>
-<tr>
-  <td>12</td>
-  <td><code>TARGET_IP</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>TARGET_IP node in host/src/main.rs.</td>
-</tr>
-<tr>
-  <td>13</td>
   <td><code>closeclipboard</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-cmd">Entry</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -596,7 +583,7 @@ flowchart LR
   <td>closeclipboard node in project.</td>
 </tr>
 <tr>
-  <td>14</td>
+  <td>12</td>
   <td><code>cursor</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -604,7 +591,7 @@ flowchart LR
   <td>cursor node in project.</td>
 </tr>
 <tr>
-  <td>15</td>
+  <td>13</td>
   <td><code>dragqueryfilew</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -612,7 +599,7 @@ flowchart LR
   <td>Supports retrieval-augmented Q&amp;A or streaming chat.</td>
 </tr>
 <tr>
-  <td>16</td>
+  <td>14</td>
   <td><code>emptyclipboard</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-cmd">Entry</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -620,7 +607,7 @@ flowchart LR
   <td>emptyclipboard node in project.</td>
 </tr>
 <tr>
-  <td>17</td>
+  <td>15</td>
   <td><code>foundation</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -628,7 +615,7 @@ flowchart LR
   <td>foundation node in project.</td>
 </tr>
 <tr>
-  <td>18</td>
+  <td>16</td>
   <td><code>gdi</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -636,7 +623,7 @@ flowchart LR
   <td>gdi node in project.</td>
 </tr>
 <tr>
-  <td>19</td>
+  <td>17</td>
   <td><code>getclipboarddata</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-cmd">Entry</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -644,7 +631,7 @@ flowchart LR
   <td>getclipboarddata node in project.</td>
 </tr>
 <tr>
-  <td>20</td>
+  <td>18</td>
   <td><code>getclipboardsequencenumber</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-cmd">Entry</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -652,7 +639,7 @@ flowchart LR
   <td>getclipboardsequencenumber node in project.</td>
 </tr>
 <tr>
-  <td>21</td>
+  <td>19</td>
   <td><code>globalalloc</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -660,7 +647,7 @@ flowchart LR
   <td>globalalloc node in project.</td>
 </tr>
 <tr>
-  <td>22</td>
+  <td>20</td>
   <td><code>globallock</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -668,7 +655,7 @@ flowchart LR
   <td>globallock node in project.</td>
 </tr>
 <tr>
-  <td>23</td>
+  <td>21</td>
   <td><code>globalsize</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -676,7 +663,7 @@ flowchart LR
   <td>globalsize node in project.</td>
 </tr>
 <tr>
-  <td>24</td>
+  <td>22</td>
   <td><code>globalunlock</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -684,7 +671,7 @@ flowchart LR
   <td>globalunlock node in project.</td>
 </tr>
 <tr>
-  <td>25</td>
+  <td>23</td>
   <td><code>gmem_moveable</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -692,7 +679,7 @@ flowchart LR
   <td>gmem_moveable node in project.</td>
 </tr>
 <tr>
-  <td>26</td>
+  <td>24</td>
   <td><code>instant</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -700,7 +687,7 @@ flowchart LR
   <td>instant node in project.</td>
 </tr>
 <tr>
-  <td>27</td>
+  <td>25</td>
   <td><code>isclipboardformatavailable</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-cmd">Entry</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -708,7 +695,7 @@ flowchart LR
   <td>isclipboardformatavailable node in project.</td>
 </tr>
 <tr>
-  <td>28</td>
+  <td>26</td>
   <td><code>keyboardandmouse</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -716,7 +703,7 @@ flowchart LR
   <td>keyboardandmouse node in project.</td>
 </tr>
 <tr>
-  <td>29</td>
+  <td>27</td>
   <td><code>openclipboard</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-cmd">Entry</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -724,12 +711,28 @@ flowchart LR
   <td>openclipboard node in project.</td>
 </tr>
 <tr>
-  <td>30</td>
+  <td>28</td>
   <td><code>openprocess</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
   <td>No direct outbound edge</td>
   <td>openprocess node in project.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>osstringext</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>osstringext node in project.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>process_query_limited_information</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>process_query_limited_information node in project.</td>
 </tr>
 </table>
 
@@ -738,85 +741,72 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>host/src/main.rs</code></td><td>79 nodes</td></tr>
+      <tr><td><code>host/src/main.rs</code></td><td>78 nodes</td></tr>
 <tr><td><code>receiver/src/main.rs</code></td><td>60 nodes</td></tr>
+<tr><td><code>host/src/web_gui.rs</code></td><td>12 nodes</td></tr>
 <tr><td><code>host/src/vk_map.rs</code></td><td>2 nodes</td></tr>
 <tr><td><code>host/install_background_service.ps1</code></td><td>1 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: contains x121, calls x89, references x67, imports x61. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x131, calls x99, references x75, imports x71. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
 
-<!-- ====== 4. Web Guirs Host ====== -->
-<h2 id="web-guirs-host">4. Web Guirs Host</h2>
-<p>Web Guirs Host groups implementation around web, guirs, host, gui, mostly in host/src/web_gui.rs. This section covers 23 nodes and 39 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<!-- ====== 4. Input Adapterrs Receiver ====== -->
+<h2 id="input-adapterrs-receiver">4. Input Adapterrs Receiver</h2>
+<p>Input Adapterrs Receiver groups implementation around input, adapterrs, receiver, emit, mostly in receiver/src/input_adapter.rs. This section covers 14 nodes and 14 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Web Guirs Host (23 nodes, 39 edges)
-    subgraph web_guirs_host_External_generated_af5459a0["External / generated"]
-        bufread_c4c4dd68("bufread")
-        bufreader_f9829d05("bufreader")
-        write_e1d0c6c1("write")
-        host_src_web_gui_rs_tcpstream_d03def78("TcpStream")
-        tcplistener_db895111("tcplistener")
-        atomicu8_9006953f("atomicu8")
-        ordering_428ac481("ordering")
-        arc_172e5273("arc")
-        host_src_web_gui_rs_mutex_cb31043c("Mutex")
-        host_src_web_gui_rs_oncelock_ffb4353b("OnceLock")
+    %% Section: Input Adapterrs Receiver (14 nodes, 14 edges)
+    subgraph input_adapterrs_receiver_External_generated_e36e9632["External / generated"]
+        virtualdevice_502b93eb("VirtualDevice")
+        virtualdevicebuilder_6e941ad7("virtualdevicebuilder")
+        attributeset_c151133c("attributeset")
+        eventtype_aea96519("eventtype")
+        inputevent_925bce7d("inputevent")
+        key_a62f2225("key")
+        relativeaxistype_e8ba3446("relativeaxistype")
     end
-    subgraph web_guirs_host_host_src_web_gui_rs_ee85788e["host/src/web_gui.rs"]
-        host_src_web_gui_16ccde2b("web_gui.rs")
-        host_src_web_gui_handle_http_client_20f6aea7("handle_http_client()<br/><small>host/src/web_gui.rs</small>")
-        host_src_web_gui_start_gui_server_9512f502("start_gui_server()<br/><small>host/src/web_gui.rs</small>")
-        host_src_web_gui_get_slot_peer_f0e7e134("get_slot_peer()<br/><small>host/src/web_gui.rs</small>")
-        host_src_web_gui_set_slot_peer_ece27134("set_slot_peer()<br/><small>host/src/web_gui.rs</small>")
-        host_src_web_gui_get_slot_48d2d8de("get_slot()<br/><small>host/src/web_gui.rs</small>")
-        host_src_web_gui_get_tailscale_peers_json_61492f5f("get_tailscale_peers_json()<br/><small>host/src/web_gui.rs</small>")
-        host_src_web_gui_open_browser_6f1b17f7("open_browser()<br/><small>host/src/web_gui.rs</small>")
+    subgraph input_adapterrs_receiver_receiver_src_input_adap_c0dd4415["receiver/src/input_adapter.rs"]
+        receiver_src_input_adapter_6fe877f0("input_adapter.rs")
+        receiver_src_input_adapter_inputadapter_4cbcd1aa("InputAdapter<br/><small>receiver/src/input_adapter.rs</small>")
+        receiver_src_input_adapter_inputadapter_emit_mou_47c9e68d("emit_mouse_click()<br/><small>receiver/src/input_adapter.rs</small>")
+        receiver_src_input_adapter_inputadapter_new_6ef6d95c("new()<br/><small>receiver/src/input_adapter.rs</small>")
+        receiver_src_input_adapter_inputadapter_emit_key_860da4c7("emit_key()<br/><small>receiver/src/input_adapter.rs</small>")
+        receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca("emit_mouse_move()<br/><small>receiver/src/input_adapter.rs</small>")
+        receiver_src_input_adapter_inputadapter_emit_mou_05efa197("emit_mouse_wheel()<br/><small>receiver/src/input_adapter.rs</small>")
     end
-    host_src_web_gui_get_slot_peer_f0e7e134 -->|calls| host_src_web_gui_get_slot_48d2d8de
-    host_src_web_gui_handle_http_client_20f6aea7 -->|calls| host_src_web_gui_set_slot_peer_ece27134
-    host_src_web_gui_handle_http_client_20f6aea7 -->|calls| host_src_web_gui_get_slot_peer_f0e7e134
-    host_src_web_gui_handle_http_client_20f6aea7 -->|calls| host_src_web_gui_get_tailscale_peers_json_61492f5f
-    host_src_web_gui_set_slot_peer_ece27134 -->|calls| host_src_web_gui_get_slot_48d2d8de
-    host_src_web_gui_start_gui_server_9512f502 -->|calls| host_src_web_gui_open_browser_6f1b17f7
-    host_src_web_gui_start_gui_server_9512f502 -->|calls| host_src_web_gui_handle_http_client_20f6aea7
-    host_src_web_gui_16ccde2b -->|imports| bufread_c4c4dd68
-    host_src_web_gui_16ccde2b -->|imports| bufreader_f9829d05
-    host_src_web_gui_16ccde2b -->|imports| write_e1d0c6c1
-    host_src_web_gui_16ccde2b -->|imports| host_src_web_gui_rs_tcpstream_d03def78
-    host_src_web_gui_16ccde2b -->|imports| tcplistener_db895111
-    host_src_web_gui_16ccde2b -->|imports| atomicu8_9006953f
-    host_src_web_gui_16ccde2b -->|imports| ordering_428ac481
-    host_src_web_gui_16ccde2b -->|imports| arc_172e5273
-    host_src_web_gui_16ccde2b -->|imports| host_src_web_gui_rs_mutex_cb31043c
-    host_src_web_gui_16ccde2b -->|imports| host_src_web_gui_rs_oncelock_ffb4353b
-    %% Omitted for readability: 5 nodes, 0 edges
-    class bufread_c4c4dd68 function;
-    class bufreader_f9829d05 function;
-    class write_e1d0c6c1 function;
-    class host_src_web_gui_rs_tcpstream_d03def78 async;
-    class tcplistener_db895111 function;
-    class atomicu8_9006953f function;
-    class ordering_428ac481 function;
-    class arc_172e5273 function;
-    class host_src_web_gui_rs_mutex_cb31043c klass;
-    class host_src_web_gui_rs_oncelock_ffb4353b klass;
-    class host_src_web_gui_16ccde2b module;
-    class host_src_web_gui_handle_http_client_20f6aea7 entry;
-    class host_src_web_gui_start_gui_server_9512f502 function;
-    class host_src_web_gui_get_slot_peer_f0e7e134 function;
-    class host_src_web_gui_set_slot_peer_ece27134 function;
-    class host_src_web_gui_get_slot_48d2d8de function;
-    class host_src_web_gui_get_tailscale_peers_json_61492f5f function;
-    class host_src_web_gui_open_browser_6f1b17f7 function;
+    receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_emit_mou_47c9e68d
+    receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_new_6ef6d95c
+    receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_emit_key_860da4c7
+    receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca
+    receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_emit_mou_05efa197
+    receiver_src_input_adapter_6fe877f0 -->|imports| virtualdevice_502b93eb
+    receiver_src_input_adapter_6fe877f0 -->|imports| virtualdevicebuilder_6e941ad7
+    receiver_src_input_adapter_6fe877f0 -->|imports| attributeset_c151133c
+    receiver_src_input_adapter_6fe877f0 -->|imports| eventtype_aea96519
+    receiver_src_input_adapter_6fe877f0 -->|imports| inputevent_925bce7d
+    receiver_src_input_adapter_6fe877f0 -->|imports| key_a62f2225
+    receiver_src_input_adapter_6fe877f0 -->|imports| relativeaxistype_e8ba3446
+    class virtualdevice_502b93eb klass;
+    class virtualdevicebuilder_6e941ad7 function;
+    class attributeset_c151133c function;
+    class eventtype_aea96519 function;
+    class inputevent_925bce7d function;
+    class key_a62f2225 function;
+    class relativeaxistype_e8ba3446 function;
+    class receiver_src_input_adapter_6fe877f0 module;
+    class receiver_src_input_adapter_inputadapter_4cbcd1aa klass;
+    class receiver_src_input_adapter_inputadapter_emit_mou_47c9e68d entry;
+    class receiver_src_input_adapter_inputadapter_new_6ef6d95c function;
+    class receiver_src_input_adapter_inputadapter_emit_key_860da4c7 function;
+    class receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca function;
+    class receiver_src_input_adapter_inputadapter_emit_mou_05efa197 function;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -840,187 +830,115 @@ flowchart LR
 </tr>
 <tr>
   <td>1</td>
-  <td><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td><span class="tag tag-class">Module</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>arc</code><br><code>atomicu8</code><br><code>bufread</code><br>+8 more</td>
-  <td>web_gui.rs node in host/src/web_gui.rs.</td>
+  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">receiver/src/main.rs</small></td>
+  <td><code>emit_key()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>emit_mouse_click()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br><code>emit_mouse_move()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small><br>+2 more</td>
+  <td>InputAdapter node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
   <td>2</td>
-  <td><code>get_slot()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>get_slot_peer()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>set_slot_peer()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>get_slot() node in host/src/web_gui.rs.</td>
+  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>attributeset</code><br><code>eventtype</code><br><code>inputevent</code><br>+4 more</td>
+  <td>input_adapter.rs node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
   <td>3</td>
-  <td><code>get_slot_peer()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><code>.emit_key()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
-  <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>mouse_hook_proc()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td><code>get_slot()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td>get_slot_peer() node in host/src/web_gui.rs.</td>
+  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>.emit_key() node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
   <td>4</td>
-  <td><code>get_tailscale_peers_json()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><code>.emit_mouse_click()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-cmd">Entry</span></td>
+  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>get_tailscale_peers_json() node in host/src/web_gui.rs.</td>
+  <td>.emit_mouse_click() node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
   <td>5</td>
-  <td><code>GUI_ACTIVE_DOWN</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
+  <td><code>.emit_mouse_move()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>GUI_ACTIVE_DOWN node in host/src/web_gui.rs.</td>
+  <td>.emit_mouse_move() node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
   <td>6</td>
-  <td><code>GUI_ACTIVE_LEFT</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
+  <td><code>.emit_mouse_wheel()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>GUI_ACTIVE_LEFT node in host/src/web_gui.rs.</td>
+  <td>.emit_mouse_wheel() node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
   <td>7</td>
-  <td><code>GUI_ACTIVE_RIGHT</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
+  <td><code>.new()</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>InputAdapter</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>GUI_ACTIVE_RIGHT node in host/src/web_gui.rs.</td>
+  <td>.new() node in receiver/src/input_adapter.rs.</td>
 </tr>
 <tr>
   <td>8</td>
-  <td><code>GUI_ACTIVE_UP</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><code>VirtualDevice</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
+  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>GUI_ACTIVE_UP node in host/src/web_gui.rs.</td>
+  <td>VirtualDevice node in project.</td>
 </tr>
 <tr>
   <td>9</td>
-  <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td><span class="tag tag-cmd">Entry</span></td>
-  <td><code>start_gui_server()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td><code>get_slot_peer()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>get_tailscale_peers_json()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>set_slot_peer()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td>handle_http_client() node in host/src/web_gui.rs.</td>
+  <td><code>attributeset</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>attributeset node in project.</td>
 </tr>
 <tr>
   <td>10</td>
-  <td><code>open_browser()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><code>eventtype</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
-  <td><code>start_gui_server()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>open_browser() node in host/src/web_gui.rs.</td>
+  <td>eventtype node in project.</td>
 </tr>
 <tr>
   <td>11</td>
-  <td><code>Mutex</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><code>inputevent</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>Mutex node in project.</td>
+  <td>inputevent node in project.</td>
 </tr>
 <tr>
   <td>12</td>
-  <td><code>OnceLock</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><code>key</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>OnceLock node in project.</td>
+  <td>key node in project.</td>
 </tr>
 <tr>
   <td>13</td>
-  <td><code>TcpStream</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-async">Async</span></td>
-  <td><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><code>relativeaxistype</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>TcpStream node in project.</td>
+  <td>relativeaxistype node in project.</td>
 </tr>
 <tr>
   <td>14</td>
-  <td><code>set_slot_peer()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><code>virtualdevicebuilder</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
-  <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>main()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td><code>get_slot()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td>set_slot_peer() node in host/src/web_gui.rs.</td>
-</tr>
-<tr>
-  <td>15</td>
-  <td><code>start_gui_server()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>open_browser()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td>start_gui_server() node in host/src/web_gui.rs.</td>
-</tr>
-<tr>
-  <td>16</td>
-  <td><code>arc</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">receiver/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><code>input_adapter.rs</code><br><small style="color:var(--muted)">receiver/src/input_adapter.rs</small></td>
   <td>No direct outbound edge</td>
-  <td>arc node in project.</td>
-</tr>
-<tr>
-  <td>17</td>
-  <td><code>atomicu8</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>atomicu8 node in project.</td>
-</tr>
-<tr>
-  <td>18</td>
-  <td><code>bufread</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>bufread node in project.</td>
-</tr>
-<tr>
-  <td>19</td>
-  <td><code>bufreader</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small><br><code>main.rs</code><br><small style="color:var(--muted)">receiver/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>bufreader node in project.</td>
-</tr>
-<tr>
-  <td>20</td>
-  <td><code>ordering</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small><br><code>main.rs</code><br><small style="color:var(--muted)">receiver/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>ordering node in project.</td>
-</tr>
-<tr>
-  <td>21</td>
-  <td><code>tcplistener</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">receiver/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>tcplistener node in project.</td>
-</tr>
-<tr>
-  <td>22</td>
-  <td><code>thread</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>thread node in project.</td>
-</tr>
-<tr>
-  <td>23</td>
-  <td><code>write</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>write node in project.</td>
+  <td>virtualdevicebuilder node in project.</td>
 </tr>
 </table>
 
@@ -1029,12 +947,12 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>host/src/web_gui.rs</code></td><td>12 nodes</td></tr>
+      <tr><td><code>receiver/src/input_adapter.rs</code></td><td>7 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: imports x11, contains x11, references x10, calls x7. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: imports x7, method x5, references x1, contains x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
@@ -1119,8 +1037,75 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 6. Run Hostsh Script ====== -->
-<h2 id="run-hostsh-script">6. Run Hostsh Script</h2>
+<!-- ====== 6. Oncelock Target Host ====== -->
+<h2 id="oncelock-target-host">6. Oncelock Target Host</h2>
+<p>Oncelock Target Host groups implementation around oncelock, target, host, mainrs, mostly in host/src/main.rs. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Oncelock Target Host (2 nodes, 1 edges)
+    host_src_main_rs_oncelock_cf713789("OnceLock")
+    host_src_main_target_ip_4bebec9c("TARGET_IP<br/><small>host/src/main.rs</small>")
+    host_src_main_target_ip_4bebec9c -->|references| host_src_main_rs_oncelock_cf713789
+    class host_src_main_rs_oncelock_cf713789 klass;
+    class host_src_main_target_ip_4bebec9c klass;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>OnceLock</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>OnceLock node in project.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>TARGET_IP</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>TARGET_IP node in host/src/main.rs.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>host/src/main.rs</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: references x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 7. Run Hostsh Script ====== -->
+<h2 id="run-hostsh-script">7. Run Hostsh Script</h2>
 <p>Run Hostsh Script groups implementation around run, hostsh, script, mostly in run-host.sh. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1186,8 +1171,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 7. Run Receiversh Script ====== -->
-<h2 id="run-receiversh-script">7. Run Receiversh Script</h2>
+<!-- ====== 8. Run Receiversh Script ====== -->
+<h2 id="run-receiversh-script">8. Run Receiversh Script</h2>
 <p>Run Receiversh Script groups implementation around run, receiversh, script, mostly in run-receiver.sh. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1253,8 +1238,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 8. Host Tailscale Kvm ====== -->
-<h2 id="host-tailscale-kvm">8. Host Tailscale Kvm</h2>
+<!-- ====== 9. Host Tailscale Kvm ====== -->
+<h2 id="host-tailscale-kvm">9. Host Tailscale Kvm</h2>
 <p>Host Tailscale Kvm groups implementation around host, tailscale, kvm, cargotoml, mostly in host/Cargo.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1309,8 +1294,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 9. Receiver Tailscale Kvm ====== -->
-<h2 id="receiver-tailscale-kvm">9. Receiver Tailscale Kvm</h2>
+<!-- ====== 10. Receiver Tailscale Kvm ====== -->
+<h2 id="receiver-tailscale-kvm">10. Receiver Tailscale Kvm</h2>
 <p>Receiver Tailscale Kvm groups implementation around receiver, tailscale, kvm, cargotoml, mostly in receiver/Cargo.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1365,8 +1350,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 10. Run Hostps1 ====== -->
-<h2 id="run-hostps1">10. Run Hostps1</h2>
+<!-- ====== 11. Run Hostps1 ====== -->
+<h2 id="run-hostps1">11. Run Hostps1</h2>
 <p>Run Hostps1 groups implementation around run, hostps1, mostly in run-host.ps1. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1421,8 +1406,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 11. Run Receiverps1 ====== -->
-<h2 id="run-receiverps1">11. Run Receiverps1</h2>
+<!-- ====== 12. Run Receiverps1 ====== -->
+<h2 id="run-receiverps1">12. Run Receiverps1</h2>
 <p>Run Receiverps1 groups implementation around run, receiverps1, mostly in run-receiver.ps1. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1483,17 +1468,17 @@ flowchart LR
   <div class="card">
     <h4>Graph</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>Nodes</td><td>264</td></tr>
-      <tr><td>Edges</td><td>430</td></tr>
+      <tr><td>Nodes</td><td>270</td></tr>
+      <tr><td>Edges</td><td>436</td></tr>
       <tr><td>Hyperedges</td><td>0</td></tr>
-      <tr><td>Communities</td><td>33</td></tr>
-      <tr><td>Documented Sections</td><td>10</td></tr>
+      <tr><td>Communities</td><td>34</td></tr>
+      <tr><td>Documented Sections</td><td>11</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Edge Confidence</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>EXTRACTED</td><td>430</td></tr>
+      <tr><td>EXTRACTED</td><td>436</td></tr>
       <tr><td>INFERRED</td><td>0</td></tr>
       <tr><td>AMBIGUOUS</td><td>0</td></tr>
     </table>
@@ -1502,7 +1487,7 @@ flowchart LR
 
 <div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
   <p>tailscale-kvm — Architecture Documentation</p>
-  <p>Generated: 2026-11-07 03:41 UTC · graphify callflow-html</p>
+  <p>Generated: 2026-11-07 03:48 UTC · graphify callflow-html</p>
 </div>
 
 </div><!-- .container -->

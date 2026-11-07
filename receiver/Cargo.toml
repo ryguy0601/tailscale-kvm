@@ -3,9 +3,19 @@ name = "tailscale-kvm-receiver"
 version = "0.1.0"
 edition = "2021"
 authors = ["Ryan Cuccurullo <ryguy0601@gmail.com>"]
-description = "High-performance Rust receiver daemon for Tailscale KVM with /dev/uinput injection on Wayland/Hyprland"
+description = "High-performance Rust receiver daemon for Tailscale KVM supporting Linux and Windows synthetic input injection"
 
 [dependencies]
 tokio = { version = "1.38", features = ["rt-multi-thread", "macros", "net", "io-util", "process", "sync", "time", "fs"] }
 serde_json = "1.0"
+
+[target.'cfg(unix)'.dependencies]
 evdev = { version = "0.12", features = ["tokio"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.52", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_Graphics_Gdi",
+] }

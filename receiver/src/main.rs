@@ -1,5 +1,6 @@
-use evdev::uinput::VirtualDeviceBuilder;
-use evdev::{AttributeSet, EventType, InputEvent, Key, RelativeAxisType};
+mod input_adapter;
+use input_adapter::InputAdapter;
+
 use std::env;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
@@ -7,7 +8,9 @@ use std::sync::atomic::{AtomicBool, AtomicI32, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex as StdMutex};
 use tokio::fs::{self, File};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
-use tokio::net::{TcpListener, TcpStream, UnixStream};
+use tokio::net::{TcpListener, TcpStream};
+#[cfg(unix)]
+use tokio::net::UnixStream;
 use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
 
@@ -157,6 +160,7 @@ fn parse_return_edge() -> ReturnEdge {
     ReturnEdge::Left
 }
 
+#[cfg(unix)]
 fn get_hyprland_bounds() -> MonitorBounds {
     let output = Command::new("hyprctl").args(["monitors", "-j"]).output();
 
@@ -193,14 +197,30 @@ fn get_hyprland_bounds() -> MonitorBounds {
 }
 
 fn update_current_monitor_bounds() {
-    let b = get_hyprland_bounds();
-    CURRENT_BOUND_MIN_X.store(b.min_x, Ordering::SeqCst);
-    CURRENT_BOUND_MAX_X.store(b.max_x, Ordering::SeqCst);
-    CURRENT_BOUND_MIN_Y.store(b.min_y, Ordering::SeqCst);
-    CURRENT_BOUND_MAX_Y.store(b.max_y, Ordering::SeqCst);
+    #[cfg(unix)]
+    {
+        let b = get_hyprland_bounds();
+        CURRENT_BOUND_MIN_X.store(b.min_x, Ordering::SeqCst);
+        CURRENT_BOUND_MAX_X.store(b.max_x, Ordering::SeqCst);
+        CURRENT_BOUND_MIN_Y.store(b.min_y, Ordering::SeqCst);
+        CURRENT_BOUND_MAX_Y.store(b.max_y, Ordering::SeqCst);
+    }
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_CXSCREEN, SM_CYSCREEN};
+        unsafe {
+            let sw = GetSystemMetrics(SM_CXSCREEN);
+            let sh = GetSystemMetrics(SM_CYSCREEN);
+            CURRENT_BOUND_MIN_X.store(0, Ordering::SeqCst);
+            CURRENT_BOUND_MAX_X.store(sw, Ordering::SeqCst);
+            CURRENT_BOUND_MIN_Y.store(0, Ordering::SeqCst);
+            CURRENT_BOUND_MAX_Y.store(sh, Ordering::SeqCst);
+        }
+    }
 }
 
 fn start_cursorpos_worker() {
+    #[cfg(unix)]
     tokio::spawn(async {
         let xdg = env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/run/user/1000".to_string());
         let sig = env::var("HYPRLAND_INSTANCE_SIGNATURE").unwrap_or_default();
@@ -225,6 +245,22 @@ fn start_cursorpos_worker() {
                             }
                         }
                     }
+                }
+            }
+            sleep(Duration::from_millis(15)).await;
+        }
+    });
+
+    #[cfg(windows)]
+    tokio::spawn(async {
+        use windows_sys::Win32::UI::WindowsAndMessaging::GetCursorPos;
+        use windows_sys::Win32::Foundation::POINT;
+        loop {
+            let mut pt = POINT { x: 0, y: 0 };
+            unsafe {
+                if GetCursorPos(&mut pt) != 0 {
+                    CURSOR_X.store(pt.x, Ordering::Relaxed);
+                    CURSOR_Y.store(pt.y, Ordering::Relaxed);
                 }
             }
             sleep(Duration::from_millis(15)).await;
@@ -937,7 +973,7 @@ fn open_terminal_at_path(path: String) {
 
 async fn handle_connection(
     stream: TcpStream,
-    device: Arc<Mutex<evdev::uinput::VirtualDevice>>,
+    device: Arc<Mutex<InputAdapter>>,
 ) {
     let peer = stream.peer_addr().ok();
     if let Some(ref p) = peer {
@@ -1038,9 +1074,7 @@ async fn handle_connection(
                         let dx = target_x - cur_x;
                         if dx != 0 {
                             let mut dev = device.lock().await;
-                            let ev_x = InputEvent::new(EventType::RELATIVE, RelativeAxisType::REL_X.0, dx);
-                            let syn = InputEvent::new(EventType::SYNCHRONIZATION, 0, 0);
-                            let _ = dev.emit(&[ev_x, syn]);
+                            dev.emit_mouse_move(dx, 0);
                         }
                     }
                 }
@@ -1055,9 +1089,7 @@ async fn handle_connection(
                         let dy = target_y - cur_y;
                         if dy != 0 {
                             let mut dev = device.lock().await;
-                            let ev_y = InputEvent::new(EventType::RELATIVE, RelativeAxisType::REL_Y.0, dy);
-                            let syn = InputEvent::new(EventType::SYNCHRONIZATION, 0, 0);
-                            let _ = dev.emit(&[ev_y, syn]);
+                            dev.emit_mouse_move(0, dy);
                         }
                     }
                 }
@@ -1071,12 +1103,7 @@ async fn handle_connection(
                     if let (Some(dx_s), Some(dy_s)) = (parts.next(), parts.next()) {
                         if let (Ok(dx), Ok(dy)) = (dx_s.parse::<i32>(), dy_s.parse::<i32>()) {
                             let mut dev = device.lock().await;
-                            let ev_x =
-                                InputEvent::new(EventType::RELATIVE, RelativeAxisType::REL_X.0, dx);
-                            let ev_y =
-                                InputEvent::new(EventType::RELATIVE, RelativeAxisType::REL_Y.0, dy);
-                            let syn = InputEvent::new(EventType::SYNCHRONIZATION, 0, 0);
-                            let _ = dev.emit(&[ev_x, ev_y, syn]);
+                            dev.emit_mouse_move(dx, dy);
 
                             // Multi-directional edge return checking
                             let cur_x = CURSOR_X.load(Ordering::Relaxed);
@@ -1135,25 +1162,18 @@ async fn handle_connection(
                 if trimmed.len() > 2 {
                     let mut parts = trimmed[2..].split_whitespace();
                     if let (Some(btn), Some(act)) = (parts.next(), parts.next()) {
-                        let btn_code = match btn {
-                            "right" => Key::BTN_RIGHT.code(),
-                            "middle" => Key::BTN_MIDDLE.code(),
-                            _ => {
-                                if act == "down" {
-                                    REMOTE_MOUSE_LBUTTON.store(true, Ordering::SeqCst);
-                                    REMOTE_DRAG_START_X.store(CURSOR_X.load(Ordering::Relaxed), Ordering::Relaxed);
-                                    REMOTE_DRAG_START_Y.store(CURSOR_Y.load(Ordering::Relaxed), Ordering::Relaxed);
-                                } else {
-                                    REMOTE_MOUSE_LBUTTON.store(false, Ordering::SeqCst);
-                                }
-                                Key::BTN_LEFT.code()
+                        let is_down = act == "down";
+                        if btn == "left" {
+                            if is_down {
+                                REMOTE_MOUSE_LBUTTON.store(true, Ordering::SeqCst);
+                                REMOTE_DRAG_START_X.store(CURSOR_X.load(Ordering::Relaxed), Ordering::Relaxed);
+                                REMOTE_DRAG_START_Y.store(CURSOR_Y.load(Ordering::Relaxed), Ordering::Relaxed);
+                            } else {
+                                REMOTE_MOUSE_LBUTTON.store(false, Ordering::SeqCst);
                             }
-                        };
-                        let act_val = if act == "down" { 1 } else { 0 };
+                        }
                         let mut dev = device.lock().await;
-                        let ev = InputEvent::new(EventType::KEY, btn_code, act_val);
-                        let syn = InputEvent::new(EventType::SYNCHRONIZATION, 0, 0);
-                        let _ = dev.emit(&[ev, syn]);
+                        dev.emit_mouse_click(btn, is_down);
                     }
                 }
             }
@@ -1166,25 +1186,7 @@ async fn handle_connection(
                     if let (Some(dx_s), Some(dy_s)) = (parts.next(), parts.next()) {
                         if let (Ok(dx), Ok(dy)) = (dx_s.parse::<i32>(), dy_s.parse::<i32>()) {
                             let mut dev = device.lock().await;
-                            let mut events = Vec::with_capacity(3);
-                            if dy != 0 {
-                                events.push(InputEvent::new(
-                                    EventType::RELATIVE,
-                                    RelativeAxisType::REL_WHEEL.0,
-                                    dy,
-                                ));
-                            }
-                            if dx != 0 {
-                                events.push(InputEvent::new(
-                                    EventType::RELATIVE,
-                                    RelativeAxisType::REL_HWHEEL.0,
-                                    dx,
-                                ));
-                            }
-                            if !events.is_empty() {
-                                events.push(InputEvent::new(EventType::SYNCHRONIZATION, 0, 0));
-                                let _ = dev.emit(&events);
-                            }
+                            dev.emit_mouse_wheel(dx, dy);
                         }
                     }
                 }
@@ -1197,11 +1199,9 @@ async fn handle_connection(
                     let mut parts = trimmed[2..].split_whitespace();
                     if let (Some(code_s), Some(act)) = (parts.next(), parts.next()) {
                         if let Ok(code) = code_s.parse::<u16>() {
-                            let act_val = if act == "down" { 1 } else { 0 };
+                            let is_down = act == "down";
                             let mut dev = device.lock().await;
-                            let ev = InputEvent::new(EventType::KEY, code, act_val);
-                            let syn = InputEvent::new(EventType::SYNCHRONIZATION, 0, 0);
-                            let _ = dev.emit(&[ev, syn]);
+                            dev.emit_key(code, is_down);
                         }
                     }
                 }
@@ -1297,29 +1297,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Tailscale KVM Universal Receiver Daemon ===");
     println!("[*] Configured return edge trigger: {:?} (exit this edge to return control to host)", return_edge);
 
-    let mut key_set = AttributeSet::<Key>::new();
-    for code in 1..248 {
-        key_set.insert(Key::new(code));
-    }
-    key_set.insert(Key::BTN_LEFT);
-    key_set.insert(Key::BTN_RIGHT);
-    key_set.insert(Key::BTN_MIDDLE);
-    key_set.insert(Key::BTN_SIDE);
-    key_set.insert(Key::BTN_EXTRA);
-
-    let mut rel_set = AttributeSet::<RelativeAxisType>::new();
-    rel_set.insert(RelativeAxisType::REL_X);
-    rel_set.insert(RelativeAxisType::REL_Y);
-    rel_set.insert(RelativeAxisType::REL_WHEEL);
-    rel_set.insert(RelativeAxisType::REL_HWHEEL);
-
-    let virtual_device = VirtualDeviceBuilder::new()?
-        .name("Tailscale-KVM-Rust-Device")
-        .with_keys(&key_set)?
-        .with_relative_axes(&rel_set)?
-        .build()?;
-
-    let device = Arc::new(Mutex::new(virtual_device));
+    let adapter = InputAdapter::new()?;
+    let device = Arc::new(Mutex::new(adapter));
     update_current_monitor_bounds();
     println!(
         "[*] Detected Hyprland bounds: X=[{}, {}], Y=[{}, {}]",

@@ -1,7 +1,6 @@
 use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
-use std::sync::atomic::{AtomicU8, Ordering};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Mutex, OnceLock};
 use std::thread;
 
 pub static GUI_ACTIVE_RIGHT: OnceLock<Mutex<Option<String>>> = OnceLock::new();
