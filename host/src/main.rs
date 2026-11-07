@@ -1518,6 +1518,7 @@ fn start_clipboard_sync() {
 
 /// Persistent TCP connection manager with automatic reconnect on disconnect or receiver restart.
 fn switch_active_peer(new_ip: String) {
+    println!("[*] Switching active KVM target peer to: {}", new_ip);
     if let Ok(mut lock) = TARGET_PEER_IP.lock() {
         *lock = Some(new_ip);
     }
@@ -1543,6 +1544,7 @@ fn start_connection_manager() {
                                 *lock = Some(stream);
                             }
                             IS_CONNECTED.store(true, Ordering::SeqCst);
+                            println!("[+] Successfully connected to receiver at {} (Port 9876)", target_ip);
 
                             let reader = BufReader::new(reader_stream);
                             for line in reader.lines() {
