@@ -6,6 +6,7 @@ authors = ["Ryan Cuccurullo <ryguy0601@gmail.com>"]
 description = "Ultra-low-latency Rust Windows host controller for Tailscale KVM with Win32 event suppression"
 
 [dependencies]
+serde_json = "1.0.154"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.52", features = [

@@ -49,6 +49,26 @@ static LAST_CLIP_SEQ: AtomicU32 = AtomicU32::new(0);
 static STREAM_SENDER: Mutex<Option<TcpStream>> = Mutex::new(None);
 static TARGET_IP: OnceLock<String> = OnceLock::new();
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EdgeDirection {
+    Right,
+    Left,
+    Up,
+    Down,
+}
+
+impl EdgeDirection {
+    pub fn parse(s: &str) -> Self {
+        match s.to_ascii_lowercase().trim() {
+            "left" => EdgeDirection::Left,
+            "up" | "top" => EdgeDirection::Up,
+            "down" | "bottom" => EdgeDirection::Down,
+            _ => EdgeDirection::Right,
+        }
+    }
+}
+
+static EDGE_DIRECTION: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(0); // 0=Right, 1=Left, 2=Up, 3=Down
 static SCREEN_WIDTH: AtomicI32 = AtomicI32::new(1920);
 static SCREEN_HEIGHT: AtomicI32 = AtomicI32::new(1080);
 static CENTER_X: AtomicI32 = AtomicI32::new(960);
@@ -92,9 +112,79 @@ enum DragKind {
     Other,
 }
 
+fn auto_discover_peer_ip() -> Option<String> {
+    if let Ok(output) = std::process::Command::new("tailscale").args(["status", "--json"]).output() {
+        if let Ok(val) = serde_json::from_slice::<serde_json::Value>(&output.stdout) {
+            if let Some(peers) = val.get("Peer").and_then(|p| p.as_object()) {
+                for (_, peer) in peers {
+                    let online = peer.get("Online").and_then(|o| o.as_bool()).unwrap_or(false);
+                    if online {
+                        if let Some(ips) = peer.get("TailscaleIPs").and_then(|i| i.as_array()) {
+                            if let Some(first_ip) = ips.get(0).and_then(|ip| ip.as_str()) {
+                                return Some(first_ip.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
+fn get_config_direction() -> EdgeDirection {
+    let args: Vec<String> = env::args().collect();
+    for i in 1..args.len() {
+        if args[i] == "--direction" || args[i] == "-d" || args[i] == "--edge" || args[i] == "-e" {
+            if i + 1 < args.len() {
+                return EdgeDirection::parse(&args[i + 1]);
+            }
+        }
+        if let Some(val) = args[i].strip_prefix("--direction=") {
+            return EdgeDirection::parse(val);
+        }
+        if let Some(val) = args[i].strip_prefix("--edge=") {
+            return EdgeDirection::parse(val);
+        }
+    }
+
+    if let Ok(dir) = env::var("KVM_DIRECTION") {
+        if !dir.trim().is_empty() {
+            return EdgeDirection::parse(&dir);
+        }
+    }
+
+    if let Ok(content) = fs::read_to_string("config.txt") {
+        for line in content.lines() {
+            let line = line.trim();
+            if let Some(rest) = line.strip_prefix("DIRECTION=") {
+                return EdgeDirection::parse(rest);
+            }
+            if let Some(rest) = line.strip_prefix("EDGE=") {
+                return EdgeDirection::parse(rest);
+            }
+        }
+    }
+
+    EdgeDirection::Right
+}
+
 fn get_config_ip() -> String {
     let args: Vec<String> = env::args().collect();
-    if args.len() > 1 && !args[1].trim().is_empty() {
+    for i in 1..args.len() {
+        if args[i] == "--target" || args[i] == "-t" || args[i] == "--ip" {
+            if i + 1 < args.len() {
+                return args[i + 1].trim().to_string();
+            }
+        }
+        if let Some(val) = args[i].strip_prefix("--target=") {
+            return val.trim().to_string();
+        }
+        if let Some(val) = args[i].strip_prefix("--ip=") {
+            return val.trim().to_string();
+        }
+    }
+    if args.len() > 1 && !args[1].starts_with('-') && !args[1].trim().is_empty() {
         return args[1].trim().to_string();
     }
 
@@ -115,7 +205,7 @@ fn get_config_ip() -> String {
         }
     }
 
-    "100.99.142.70".to_string()
+    auto_discover_peer_ip().unwrap_or_else(|| "127.0.0.1".to_string())
 }
 
 #[inline(always)]
@@ -585,12 +675,17 @@ fn open_url_on_windows(url: &str) {
 fn open_terminal_on_windows(dir_path: &str) {
     let d = dir_path.trim().to_string();
     thread::spawn(move || {
+        let default_dir = get_windows_downloads_dir()
+            .parent()
+            .unwrap_or(Path::new("C:\\"))
+            .to_string_lossy()
+            .to_string();
         let win_path = if d.contains("/Work") {
-            let userprofile = env::var("USERPROFILE").unwrap_or_else(|_| "C:\\Users\\ryguy".to_string());
+            let userprofile = env::var("USERPROFILE").unwrap_or_else(|_| default_dir);
             let sub = d.split("/Work").nth(1).unwrap_or("");
             format!("{}\\{}", userprofile, sub.replace('/', "\\").trim_start_matches('\\'))
         } else {
-            env::var("USERPROFILE").unwrap_or_else(|_| "C:\\Users\\ryguy".to_string())
+            env::var("USERPROFILE").unwrap_or_else(|_| default_dir)
         };
 
         let _ = std::process::Command::new("wt.exe")
@@ -936,7 +1031,7 @@ fn execute_handoff(source_hwnd: HWND, fallback_hwnd: HWND, from_drag: bool) {
     });
 }
 
-pub fn switch_to_remote(was_dragging: bool, entry_y: i32) {
+pub fn switch_to_remote(was_dragging: bool, entry_coord: i32) {
     #[cfg(windows)]
     let fg_hwnd = unsafe { GetForegroundWindow() };
     #[cfg(windows)]
@@ -944,9 +1039,14 @@ pub fn switch_to_remote(was_dragging: bool, entry_y: i32) {
 
     hide_edge_overlay();
 
-    // Send Y alignment coordinate to receiver so cursor lands at matching vertical position
-    let y_pkt = format!("Y {}\n", entry_y);
-    send_fast_bytes(y_pkt.as_bytes());
+    let dir_val = EDGE_DIRECTION.load(Ordering::Relaxed);
+    // When switching from Up/Down, align horizontally (X); otherwise align vertically (Y)
+    let pkt = if dir_val == 2 || dir_val == 3 {
+        format!("X {}\n", entry_coord)
+    } else {
+        format!("Y {}\n", entry_coord)
+    };
+    send_fast_bytes(pkt.as_bytes());
 
     LBUTTON_DOWN.store(false, Ordering::SeqCst);
     IS_REMOTE.store(true, Ordering::SeqCst);
@@ -966,7 +1066,7 @@ pub fn switch_to_remote(was_dragging: bool, entry_y: i32) {
     }
 }
 
-pub fn switch_to_local(target_y: Option<i32>) {
+pub fn switch_to_local(target_coord: Option<i32>) {
     IS_REMOTE.store(false, Ordering::SeqCst);
     IGNORE_WARP.store(true, Ordering::SeqCst);
     hide_edge_overlay();
@@ -974,11 +1074,17 @@ pub fn switch_to_local(target_y: Option<i32>) {
     #[cfg(windows)]
     unsafe {
         ClipCursor(std::ptr::null());
-        let y = target_y.unwrap_or_else(|| CENTER_Y.load(Ordering::Relaxed));
-        SetCursorPos(
-            SCREEN_WIDTH.load(Ordering::Relaxed) - 80,
-            y,
-        );
+        let sw = SCREEN_WIDTH.load(Ordering::Relaxed);
+        let sh = SCREEN_HEIGHT.load(Ordering::Relaxed);
+        let dir_val = EDGE_DIRECTION.load(Ordering::Relaxed);
+
+        let (x, y) = match dir_val {
+            1 => (80, target_coord.unwrap_or_else(|| CENTER_Y.load(Ordering::Relaxed))), // Host Left -> Re-enter near Left edge
+            2 => (target_coord.unwrap_or_else(|| CENTER_X.load(Ordering::Relaxed)), 80), // Host Up -> Re-enter near Top edge
+            3 => (target_coord.unwrap_or_else(|| CENTER_X.load(Ordering::Relaxed)), sh - 80), // Host Down -> Re-enter near Bottom edge
+            _ => (sw - 80, target_coord.unwrap_or_else(|| CENTER_Y.load(Ordering::Relaxed))), // Default: Host Right -> Re-enter near Right edge
+        };
+        SetCursorPos(x, y);
     }
 }
 
@@ -998,11 +1104,13 @@ unsafe extern "system" fn overlay_wnd_proc(
             let mut ps: PAINTSTRUCT = std::mem::zeroed();
             let hdc = BeginPaint(hwnd, &mut ps);
             let brush = CreateSolidBrush(0x00D77838); // Cyan/Teal accent border glow
-            let mut rc = RECT {
-                left: 0,
-                top: 0,
-                right: 3,
-                bottom: SCREEN_HEIGHT.load(Ordering::Relaxed),
+            let dir = EDGE_DIRECTION.load(Ordering::Relaxed);
+            let sw = SCREEN_WIDTH.load(Ordering::Relaxed);
+            let sh = SCREEN_HEIGHT.load(Ordering::Relaxed);
+            let mut rc = if dir == 2 || dir == 3 {
+                RECT { left: 0, top: 0, right: sw, bottom: 3 }
+            } else {
+                RECT { left: 0, top: 0, right: 3, bottom: sh }
             };
             FillRect(hdc, &mut rc, brush);
             DeleteObject(brush as _);
@@ -1035,15 +1143,23 @@ fn init_edge_overlay() {
         let sw = SCREEN_WIDTH.load(Ordering::Relaxed);
         let sh = SCREEN_HEIGHT.load(Ordering::Relaxed);
 
+        let dir = EDGE_DIRECTION.load(Ordering::Relaxed);
+        let (x_pos, y_pos, w_size, h_size) = match dir {
+            1 => (0, 0, 3, sh),
+            2 => (0, 0, sw, 3),
+            3 => (0, sh - 3, sw, 3),
+            _ => (sw - 3, 0, 3, sh),
+        };
+
         let hwnd = CreateWindowExW(
             WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED,
             class_name.as_ptr(),
             std::ptr::null(),
             WS_POPUP,
-            sw - 3,
-            0,
-            3,
-            sh,
+            x_pos,
+            y_pos,
+            w_size,
+            h_size,
             0,
             0,
             0,
@@ -1070,13 +1186,22 @@ fn show_edge_overlay() {
         if hwnd != 0 {
             unsafe {
                 ShowWindow(hwnd, SW_SHOW);
+                let sw = SCREEN_WIDTH.load(Ordering::Relaxed);
+                let sh = SCREEN_HEIGHT.load(Ordering::Relaxed);
+                let dir = EDGE_DIRECTION.load(Ordering::Relaxed);
+                let (x_pos, y_pos, w_size, h_size) = match dir {
+                    1 => (0, 0, 3, sh),
+                    2 => (0, 0, sw, 3),
+                    3 => (0, sh - 3, sw, 3),
+                    _ => (sw - 3, 0, 3, sh),
+                };
                 SetWindowPos(
                     hwnd,
                     HWND_TOPMOST,
-                    SCREEN_WIDTH.load(Ordering::Relaxed) - 3,
-                    0,
-                    3,
-                    SCREEN_HEIGHT.load(Ordering::Relaxed),
+                    x_pos,
+                    y_pos,
+                    w_size,
+                    h_size,
                     SWP_NOACTIVATE | SWP_SHOWWINDOW,
                 );
             }
@@ -1127,23 +1252,45 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
             let screen_w = SCREEN_WIDTH.load(Ordering::Relaxed);
             let screen_h = SCREEN_HEIGHT.load(Ordering::Relaxed);
 
-            // Feature 6: Edge Visual Glow when cursor nears the right boundary
-            if x >= screen_w - 45 && IS_CONNECTED.load(Ordering::Relaxed) {
+            let dir = EDGE_DIRECTION.load(Ordering::Relaxed);
+            let near_edge = match dir {
+                1 => x <= 45,
+                2 => y <= 45,
+                3 => y >= screen_h - 45,
+                _ => x >= screen_w - 45,
+            };
+
+            if near_edge && IS_CONNECTED.load(Ordering::Relaxed) {
                 show_edge_overlay();
             } else {
                 hide_edge_overlay();
             }
 
-            // Feature 3: Anti-Slip Corner Locking (Deadzone in top & bottom 50px of right screen edge)
-            let in_corner_deadzone = y <= 50 || y >= screen_h - 50;
+            let in_corner_deadzone = if dir == 2 || dir == 3 {
+                x <= 50 || x >= screen_w - 50
+            } else {
+                y <= 50 || y >= screen_h - 50
+            };
 
-            if x >= screen_w - 3 && IS_CONNECTED.load(Ordering::Relaxed) && !in_corner_deadzone {
+            let at_trigger_boundary = match dir {
+                1 => x <= 3,
+                2 => y <= 3,
+                3 => y >= screen_h - 3,
+                _ => x >= screen_w - 3,
+            };
+
+            if at_trigger_boundary && IS_CONNECTED.load(Ordering::Relaxed) && !in_corner_deadzone {
                 let held = LBUTTON_DOWN.load(Ordering::SeqCst);
-                let dx_drag = x - DRAG_START_X.load(Ordering::Relaxed);
-                let was_dragging = held && dx_drag >= 35;
+                let was_dragging = if dir == 2 || dir == 3 {
+                    let dy_drag = (y - DRAG_START_Y.load(Ordering::Relaxed)).abs();
+                    held && dy_drag >= 35
+                } else {
+                    let dx_drag = (x - DRAG_START_X.load(Ordering::Relaxed)).abs();
+                    held && dx_drag >= 35
+                };
 
-                // Feature 1: Seamless Y-axis alignment (pass entry y)
-                switch_to_remote(was_dragging, y);
+                let entry_coord = if dir == 2 || dir == 3 { x } else { y };
+                switch_to_remote(was_dragging, entry_coord);
                 return 1;
             }
             return CallNextHookEx(MOUSE_HOOK, code, wparam, lparam);
@@ -1234,7 +1381,8 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
             && ALT_DOWN.load(Ordering::Relaxed)
             && IS_CONNECTED.load(Ordering::Relaxed)
         {
-            let pkt = "D /home/ryguy/Work/tailscale-kvm\n";
+            // Directory teleport hotkey
+            let pkt = "D .\n";
             send_fast_bytes(pkt.as_bytes());
             return 1;
         }
@@ -1380,8 +1528,21 @@ fn start_connection_manager(target_ip: String) {
 }
 
 fn main() {
+    let dir = get_config_direction();
+    let dir_val = match dir {
+        EdgeDirection::Left => 1,
+        EdgeDirection::Up => 2,
+        EdgeDirection::Down => 3,
+        EdgeDirection::Right => 0,
+    };
+    EDGE_DIRECTION.store(dir_val, Ordering::SeqCst);
+
     let target_ip = get_config_ip();
     let _ = TARGET_IP.set(target_ip.clone());
+
+    println!("=== Tailscale KVM Windows Host Controller ===");
+    println!("[*] Configured Host Screen Edge Trigger: {:?} (move cursor past this edge to control remote)", dir);
+    println!("[*] Target Receiver Peer: {}", target_ip);
 
     #[cfg(windows)]
     unsafe {

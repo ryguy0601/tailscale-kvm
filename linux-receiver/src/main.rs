@@ -11,14 +11,46 @@ use tokio::net::{TcpListener, TcpStream, UnixStream};
 use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ReturnEdge {
+    Left,
+    Right,
+    Top,
+    Bottom,
+}
+
+impl ReturnEdge {
+    pub fn parse(s: &str) -> Self {
+        match s.to_ascii_lowercase().trim() {
+            "right" => ReturnEdge::Right,
+            "top" | "up" => ReturnEdge::Top,
+            "bottom" | "down" => ReturnEdge::Bottom,
+            _ => ReturnEdge::Left,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct MonitorBounds {
+    pub min_x: i32,
+    pub max_x: i32,
+    pub min_y: i32,
+    pub max_y: i32,
+}
+
 static CURSOR_X: AtomicI32 = AtomicI32::new(6000);
 static CURSOR_Y: AtomicI32 = AtomicI32::new(540);
-static CURRENT_LEFT_BOUND: AtomicI32 = AtomicI32::new(0);
+static CURRENT_BOUND_MIN_X: AtomicI32 = AtomicI32::new(0);
+static CURRENT_BOUND_MAX_X: AtomicI32 = AtomicI32::new(1920);
+static CURRENT_BOUND_MIN_Y: AtomicI32 = AtomicI32::new(0);
+static CURRENT_BOUND_MAX_Y: AtomicI32 = AtomicI32::new(1080);
+static RETURN_EDGE: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(0); // 0=Left, 1=Right, 2=Top, 3=Bottom
 static ACTIVE_CONTROL_CLIENTS: AtomicUsize = AtomicUsize::new(0);
 static SWITCHED_SINGLE_MONITOR: AtomicBool = AtomicBool::new(false);
 
 static REMOTE_MOUSE_LBUTTON: AtomicBool = AtomicBool::new(false);
 static REMOTE_DRAG_START_X: AtomicI32 = AtomicI32::new(0);
+static REMOTE_DRAG_START_Y: AtomicI32 = AtomicI32::new(0);
 static REMOTE_HANDOFF_BUSY: AtomicBool = AtomicBool::new(false);
 
 static LAST_WAYLAND_CLIP_TEXT: StdMutex<String> = StdMutex::new(String::new());
@@ -69,8 +101,7 @@ fn apply_single_monitor_if_docked() {
             let _ = Command::new("hyprmoncfg")
                 .args(["apply", "docked-single", "--confirm-timeout", "0"])
                 .status();
-            let new_bound = get_hyprland_left_bound();
-            CURRENT_LEFT_BOUND.store(new_bound, Ordering::SeqCst);
+            update_current_monitor_bounds();
         }
     }
 }
@@ -83,31 +114,90 @@ fn restore_docked_monitors_if_needed() {
             let _ = Command::new("hyprmoncfg")
                 .args(["apply", "docked", "--confirm-timeout", "0"])
                 .status();
-            let new_bound = get_hyprland_left_bound();
-            CURRENT_LEFT_BOUND.store(new_bound, Ordering::SeqCst);
+            update_current_monitor_bounds();
         }
     }
 }
 
-fn get_hyprland_left_bound() -> i32 {
+fn parse_return_edge() -> ReturnEdge {
+    let args: Vec<String> = env::args().collect();
+    for i in 1..args.len() {
+        if args[i] == "--edge" || args[i] == "-e" || args[i] == "--return-edge" || args[i] == "--direction" || args[i] == "-d" {
+            if i + 1 < args.len() {
+                return ReturnEdge::parse(&args[i + 1]);
+            }
+        }
+        if let Some(val) = args[i].strip_prefix("--edge=") {
+            return ReturnEdge::parse(val);
+        }
+        if let Some(val) = args[i].strip_prefix("--direction=") {
+            return ReturnEdge::parse(val);
+        }
+    }
+    if let Ok(env_val) = env::var("KVM_RETURN_EDGE") {
+        return ReturnEdge::parse(&env_val);
+    }
+    if let Ok(env_val) = env::var("KVM_EDGE") {
+        return ReturnEdge::parse(&env_val);
+    }
+    if let Ok(content) = std::fs::read_to_string("config.txt") {
+        for line in content.lines() {
+            let t = line.trim();
+            if let Some(rest) = t.strip_prefix("RETURN_EDGE=") {
+                return ReturnEdge::parse(rest);
+            }
+            if let Some(rest) = t.strip_prefix("EDGE=") {
+                return ReturnEdge::parse(rest);
+            }
+            if let Some(rest) = t.strip_prefix("DIRECTION=") {
+                return ReturnEdge::parse(rest);
+            }
+        }
+    }
+    ReturnEdge::Left
+}
+
+fn get_hyprland_bounds() -> MonitorBounds {
     let output = Command::new("hyprctl").args(["monitors", "-j"]).output();
 
     if let Ok(out) = output {
         if let Ok(json_val) = serde_json::from_slice::<serde_json::Value>(&out.stdout) {
             if let Some(arr) = json_val.as_array() {
-                let mut leftmost = 0;
-                for (i, m) in arr.iter().enumerate() {
-                    if let Some(x) = m["x"].as_i64() {
-                        if i == 0 || (x as i32) < leftmost {
-                            leftmost = x as i32;
-                        }
-                    }
+                let mut min_x = i32::MAX;
+                let mut max_x = i32::MIN;
+                let mut min_y = i32::MAX;
+                let mut max_y = i32::MIN;
+
+                for m in arr {
+                    let x = m["x"].as_i64().unwrap_or(0) as i32;
+                    let y = m["y"].as_i64().unwrap_or(0) as i32;
+                    let w_raw = m["width"].as_i64().unwrap_or(1920) as f64;
+                    let h_raw = m["height"].as_i64().unwrap_or(1080) as f64;
+                    let scale = m["scale"].as_f64().unwrap_or(1.0);
+                    let w = (w_raw / scale).round() as i32;
+                    let h = (h_raw / scale).round() as i32;
+
+                    min_x = min_x.min(x);
+                    max_x = max_x.max(x + w);
+                    min_y = min_y.min(y);
+                    max_y = max_y.max(y + h);
                 }
-                return leftmost;
+
+                if min_x != i32::MAX {
+                    return MonitorBounds { min_x, max_x, min_y, max_y };
+                }
             }
         }
     }
-    0
+    MonitorBounds { min_x: 0, max_x: 1920, min_y: 0, max_y: 1080 }
+}
+
+fn update_current_monitor_bounds() {
+    let b = get_hyprland_bounds();
+    CURRENT_BOUND_MIN_X.store(b.min_x, Ordering::SeqCst);
+    CURRENT_BOUND_MAX_X.store(b.max_x, Ordering::SeqCst);
+    CURRENT_BOUND_MIN_Y.store(b.min_y, Ordering::SeqCst);
+    CURRENT_BOUND_MAX_Y.store(b.max_y, Ordering::SeqCst);
 }
 
 fn start_cursorpos_worker() {
@@ -198,7 +288,7 @@ fn sanitize_relative_path(raw: &str) -> PathBuf {
 }
 
 fn downloads_dir() -> PathBuf {
-    let home = env::var("HOME").unwrap_or_else(|_| "/home/ryguy".to_string());
+    let home = env::var("HOME").unwrap_or_else(|_| env::var("USERPROFILE").unwrap_or_else(|_| "/tmp".to_string()));
     PathBuf::from(home).join("Downloads")
 }
 
@@ -836,7 +926,7 @@ fn open_terminal_at_path(path: String) {
         let target_dir = if !p.is_empty() && Path::new(p).exists() {
             p
         } else {
-            "/home/ryguy"
+            &env::var("HOME").unwrap_or_else(|_| ".".to_string())
         };
         let _ = tokio::process::Command::new("foot")
             .arg("-D")
@@ -939,7 +1029,24 @@ async fn handle_connection(
                 }
             }
 
-            // "Y <y_coord>" -> Seamless cursor vertical alignment
+            // "X <x_coord>" -> Seamless cursor horizontal alignment (when switching from Top/Bottom)
+            b'X' => {
+                mark_control_session(&mut is_control);
+                if trimmed.len() > 2 {
+                    if let Ok(target_x) = trimmed[2..].trim().parse::<i32>() {
+                        let cur_x = CURSOR_X.load(Ordering::Relaxed);
+                        let dx = target_x - cur_x;
+                        if dx != 0 {
+                            let mut dev = device.lock().await;
+                            let ev_x = InputEvent::new(EventType::RELATIVE, RelativeAxisType::REL_X.0, dx);
+                            let syn = InputEvent::new(EventType::SYNCHRONIZATION, 0, 0);
+                            let _ = dev.emit(&[ev_x, syn]);
+                        }
+                    }
+                }
+            }
+
+            // "Y <y_coord>" -> Seamless cursor vertical alignment (when switching from Left/Right)
             b'Y' => {
                 mark_control_session(&mut is_control);
                 if trimmed.len() > 2 {
@@ -971,23 +1078,40 @@ async fn handle_connection(
                             let syn = InputEvent::new(EventType::SYNCHRONIZATION, 0, 0);
                             let _ = dev.emit(&[ev_x, ev_y, syn]);
 
-                            // When cursor moves left and hits the left edge bound, switch back to Windows with Y coord
-                            if dx < 0 {
-                                let cur_x = CURSOR_X.load(Ordering::Relaxed);
-                                let left_bound = CURRENT_LEFT_BOUND.load(Ordering::Relaxed);
-                                if cur_x <= left_bound + 2 {
-                                    let was_dragging = REMOTE_MOUSE_LBUTTON.load(Ordering::SeqCst)
-                                        && (REMOTE_DRAG_START_X.load(Ordering::Relaxed) - cur_x).abs() >= 35;
+                            // Multi-directional edge return checking
+                            let cur_x = CURSOR_X.load(Ordering::Relaxed);
+                            let cur_y = CURSOR_Y.load(Ordering::Relaxed);
+                            let min_x = CURRENT_BOUND_MIN_X.load(Ordering::Relaxed);
+                            let max_x = CURRENT_BOUND_MAX_X.load(Ordering::Relaxed);
+                            let min_y = CURRENT_BOUND_MIN_Y.load(Ordering::Relaxed);
+                            let max_y = CURRENT_BOUND_MAX_Y.load(Ordering::Relaxed);
+                            let edge_id = RETURN_EDGE.load(Ordering::Relaxed);
 
-                                    if was_dragging {
-                                        execute_reverse_handoff().await;
-                                    }
+                            let should_return = match edge_id {
+                                1 => dx > 0 && cur_x >= max_x - 3,       // Return exiting Right edge
+                                2 => dy < 0 && cur_y <= min_y + 3,       // Return exiting Top edge
+                                3 => dy > 0 && cur_y >= max_y - 3,       // Return exiting Bottom edge
+                                _ => dx < 0 && cur_x <= min_x + 3,       // Default: Return exiting Left edge
+                            };
 
-                                    REMOTE_MOUSE_LBUTTON.store(false, Ordering::SeqCst);
-                                    let cur_y = CURSOR_Y.load(Ordering::Relaxed);
-                                    let switch_msg = format!("switch_to_local {}\n", cur_y);
-                                    let _ = msg_tx.send(switch_msg.into_bytes());
+                            if should_return {
+                                let held = REMOTE_MOUSE_LBUTTON.load(Ordering::SeqCst);
+                                let drag_dist_x = (REMOTE_DRAG_START_X.load(Ordering::Relaxed) - cur_x).abs();
+                                let drag_dist_y = (REMOTE_DRAG_START_Y.load(Ordering::Relaxed) - cur_y).abs();
+                                let was_dragging = held && (drag_dist_x >= 35 || drag_dist_y >= 35);
+
+                                if was_dragging {
+                                    execute_reverse_handoff().await;
                                 }
+
+                                REMOTE_MOUSE_LBUTTON.store(false, Ordering::SeqCst);
+
+                                let switch_msg = if edge_id == 2 || edge_id == 3 {
+                                    format!("switch_to_local {}\n", cur_x)
+                                } else {
+                                    format!("switch_to_local {}\n", cur_y)
+                                };
+                                let _ = msg_tx.send(switch_msg.into_bytes());
                             }
                         }
                     }
@@ -1018,6 +1142,7 @@ async fn handle_connection(
                                 if act == "down" {
                                     REMOTE_MOUSE_LBUTTON.store(true, Ordering::SeqCst);
                                     REMOTE_DRAG_START_X.store(CURSOR_X.load(Ordering::Relaxed), Ordering::Relaxed);
+                                    REMOTE_DRAG_START_Y.store(CURSOR_Y.load(Ordering::Relaxed), Ordering::Relaxed);
                                 } else {
                                     REMOTE_MOUSE_LBUTTON.store(false, Ordering::SeqCst);
                                 }
@@ -1161,7 +1286,16 @@ async fn handle_connection(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let return_edge = parse_return_edge();
+    let edge_val = match return_edge {
+        ReturnEdge::Right => 1,
+        ReturnEdge::Top => 2,
+        ReturnEdge::Bottom => 3,
+        ReturnEdge::Left => 0,
+    };
+    RETURN_EDGE.store(edge_val, Ordering::SeqCst);
     println!("=== Tailscale KVM Rust Receiver Daemon ===");
+    println!("[*] Configured return edge trigger: {:?} (exit this edge to return control to host)", return_edge);
 
     let mut key_set = AttributeSet::<Key>::new();
     for code in 1..248 {
@@ -1186,9 +1320,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
 
     let device = Arc::new(Mutex::new(virtual_device));
-    let left_bound = get_hyprland_left_bound();
-    CURRENT_LEFT_BOUND.store(left_bound, Ordering::SeqCst);
-    println!("[*] Detected Hyprland leftmost coordinate: {}", left_bound);
+    update_current_monitor_bounds();
+    println!(
+        "[*] Detected Hyprland bounds: X=[{}, {}], Y=[{}, {}]",
+        CURRENT_BOUND_MIN_X.load(Ordering::SeqCst),
+        CURRENT_BOUND_MAX_X.load(Ordering::SeqCst),
+        CURRENT_BOUND_MIN_Y.load(Ordering::SeqCst),
+        CURRENT_BOUND_MAX_Y.load(Ordering::SeqCst)
+    );
 
     start_cursorpos_worker();
     start_wayland_clipboard_monitor();

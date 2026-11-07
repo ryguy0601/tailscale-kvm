@@ -1,14 +1,15 @@
-# ⚡ Tailscale Software KVM: Windows Host to Omarchy / Hyprland (Pure Rust)
+# ⚡ Tailscale Software KVM: Universal Multi-Directional & Multi-Platform Mesh (Pure Rust)
 
-A high-performance, zero-overhead software KVM switch written in 100% native Rust, bridging Windows workstations to Omarchy Linux (Hyprland / Wayland) over an encrypted Tailscale mesh network with kernel-level `/dev/uinput` synthetic event injection.
+A high-performance, zero-overhead software KVM switch written in 100% native Rust, seamlessly bridging any device combination (**Windows, Linux, macOS**) over an encrypted Tailscale mesh network with configurable multi-directional edge transitions (**Right, Left, Up, Down**).
 
 <div align="center">
 
 ![Rust](https://img.shields.io/badge/Rust-2021%20Edition-DEA584?style=for-the-badge&logo=rust&logoColor=black)
 ![Tailscale](https://img.shields.io/badge/Tailscale-Mesh%20VPN-4F46E5?style=for-the-badge&logo=tailscale&logoColor=white)
+![Platforms](https://img.shields.io/badge/Platforms-Windows%20%7C%20Linux%20%7C%20macOS-blue?style=for-the-badge)
 ![Wayland](https://img.shields.io/badge/Wayland-Hyprland%20%2F%20Omarchy-0A84FF?style=for-the-badge&logo=linux&logoColor=white)
 ![Tokio](https://img.shields.io/badge/Async-Tokio-000000?style=for-the-badge&logo=tokio&logoColor=white)
-![Graphify](https://img.shields.io/badge/Graphify-85%20Nodes-00C7B7?style=for-the-badge&logo=diagram-next&logoColor=white)
+![Graphify](https://img.shields.io/badge/Graphify-Indexed-00C7B7?style=for-the-badge&logo=diagram-next&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green.style=for-the-badge)
 
 </div>
@@ -18,14 +19,17 @@ A high-performance, zero-overhead software KVM switch written in 100% native Rus
 ## 🌟 Key Features
 
 - **100% Native Rust Architecture:** Engineered as a unified Cargo workspace with zero runtime interpreter dependencies, providing sub-millisecond input response, zero garbage collection pauses, and minimal memory footprint.
-- **Kernel-Level Input Injection (`/dev/uinput`):** Uses the pure-Rust **`evdev`** crate to inject hardware-level relative mouse movements, clicks, wheel scrolls, and scancodes directly into the Linux input subsystem, completely bypassing Wayland security boundaries and compositor synthetic event blocking.
-- **Low-Latency Encrypted Mesh Transport:** Communicates via dedicated TCP streams with **`TCP_NODELAY`** enabled over a private **Tailscale** peer-to-peer mesh VPN, guaranteeing sub-millisecond edge input transmission without public exposure or port forwarding.
-- **Bi-Directional Seamless Monitor Edge Transitions:** 
-  - Move cursor past the **right edge of Windows** $\rightarrow$ Seamlessly enters Omarchy.
-  - Move cursor past the **left edge of Omarchy** $\rightarrow$ Automatically returns to Windows without pressing any hotkeys!
-- **Complete Event Suppression (No Ghost Clicks):** Uses raw Win32 low-level hooks (`WH_MOUSE_LL` and `WH_KEYBOARD_LL`) via `windows-sys` to swallow inputs on Windows while in remote mode, eliminating duplicate clicks and phantom keystrokes.
-- **Comprehensive Keycode & Hotkey Support:** Fast pattern-matching translation table for Hyprland hotkeys (`Super / Windows Key`, `Alt`, `Shift`, `Backspace`, function keys, and symbols).
-- **Clipboard Synchronization:** Background worker keeps clipboards in sync between Windows and Omarchy using `arboard` and Wayland `wl-copy`.
+- **Universal Multi-Directional Edge Positioning:**
+  - Place your receiver in **any direction relative to the host**: `--direction right`, `--direction left`, `--direction up`, or `--direction down`.
+  - Reciprocal return transitions: Exiting the matching opposite boundary on the receiver instantly hands control back to the host.
+  - Active visual edge glow and corner anti-slip safety locks dynamically adapt to whatever edge direction is selected.
+- **Native Tailscale Mesh Integration:**
+  - Automatic peer discovery via local `tailscale status --json` query: automatically locates active online peers on your tailnet without manual IP configuration.
+  - Full support for Tailscale 100.x.y.z addresses and MagicDNS node names.
+- **Kernel-Level Input Injection (`/dev/uinput`):** Uses pure-Rust **`evdev`** to inject hardware-level relative mouse movements, clicks, wheel scrolls, and scancodes directly into the Linux input subsystem, completely bypassing Wayland compositor synthetic event blocking.
+- **Complete Event Suppression (No Ghost Clicks):** Raw Win32 low-level hooks (`WH_MOUSE_LL` and `WH_KEYBOARD_LL`) swallow inputs on Windows while in remote mode, eliminating duplicate clicks and phantom keystrokes.
+- **Clipboard & Media Synchronization:** Real-time text and high-resolution image clipboard synchronization with streaming chunk buffers.
+- **Cross-Platform Compatibility:** Designed to support any device combination across Windows, Linux, and macOS.
 - **Graphify Code Graph Integration:** Features automated AST structural code analysis, call flow mapping, and visual knowledge graphs generated via **Graphify**.
 
 ---
@@ -34,10 +38,11 @@ A high-performance, zero-overhead software KVM switch written in 100% native Rus
 
 ```text
 +-----------------------------------------------------------------------------------+
-|                        WINDOWS HOST CONTROLLER (Rust)                             |
-|  Raw Win32 Hooks (WH_MOUSE_LL / WH_KEYBOARD_LL) via windows-sys                   |
+|                        UNIVERSAL HOST CONTROLLER (Rust)                           |
+|  Low-Level Event Hooks (Win32 LL Hooks / CoreGraphics Tap / evdev grab)            |
+|  Directional Edge Detector: [Right | Left | Up | Down]                             |
 |  Event Suppression Engine  +  Relative Center-Warp Delta Tracker                  |
-|  Bidirectional Clipboard Engine (arboard)                                         |
+|  Bidirectional Clipboard Engine (arboard / Win32 / Wayland wl-clipboard)         |
 +------------------------------------------+----------------------------------------+
                                            |
                                   TCP Stream (TCP_NODELAY)
@@ -45,66 +50,67 @@ A high-performance, zero-overhead software KVM switch written in 100% native Rus
                                            |
                                            v
 +-----------------------------------------------------------------------------------+
-|                     OMARCHY / HYPRLAND CLIENT RECEIVER (Rust)                     |
+|                     UNIVERSAL CLIENT RECEIVER (Rust)                             |
 |  Async Tokio Multi-Threaded TCP Server (Port 9876)                                |
+|  Multi-Edge Return Monitor: [Left | Right | Top | Bottom]                          |
 |                                          |                                        |
 |             +----------------------------+----------------------------+           |
 |             v                                                         v           |
-|  Kernel /dev/uinput (evdev)                                 Wayland wl-clipboard  |
+|  Kernel /dev/uinput (evdev) / SendInput / CGEventPost       Wayland / Native Clip |
 |  [Virtual Mouse & Keyboard Device]                           [Clipboard Sync]     |
 |             |                                                         |           |
 |             v                                                         v           |
-|  Wayland Compositor (Hyprland Core)                          Omarchy Desktop UI   |
-|  [Dynamic Left Edge Boundary Monitor (hyprctl)]              [Screen Sync]        |
+|  Desktop Compositor & Window Manager                         Desktop Display      |
 +-----------------------------------------------------------------------------------+
 ```
-
-- **Host (Windows):** Rust 2021, `windows-sys`, `arboard`, `serde`, `serde_json`.
-- **Receiver (Omarchy / Hyprland Linux):** Rust 2021, `tokio` (async network I/O), `evdev` (`/dev/uinput`), `notify-rust`, `serde`, `serde_json`.
-- **Networking:** Tailscale Mesh VPN, WireGuard overlay routing, low-latency raw TCP sockets with disabled Nagle algorithm (`TCP_NODELAY`).
-- **Code Intelligence & Graphing:** Graphify AST semantic engine, interactive D3 graph (`graph.html`), and Mermaid call flow mapping (`tailscale-kvm-callflow.html`).
-
----
-
-## 📊 Visual Overview & Architecture Graph
-
-Visual demonstration assets and AST dependency graphs generated for this repository:
-
-<div align="center">
-
-| Architecture Knowledge Graph (`graphify` - 85 Nodes) | Call Flow & Component Sequence |
-| :---: | :---: |
-| ![Architecture Graph](demoPics/01-architecture-graph.png) | ![Call Flow Diagram](demoPics/02-callflow-diagram.png) |
-
-</div>
 
 ---
 
 ## 🚀 Setup & Usage
 
-### 1. Linux Receiver (Omarchy)
+### 1. Starting the Receiver (Client Machine)
+
+On the receiver computer (e.g. Omarchy Linux, macOS, or Windows):
 
 ```bash
 cd linux-receiver
 cargo build --release
-./target/release/tailscale-kvm-receiver
+
+# Run receiver specifying which edge returns cursor back to host:
+# Options: --edge left | right | top | bottom (default: left)
+./target/release/tailscale-kvm-receiver --edge left
 ```
 
-### 2. Windows Host (`not-a-gabe-cube`)
+### 2. Starting the Host Controller
 
-```powershell
+On the host machine (where your physical mouse and keyboard are connected):
+
+```bash
 cd windows-host
 cargo build --release
-.\target\release\tailscale-kvm-host.exe 100.99.142.70
+
+# Run host specifying where the receiver is located:
+# Options: --direction right | left | up | down (default: right)
+# Target automatically discovers active online Tailscale peer if omitted!
+.\target\release\tailscale-kvm-host.exe --direction right --target 100.x.y.z
+```
+
+### Configuration File (`config.txt`)
+Alternatively, create a `config.txt` in the program folder:
+```ini
+DIRECTION=right
+EDGE=left
+TARGET_IP=100.x.y.z
 ```
 
 ---
 
 ## 🎮 How to Control
 
-- **Switch to Omarchy:** Move your mouse cursor against the **right edge of your Windows display**.
-- **Switch back to Windows:** Move your mouse cursor against the **left edge of your Omarchy display**.
-- **Emergency Release Hotkeys:** Press **`F12`**, **`Pause / Break`**, or **`Scroll Lock`** anytime to instantly release the cursor back to Windows.
+- **Switch to Receiver:** Move your mouse cursor past the configured edge on your host display (**Right**, **Left**, **Up**, or **Down**).
+- **Switch back to Host:** Move your mouse cursor past the opposite return edge on the receiver display.
+- **Emergency Release Hotkeys:** Press **`F12`**, **`Pause / Break`**, or **`Scroll Lock`** anytime to instantly release the cursor back to the host.
+
 
 ---
 
