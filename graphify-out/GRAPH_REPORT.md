@@ -1,17 +1,17 @@
 # Graph Report - tailscale-kvm  (2026-11-06)
 
 ## Corpus Check
-- 8 files · ~6,491 words
+- 8 files · ~7,910 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 4 file(s) not represented in the graph (top: (none) 3, .toml 1)
 
 ## Summary
-- 159 nodes · 246 edges · 20 communities (10 shown, 10 thin omitted)
+- 183 nodes · 287 edges · 21 communities (13 shown, 8 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a80c4fa1`
+- Built from commit: `287b3e63`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -23,30 +23,31 @@
 - apply_single_monitor_if_docked
 - ⚡ Tailscale Software KVM: Windows Host to Omarchy / Hyprland (Pure Rust)
 - execute_handoff
-- keyboard_hook_proc
+- main
 - AtomicBool
 - HHOOK
 - handle_connection
 - tailscale-kvm-host
 - tailscale-kvm-receiver
 - AtomicI32
-- resolve_target_addr
+- execute_reverse_handoff
 - AtomicIsize
 - AtomicU32
 - AtomicBool
 - OnceLock
+- send_inputs
 
 ## God Nodes (most connected - your core abstractions)
-1. `handle_connection()` - 15 edges
+1. `handle_connection()` - 16 edges
 2. `execute_handoff()` - 14 edges
 3. `keyboard_hook_proc()` - 8 edges
 4. `⚡ Tailscale Software KVM: Windows Host to Omarchy / Hyprland (Pure Rust)` - 8 edges
-5. `send_fast_bytes()` - 6 edges
-6. `mouse_hook_proc()` - 6 edges
-7. `receive_binary_file()` - 5 edges
-8. `DragKind` - 5 edges
-9. `send_inputs()` - 5 edges
-10. `tap_key()` - 5 edges
+5. `execute_reverse_handoff()` - 6 edges
+6. `send_fast_bytes()` - 6 edges
+7. `mouse_hook_proc()` - 6 edges
+8. `receive_binary_file()` - 5 edges
+9. `ActiveApp` - 5 edges
+10. `DragKind` - 5 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `keyboard_hook_proc()` --calls--> `translate_vk()`  [EXTRACTED]
@@ -55,7 +56,11 @@
 ## Import Cycles
 - None detected.
 
-## Communities (20 total, 10 thin omitted)
+## Communities (21 total, 8 thin omitted)
+
+### Community 1 - "AtomicI32"
+Cohesion: 0.50
+Nodes (3): CURRENT_LEFT_BOUND, CURSOR_X, REMOTE_DRAG_START_X
 
 ### Community 2 - "windows-host/src/main.rs"
 Cohesion: 0.07
@@ -74,12 +79,12 @@ Cohesion: 0.18
 Nodes (10): 1. Linux Receiver (Omarchy), 2. Windows Host (`not-a-gabe-cube`), 🏗 Architecture & Tech Stack, 🕸 Graphify Knowledge Graph, 🎮 How to Control, 🌟 Key Features, 📄 License, 🚀 Setup & Usage (+2 more)
 
 ### Community 6 - "execute_handoff"
-Cohesion: 0.17
-Nodes (14): cancel_active_drag_and_release_mouse(), classify_window(), DragKind, Browser, Explorer, Other, execute_handoff(), looks_like_url() (+6 more)
+Cohesion: 0.13
+Nodes (17): classify_window(), DragKind, Browser, Explorer, Other, execute_handoff(), keyboard_hook_proc(), looks_like_url() (+9 more)
 
-### Community 7 - "keyboard_hook_proc"
-Cohesion: 0.18
-Nodes (11): get_config_ip(), keyboard_hook_proc(), main(), mouse_hook_proc(), read_clipboard_unicode_text(), send_fast_bytes(), start_clipboard_sync(), start_connection_manager() (+3 more)
+### Community 7 - "main"
+Cohesion: 0.15
+Nodes (11): collect_transfer_entries(), get_config_ip(), get_windows_downloads_dir(), main(), open_url_on_windows(), receive_binary_file_windows(), resolve_target_addr(), sanitize_relative_path() (+3 more)
 
 ### Community 8 - "AtomicBool"
 Cohesion: 0.20
@@ -93,27 +98,37 @@ Nodes (9): copy_text_to_wayland_clipboard(), decode_base64(), downloads_dir(), h
 Cohesion: 0.29
 Nodes (6): CENTER_X, CENTER_Y, DRAG_START_X, DRAG_START_Y, SCREEN_HEIGHT, SCREEN_WIDTH
 
-### Community 15 - "resolve_target_addr"
+### Community 15 - "execute_reverse_handoff"
+Cohesion: 0.14
+Nodes (12): ACTIVE_WINDOWS_PEER, ActiveApp, Browser, FileManager, Other, collect_transfer_entries(), execute_reverse_handoff(), get_active_hyprland_app() (+4 more)
+
+### Community 18 - "AtomicBool"
 Cohesion: 0.50
-Nodes (3): collect_transfer_entries(), resolve_target_addr(), stream_files_to_omarchy()
+Nodes (3): REMOTE_HANDOFF_BUSY, REMOTE_MOUSE_LBUTTON, SWITCHED_SINGLE_MONITOR
+
+### Community 20 - "send_inputs"
+Cohesion: 0.53
+Nodes (5): cancel_active_drag_and_release_mouse(), make_key_input(), send_inputs(), tap_chord(), tap_key()
 
 ## Knowledge Gaps
-- **5 isolated node(s):** `tailscale-kvm-receiver`, `tailscale-kvm-host`, `Browser`, `Explorer`, `Other`
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 63 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **8 isolated node(s):** `tailscale-kvm-receiver`, `Browser`, `FileManager`, `Other`, `tailscale-kvm-host` (+3 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 69 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **8 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `keyboard_hook_proc()` connect `keyboard_hook_proc` to `windows-host/src/main.rs`, `execute_handoff`?**
-  _High betweenness centrality (0.040) - this node is a cross-community bridge._
-- **What connects `tailscale-kvm-receiver`, `tailscale-kvm-host`, `Browser` to the rest of the system?**
-  _5 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `keyboard_hook_proc()` connect `execute_handoff` to `windows-host/src/main.rs`?**
+  _High betweenness centrality (0.036) - this node is a cross-community bridge._
+- **What connects `tailscale-kvm-receiver`, `Browser`, `FileManager` to the rest of the system?**
+  _8 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `windows-host/src/main.rs` be split into smaller, more focused modules?**
   _Cohesion score 0.07142857142857142 - nodes in this community are weakly interconnected._
-- **Why does `DragKind` connect `execute_handoff` to `windows-host/src/main.rs`?**
-  _High betweenness centrality (0.034) - this node is a cross-community bridge._
+- **Why does `ActiveApp` connect `execute_reverse_handoff` to `linux-receiver/src/main.rs`?**
+  _High betweenness centrality (0.030) - this node is a cross-community bridge._
 - **Should `linux-receiver/src/main.rs` be split into smaller, more focused modules?**
-  _Cohesion score 0.07407407407407407 - nodes in this community are weakly interconnected._
-- **Why does `mouse_hook_proc()` connect `keyboard_hook_proc` to `windows-host/src/main.rs`?**
-  _High betweenness centrality (0.016) - this node is a cross-community bridge._
+  _Cohesion score 0.07142857142857142 - nodes in this community are weakly interconnected._
+- **Why does `DragKind` connect `execute_handoff` to `windows-host/src/main.rs`?**
+  _High betweenness centrality (0.030) - this node is a cross-community bridge._
+- **Should `execute_handoff` be split into smaller, more focused modules?**
+  _Cohesion score 0.12554112554112554 - nodes in this community are weakly interconnected._

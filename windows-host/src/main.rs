@@ -407,6 +407,174 @@ fn resolve_target_addr(target_ip: &str) -> Option<SocketAddr> {
     addr_str.to_socket_addrs().ok()?.next()
 }
 
+/// Windows-side Downloads directory
+fn get_windows_downloads_dir() -> PathBuf {
+    if let Ok(profile) = env::var("USERPROFILE") {
+        let p = PathBuf::from(profile).join("Downloads");
+        if p.exists() {
+            return p;
+        }
+    }
+    PathBuf::from("C:\\Users\\Default\\Downloads")
+}
+
+fn sanitize_relative_path(raw: &str) -> PathBuf {
+    let normalized = raw.replace('/', "\\");
+    let mut safe = PathBuf::new();
+    for comp in Path::new(&normalized).components() {
+        if let std::path::Component::Normal(seg) = comp {
+            if !seg.is_empty() {
+                safe.push(seg);
+            }
+        }
+    }
+    if safe.as_os_str().is_empty() {
+        safe.push("transferred_file");
+    }
+    safe
+}
+
+fn receive_binary_file_windows<R: Read>(
+    reader: &mut R,
+    file_size: u64,
+    raw_rel_path: &str,
+) -> Result<String, std::io::Error> {
+    let safe_rel = sanitize_relative_path(raw_rel_path);
+    let base_downloads = get_windows_downloads_dir();
+    let target_path = base_downloads.join(&safe_rel);
+
+    if let Some(parent) = target_path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+
+    let mut out_file = fs::File::create(&target_path)?;
+    let mut chunk = [0u8; FILE_CHUNK_SIZE];
+    let mut remaining = file_size;
+
+    while remaining > 0 {
+        let to_read = FILE_CHUNK_SIZE.min(remaining as usize);
+        let n = reader.read(&mut chunk[..to_read])?;
+        if n == 0 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "stream closed mid-file",
+            ));
+        }
+        out_file.write_all(&chunk[..n])?;
+        remaining -= n as u64;
+    }
+
+    out_file.flush()?;
+    Ok(safe_rel.to_string_lossy().into_owned())
+}
+
+fn open_url_on_windows(url: &str) {
+    let u = url.trim().to_string();
+    if u.is_empty() {
+        return;
+    }
+    thread::spawn(move || {
+        let formatted = if !u.starts_with("http://")
+            && !u.starts_with("https://")
+            && !u.starts_with("about:")
+            && !u.starts_with("file://")
+        {
+            format!("https://{}", u)
+        } else {
+            u
+        };
+
+        // Try opening in Firefox directly if available, else standard Windows 'start'
+        let ff_candidates = [
+            "C:\\Program Files\\Mozilla Firefox\\firefox.exe",
+            "C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe",
+        ];
+        let mut opened = false;
+        for candidate in ff_candidates {
+            if Path::new(candidate).exists() {
+                if std::process::Command::new(candidate)
+                    .arg(&formatted)
+                    .spawn()
+                    .is_ok()
+                {
+                    opened = true;
+                    break;
+                }
+            }
+        }
+        if !opened {
+            let _ = std::process::Command::new("cmd")
+                .args(["/C", "start", "", &formatted])
+                .spawn();
+        }
+    });
+}
+
+/// Incoming transfer listener on Windows port 9876 so Omarchy can stream files & tabs back to Windows
+fn start_windows_server_listener() {
+    thread::spawn(|| {
+        let Ok(listener) = std::net::TcpListener::bind("0.0.0.0:9876") else {
+            return;
+        };
+
+        for stream_res in listener.incoming() {
+            if let Ok(stream) = stream_res {
+                let _ = stream.set_nodelay(true);
+                thread::spawn(move || {
+                    let mut reader = BufReader::with_capacity(FILE_CHUNK_SIZE, stream);
+                    let mut line = String::new();
+                    loop {
+                        line.clear();
+                        let bytes_read = match reader.read_line(&mut line) {
+                            Ok(n) => n,
+                            Err(_) => break,
+                        };
+                        if bytes_read == 0 {
+                            break;
+                        }
+
+                        let trimmed = line.trim_end_matches(['\r', '\n']);
+                        let bytes = trimmed.as_bytes();
+                        if bytes.is_empty() {
+                            continue;
+                        }
+
+                        match bytes[0] {
+                            // "B <size> <rel_path>\n" -> Binary file stream from Omarchy
+                            b'B' => {
+                                if trimmed.len() > 2 {
+                                    let rest = &trimmed[2..];
+                                    if let Some(space_idx) = rest.find(' ') {
+                                        let size_str = &rest[..space_idx];
+                                        let rel_path = rest[space_idx + 1..].trim();
+                                        if let Ok(file_size) = size_str.parse::<u64>() {
+                                            let _ = receive_binary_file_windows(
+                                                &mut reader,
+                                                file_size,
+                                                rel_path,
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+
+                            // "U <url>\n" -> Tab fling from Omarchy
+                            b'U' => {
+                                if trimmed.len() > 2 {
+                                    let url = trimmed[2..].trim();
+                                    open_url_on_windows(url);
+                                }
+                            }
+
+                            _ => {}
+                        }
+                    }
+                });
+            }
+        }
+    });
+}
+
 /// Streams files over a dedicated secondary TCP connection using a constant 64 KB stack buffer.
 /// Uses < 128 KB RAM even for multi-gigabyte files and never blocks the 1000Hz mouse/keyboard socket.
 fn stream_files_to_omarchy(paths: Vec<PathBuf>) {
@@ -933,6 +1101,7 @@ fn main() {
         CENTER_Y.store(sh / 2, Ordering::SeqCst);
     }
 
+    start_windows_server_listener();
     start_connection_manager(target_ip);
     start_clipboard_sync();
 

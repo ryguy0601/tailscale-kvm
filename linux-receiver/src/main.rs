@@ -4,7 +4,7 @@ use std::env;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex as StdMutex};
 use tokio::fs::{self, File};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream, UnixStream};
@@ -15,6 +15,12 @@ static CURSOR_X: AtomicI32 = AtomicI32::new(6000);
 static CURRENT_LEFT_BOUND: AtomicI32 = AtomicI32::new(0);
 static ACTIVE_CONTROL_CLIENTS: AtomicUsize = AtomicUsize::new(0);
 static SWITCHED_SINGLE_MONITOR: AtomicBool = AtomicBool::new(false);
+
+static REMOTE_MOUSE_LBUTTON: AtomicBool = AtomicBool::new(false);
+static REMOTE_DRAG_START_X: AtomicI32 = AtomicI32::new(0);
+static REMOTE_HANDOFF_BUSY: AtomicBool = AtomicBool::new(false);
+
+static ACTIVE_WINDOWS_PEER: StdMutex<Option<std::net::IpAddr>> = StdMutex::new(None);
 
 const STREAM_CHUNK_SIZE: usize = 65_536; // 64 KB fixed streaming buffer
 const MAX_SINGLE_FILE_BYTES: u64 = 64 * 1024 * 1024 * 1024; // 64 GB sanity cap
@@ -319,11 +325,335 @@ fn mark_control_session(is_control: &mut bool) {
     }
 }
 
+// -------------------------------------------------------------
+// Two-Way Reverse Handoff: Linux (Omarchy) -> Windows 11 Host
+// -------------------------------------------------------------
+
+#[derive(Clone, Debug)]
+enum ActiveApp {
+    Browser,
+    FileManager,
+    Other,
+}
+
+fn get_active_hyprland_app() -> ActiveApp {
+    let output = Command::new("hyprctl").args(["activewindow", "-j"]).output();
+    if let Ok(out) = output {
+        if let Ok(v) = serde_json::from_slice::<serde_json::Value>(&out.stdout) {
+            let class = v["class"].as_str().unwrap_or("").to_lowercase();
+            let initial_class = v["initialClass"].as_str().unwrap_or("").to_lowercase();
+            let title = v["title"].as_str().unwrap_or("").to_lowercase();
+
+            if class.contains("firefox")
+                || class.contains("zen")
+                || class.contains("chromium")
+                || class.contains("chrome")
+                || class.contains("brave")
+                || initial_class.contains("firefox")
+            {
+                return ActiveApp::Browser;
+            }
+            if class.contains("nautilus")
+                || class.contains("thunar")
+                || class.contains("dolphin")
+                || class.contains("nemo")
+                || title.contains("files")
+            {
+                return ActiveApp::FileManager;
+            }
+        }
+    }
+    ActiveApp::Other
+}
+
+fn collect_transfer_entries(
+    base: &Path,
+    current: &Path,
+    depth: usize,
+    out: &mut Vec<(PathBuf, String)>,
+) {
+    if depth > 6 || out.len() >= 500 {
+        return;
+    }
+
+    if current.is_file() {
+        let rel = if base == current {
+            current
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("transferred_file")
+                .to_string()
+        } else {
+            let parent_name = base
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("folder");
+            let sub = current
+                .strip_prefix(base)
+                .ok()
+                .and_then(|p| p.to_str())
+                .unwrap_or("file");
+            format!("{}/{}", parent_name, sub.replace('\\', "/"))
+        };
+        let clean_rel: String = rel.chars().filter(|&c| c != '\r' && c != '\n').collect();
+        if !clean_rel.is_empty() {
+            out.push((current.to_path_buf(), clean_rel));
+        }
+    } else if current.is_dir() {
+        if let Ok(entries) = std::fs::read_dir(current) {
+            for entry in entries.flatten() {
+                collect_transfer_entries(base, &entry.path(), depth + 1, out);
+            }
+        }
+    }
+}
+
+async fn stream_files_to_windows(win_ip: std::net::IpAddr, paths: Vec<PathBuf>) {
+    let mut entries = Vec::new();
+    for p in &paths {
+        collect_transfer_entries(p, p, 0, &mut entries);
+    }
+    if entries.is_empty() {
+        return;
+    }
+
+    let addr = std::net::SocketAddr::new(win_ip, 9876);
+    let Ok(mut tx) = TcpStream::connect(addr).await else {
+        eprintln!("[!] Failed to connect to Windows host file transfer port: {}", addr);
+        return;
+    };
+    let _ = tx.set_nodelay(true);
+
+    let mut chunk_buf = [0u8; STREAM_CHUNK_SIZE];
+    for (full_path, rel_path) in entries {
+        let Ok(mut file) = File::open(&full_path).await else {
+            continue;
+        };
+        let Ok(meta) = file.metadata().await else {
+            continue;
+        };
+        let total_size = meta.len();
+
+        let header = format!("B {} {}\n", total_size, rel_path);
+        if tx.write_all(header.as_bytes()).await.is_err() {
+            break;
+        }
+
+        let mut remaining = total_size;
+        let mut failed = false;
+        while remaining > 0 {
+            let to_read = STREAM_CHUNK_SIZE.min(remaining as usize);
+            match file.read(&mut chunk_buf[..to_read]).await {
+                Ok(0) => break,
+                Ok(n) => {
+                    if tx.write_all(&chunk_buf[..n]).await.is_err() {
+                        failed = true;
+                        break;
+                    }
+                    remaining -= n as u64;
+                }
+                Err(_) => {
+                    failed = true;
+                    break;
+                }
+            }
+        }
+        if failed {
+            break;
+        }
+    }
+    let _ = tx.flush().await;
+}
+
+fn parse_file_uris(raw: &str) -> Vec<PathBuf> {
+    let mut paths = Vec::new();
+    for line in raw.lines() {
+        let t = line.trim();
+        if let Some(rest) = t.strip_prefix("file://") {
+            // Percent-decode path
+            let decoded = percent_decode_str(rest);
+            let p = PathBuf::from(decoded);
+            if p.exists() {
+                paths.push(p);
+            }
+        } else if t.starts_with('/') {
+            let p = PathBuf::from(t);
+            if p.exists() {
+                paths.push(p);
+            }
+        }
+    }
+    paths
+}
+
+fn percent_decode_str(s: &str) -> String {
+    let mut out = Vec::with_capacity(s.len());
+    let bytes = s.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            let h1 = bytes[i + 1] as char;
+            let h2 = bytes[i + 2] as char;
+            if let Ok(byte) = u8::from_str_radix(&format!("{}{}", h1, h2), 16) {
+                out.push(byte);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+fn looks_like_url(s: &str) -> bool {
+    let t = s.trim();
+    if t.len() < 4 || t.chars().any(char::is_whitespace) {
+        return false;
+    }
+    t.starts_with("http://")
+        || t.starts_with("https://")
+        || t.starts_with("about:")
+        || t.starts_with("file://")
+        || t.starts_with("www.")
+        || t.contains('.')
+        || t.starts_with("localhost:")
+}
+
+async fn execute_reverse_handoff() {
+    if REMOTE_HANDOFF_BUSY
+        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+        .is_err()
+    {
+        return;
+    }
+
+    tokio::spawn(async move {
+        let win_ip = {
+            let lock = ACTIVE_WINDOWS_PEER.lock().unwrap();
+            *lock
+        };
+
+        if let Some(target_ip) = win_ip {
+            let app = get_active_hyprland_app();
+
+            // 1. Send Escape via wtype to cancel any ongoing Wayland drag/tab detach loop
+            let _ = tokio::process::Command::new("wtype")
+                .args(["-k", "Escape"])
+                .status()
+                .await;
+            sleep(Duration::from_millis(40)).await;
+
+            match app {
+                ActiveApp::Browser => {
+                    // Focus address bar with Ctrl+L and copy with Ctrl+C
+                    let _ = tokio::process::Command::new("wtype")
+                        .args(["-M", "ctrl", "-k", "l", "-m", "ctrl"])
+                        .status()
+                        .await;
+                    sleep(Duration::from_millis(50)).await;
+
+                    let _ = tokio::process::Command::new("wtype")
+                        .args(["-M", "ctrl", "-k", "c", "-m", "ctrl"])
+                        .status()
+                        .await;
+                    sleep(Duration::from_millis(80)).await;
+
+                    // Read URL from Wayland clipboard via wl-paste
+                    if let Ok(out) = tokio::process::Command::new("wl-paste")
+                        .args(["--no-newline"])
+                        .output()
+                        .await
+                    {
+                        let text = String::from_utf8_lossy(&out.stdout).trim().to_string();
+                        let final_url = if looks_like_url(&text) {
+                            text
+                        } else {
+                            "about:newtab".to_string()
+                        };
+
+                        // Send "U <url>\n" over a short TCP socket to Windows port 9876
+                        let addr = std::net::SocketAddr::new(target_ip, 9876);
+                        if let Ok(mut tx) = TcpStream::connect(addr).await {
+                            let _ = tx.set_nodelay(true);
+                            let pkt = format!("U {}\n", final_url);
+                            let _ = tx.write_all(pkt.as_bytes()).await;
+                            let _ = tx.flush().await;
+                        }
+                    }
+
+                    // Press Escape to dismiss the browser URL bar dropdown
+                    let _ = tokio::process::Command::new("wtype")
+                        .args(["-k", "Escape"])
+                        .status()
+                        .await;
+                }
+
+                ActiveApp::FileManager => {
+                    // Copy selection in Nautilus / file manager
+                    let _ = tokio::process::Command::new("wtype")
+                        .args(["-M", "ctrl", "-k", "c", "-m", "ctrl"])
+                        .status()
+                        .await;
+                    sleep(Duration::from_millis(80)).await;
+
+                    // Read text/uri-list from Wayland clipboard
+                    let mut file_paths = Vec::new();
+                    if let Ok(out) = tokio::process::Command::new("wl-paste")
+                        .args(["-t", "text/uri-list"])
+                        .output()
+                        .await
+                    {
+                        let s = String::from_utf8_lossy(&out.stdout);
+                        file_paths = parse_file_uris(&s);
+                    }
+                    if file_paths.is_empty() {
+                        if let Ok(out) = tokio::process::Command::new("wl-paste")
+                            .args(["--no-newline"])
+                            .output()
+                            .await
+                        {
+                            let s = String::from_utf8_lossy(&out.stdout);
+                            file_paths = parse_file_uris(&s);
+                        }
+                    }
+
+                    if !file_paths.is_empty() {
+                        stream_files_to_windows(target_ip, file_paths).await;
+                    }
+                }
+
+                ActiveApp::Other => {
+                    // Check if clipboard contains file URIs or plain text
+                    if let Ok(out) = tokio::process::Command::new("wl-paste")
+                        .args(["-t", "text/uri-list"])
+                        .output()
+                        .await
+                    {
+                        let s = String::from_utf8_lossy(&out.stdout);
+                        let file_paths = parse_file_uris(&s);
+                        if !file_paths.is_empty() {
+                            stream_files_to_windows(target_ip, file_paths).await;
+                        }
+                    }
+                }
+            }
+        }
+
+        REMOTE_HANDOFF_BUSY.store(false, Ordering::SeqCst);
+    });
+}
+
 async fn handle_connection(
     stream: TcpStream,
     device: Arc<Mutex<evdev::uinput::VirtualDevice>>,
 ) {
     let peer = stream.peer_addr().ok();
+    if let Some(ref p) = peer {
+        let mut lock = ACTIVE_WINDOWS_PEER.lock().unwrap();
+        *lock = Some(p.ip());
+    }
+
     let (reader_half, mut writer) = stream.into_split();
     let mut reader = BufReader::with_capacity(STREAM_CHUNK_SIZE, reader_half);
     let mut line = String::with_capacity(256);
@@ -391,10 +721,19 @@ async fn handle_connection(
                             let syn = InputEvent::new(EventType::SYNCHRONIZATION, 0, 0);
                             let _ = dev.emit(&[ev_x, ev_y, syn]);
 
+                            // When cursor moves left and hits the left edge bound, switch back to Windows
                             if dx < 0 {
                                 let cur_x = CURSOR_X.load(Ordering::Relaxed);
                                 let left_bound = CURRENT_LEFT_BOUND.load(Ordering::Relaxed);
                                 if cur_x <= left_bound + 2 {
+                                    let was_dragging = REMOTE_MOUSE_LBUTTON.load(Ordering::SeqCst)
+                                        && (REMOTE_DRAG_START_X.load(Ordering::Relaxed) - cur_x).abs() >= 35;
+
+                                    if was_dragging {
+                                        execute_reverse_handoff().await;
+                                    }
+
+                                    REMOTE_MOUSE_LBUTTON.store(false, Ordering::SeqCst);
                                     let _ = writer.write_all(b"switch_to_local\n").await;
                                 }
                             }
@@ -423,7 +762,15 @@ async fn handle_connection(
                         let btn_code = match btn {
                             "right" => Key::BTN_RIGHT.code(),
                             "middle" => Key::BTN_MIDDLE.code(),
-                            _ => Key::BTN_LEFT.code(),
+                            _ => {
+                                if act == "down" {
+                                    REMOTE_MOUSE_LBUTTON.store(true, Ordering::SeqCst);
+                                    REMOTE_DRAG_START_X.store(CURSOR_X.load(Ordering::Relaxed), Ordering::Relaxed);
+                                } else {
+                                    REMOTE_MOUSE_LBUTTON.store(false, Ordering::SeqCst);
+                                }
+                                Key::BTN_LEFT.code()
+                            }
                         };
                         let act_val = if act == "down" { 1 } else { 0 };
                         let mut dev = device.lock().await;
@@ -542,6 +889,10 @@ async fn handle_connection(
 
     if is_control {
         println!("[-] KVM control session closed from: {:?}", peer);
+        {
+            let mut lock = ACTIVE_WINDOWS_PEER.lock().unwrap();
+            *lock = None;
+        }
         if ACTIVE_CONTROL_CLIENTS.fetch_sub(1, Ordering::SeqCst) == 1 {
             // Short debounce so restarting the Windows host doesn't flash docked monitors off and on
             tokio::spawn(async {
