@@ -72,30 +72,52 @@ fn send_fast_bytes(bytes: &[u8]) {
     }
 }
 
-/// Grabs the active browser URL using rapid Win32 keystrokes (Ctrl+L -> Ctrl+C)
+/// Grabs the active browser URL using WindowFromPoint + rapid keystrokes
 fn try_get_active_browser_url() -> Option<String> {
     #[cfg(windows)]
     unsafe {
-        let hwnd = GetForegroundWindow();
-        if hwnd == 0 {
+        // If left button is down, release it briefly so keystrokes register
+        if LBUTTON_DOWN.load(Ordering::SeqCst) {
+            keybd_event(VK_LBUTTON as u8, 0, KEYEVENTF_KEYUP, 0);
+            thread::sleep(Duration::from_millis(20));
+        }
+
+        let mut pt: POINT = std::mem::zeroed();
+        GetCursorPos(&mut pt);
+        let mut target_hwnd = WindowFromPoint(pt);
+
+        if target_hwnd == 0 {
+            target_hwnd = GetForegroundWindow();
+        } else {
+            // Find root top-level window
+            let ancestor = GetAncestor(target_hwnd, GA_ROOT);
+            if ancestor != 0 {
+                target_hwnd = ancestor;
+            }
+            SetForegroundWindow(target_hwnd);
+        }
+
+        if target_hwnd == 0 {
             return None;
         }
 
-        // Simulate Ctrl + L (Focus address bar in Chrome, Edge, Brave, Firefox)
+        thread::sleep(Duration::from_millis(50));
+
+        // Send Ctrl + L (Focus address bar)
         keybd_event(VK_CONTROL as u8, 0, 0, 0);
         keybd_event(b'L', 0, 0, 0);
         keybd_event(b'L', 0, KEYEVENTF_KEYUP, 0);
         keybd_event(VK_CONTROL as u8, 0, KEYEVENTF_KEYUP, 0);
 
-        thread::sleep(Duration::from_millis(40));
+        thread::sleep(Duration::from_millis(60));
 
-        // Simulate Ctrl + C (Copy URL to clipboard)
+        // Send Ctrl + C (Copy address)
         keybd_event(VK_CONTROL as u8, 0, 0, 0);
         keybd_event(b'C', 0, 0, 0);
         keybd_event(b'C', 0, KEYEVENTF_KEYUP, 0);
         keybd_event(VK_CONTROL as u8, 0, KEYEVENTF_KEYUP, 0);
 
-        thread::sleep(Duration::from_millis(40));
+        thread::sleep(Duration::from_millis(60));
 
         // Read URL from clipboard
         if let Ok(mut clip) = arboard::Clipboard::new() {
@@ -104,7 +126,7 @@ fn try_get_active_browser_url() -> Option<String> {
                 if trimmed.starts_with("http://")
                     || trimmed.starts_with("https://")
                     || trimmed.starts_with("www.")
-                    || (trimmed.contains('.') && !trimmed.contains(' '))
+                    || (trimmed.contains('.') && !trimmed.contains(' ') && trimmed.len() > 3)
                 {
                     return Some(trimmed.to_string());
                 }
@@ -125,8 +147,8 @@ pub fn fling_browser_to_omarchy() {
 }
 
 pub fn switch_to_remote() {
-    // If the user was dragging a window across to Omarchy (holding Left Mouse Button),
-    // automatically fling their active browser tab to Omarchy!
+    // If left mouse button was held while crossing the right edge,
+    // trigger the browser fling!
     if LBUTTON_DOWN.load(Ordering::SeqCst) {
         fling_browser_to_omarchy();
     }
