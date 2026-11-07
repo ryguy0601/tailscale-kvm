@@ -87,6 +87,9 @@
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
     }
+    .slot-card * {
+      pointer-events: none;
+    }
     .slot-card.active {
       border: 2px solid var(--accent);
       background: #111e24;
@@ -135,6 +138,7 @@
       width: 100%;
       padding: 6px;
       border-radius: 8px;
+      pointer-events: auto !important;
       transition: background 0.15s ease, transform 0.15s ease;
     }
     .assigned-peer:active {
@@ -171,6 +175,7 @@
       border-radius: 6px;
       font-size: 11px;
       cursor: pointer;
+      pointer-events: auto !important;
       transition: all 0.15s;
     }
     .remove-btn:hover {
@@ -242,13 +247,13 @@
   <!-- 2D Screen Arrangement Canvas -->
   <div class="canvas-container">
     <!-- TOP SLOT -->
-    <div class="slot-card slot-top" id="slot-up" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, 'up')">
+    <div class="slot-card slot-top" id="slot-up" data-slot="up">
       <div class="slot-label">⬆️ Top Screen</div>
       <div class="slot-content" id="content-up"><span style="color:#6e7681; font-size:12px;">Empty Slot</span></div>
     </div>
 
     <!-- LEFT SLOT -->
-    <div class="slot-card slot-left" id="slot-left" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, 'left')">
+    <div class="slot-card slot-left" id="slot-left" data-slot="left">
       <div class="slot-label">⬅️ Left Screen</div>
       <div class="slot-content" id="content-left"><span style="color:#6e7681; font-size:12px;">Empty Slot</span></div>
     </div>
@@ -261,13 +266,13 @@
     </div>
 
     <!-- RIGHT SLOT -->
-    <div class="slot-card slot-right" id="slot-right" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, 'right')">
+    <div class="slot-card slot-right" id="slot-right" data-slot="right">
       <div class="slot-label">➡️ Right Screen</div>
       <div class="slot-content" id="content-right"><span style="color:#6e7681; font-size:12px;">Empty Slot</span></div>
     </div>
 
     <!-- BOTTOM SLOT -->
-    <div class="slot-card slot-bottom" id="slot-bottom" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, 'down')">
+    <div class="slot-card slot-bottom" id="slot-bottom" data-slot="down">
       <div class="slot-label">⬇️ Bottom Screen</div>
       <div class="slot-content" id="content-down"><span style="color:#6e7681; font-size:12px;">Empty Slot</span></div>
     </div>
@@ -287,6 +292,7 @@
   <script>
     let peersData = [];
     let currentSlots = { right: '', left: '', up: '', down: '' };
+    let draggedPayload = null; // Reliable in-memory reference during drag
 
     async function fetchStatus() {
       try {
@@ -310,12 +316,13 @@
         const div = document.createElement('div');
         div.className = 'peer-chip';
         div.draggable = true;
-        div.ondragstart = (e) => {
-          e.dataTransfer.setData('text/plain', JSON.stringify({
-            peer: peer,
-            sourceSlot: null
-          }));
-        };
+        div.addEventListener('dragstart', (e) => {
+          draggedPayload = { peer: peer, sourceSlot: null };
+          e.dataTransfer.setData('text/plain', JSON.stringify(draggedPayload));
+        });
+        div.addEventListener('dragend', () => {
+          draggedPayload = null;
+        });
 
         div.innerHTML = `
           <div class="status-dot ${peer.online ? 'online' : ''}"></div>
@@ -341,18 +348,19 @@
           const div = document.createElement('div');
           div.className = 'assigned-peer';
           div.draggable = true;
-          div.ondragstart = (e) => {
+          div.addEventListener('dragstart', (e) => {
             e.stopPropagation();
-            e.dataTransfer.setData('text/plain', JSON.stringify({
-              peer: peer,
-              sourceSlot: slot
-            }));
-          };
+            draggedPayload = { peer: peer, sourceSlot: slot };
+            e.dataTransfer.setData('text/plain', JSON.stringify(draggedPayload));
+          });
+          div.addEventListener('dragend', () => {
+            draggedPayload = null;
+          });
 
           div.innerHTML = `
             <span class="peer-name">${peer.name}</span>
             <span class="peer-ip">${peer.ip}</span>
-            <span class="slot-hint">⠿ Drag to move</span>
+            <span class="slot-hint">⠿ Drag to reposition</span>
             <button class="remove-btn" onclick="assignSlot('${slot}', 'none')">Disconnect</button>
           `;
 
@@ -365,46 +373,55 @@
       });
     }
 
-    function onDragOver(e) {
-      e.preventDefault();
-      e.currentTarget.classList.add('dragover');
-    }
+    // Attach drag & drop listeners to each slot card
+    document.querySelectorAll('.slot-card[data-slot]').forEach(card => {
+      card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        card.classList.add('dragover');
+      });
 
-    function onDragLeave(e) {
-      e.currentTarget.classList.remove('dragover');
-    }
+      card.addEventListener('dragleave', (e) => {
+        card.classList.remove('dragover');
+      });
 
-    async function onDrop(e, targetSlot) {
-      e.preventDefault();
-      e.currentTarget.classList.remove('dragover');
-      try {
-        const raw = e.dataTransfer.getData('text/plain');
-        if (!raw) return;
-        const payload = JSON.parse(raw);
+      card.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        card.classList.remove('dragover');
+        const targetSlot = card.getAttribute('data-slot');
+
+        let payload = draggedPayload;
+        if (!payload) {
+          try {
+            const raw = e.dataTransfer.getData('text/plain');
+            if (raw) payload = JSON.parse(raw);
+          } catch (_) {}
+        }
+
+        if (!payload) return;
 
         const peer = payload.peer || payload;
         const sourceSlot = payload.sourceSlot;
 
         if (peer && peer.ip) {
-          // If dragging from an existing slot to a new slot:
           if (sourceSlot && sourceSlot !== targetSlot) {
-            // Swap or clear old slot
+            // Screen moved from an existing slot to a new slot:
             const existingInTarget = currentSlots[targetSlot];
             await assignSlot(sourceSlot, existingInTarget || 'none');
             await assignSlot(targetSlot, peer.ip);
           } else {
+            // New placement
             await assignSlot(targetSlot, peer.ip);
           }
         }
-      } catch (err) {
-        console.error("Drop handler error:", err);
-      }
-    }
+        draggedPayload = null;
+      });
+    });
 
     async function assignSlot(slot, ip) {
-      await fetch(`/api/assign?slot=${slot}&ip=${encodeURIComponent(ip)}`, { method: 'POST' });
       currentSlots[slot] = ip === 'none' ? '' : ip;
       renderSlots();
+      await fetch(`/api/assign?slot=${slot}&ip=${encodeURIComponent(ip)}`, { method: 'POST' });
     }
 
     fetchStatus();
