@@ -229,6 +229,7 @@ impl InputAdapter {
         #[cfg(windows)]
         {
             use windows_sys::Win32::UI::Input::KeyboardAndMouse::*;
+            use windows_sys::Win32::UI::WindowsAndMessaging::{XBUTTON1, XBUTTON2};
             let (flag, data) = match btn {
                 "right" => {
                     let f = if is_down {
