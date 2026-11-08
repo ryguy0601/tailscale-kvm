@@ -1951,6 +1951,83 @@ fn stream_image_to_connected_receivers(dib_bytes: Vec<u8>) {
 }
 
 #[cfg(windows)]
+fn get_local_tailscale_ip() -> Option<String> {
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+    let mut cmd = std::process::Command::new("tailscale");
+    cmd.args(["status", "--json"]);
+    cmd.creation_flags(CREATE_NO_WINDOW);
+
+    if let Ok(output) = cmd.output() {
+        if let Ok(val) = serde_json::from_slice::<serde_json::Value>(&output.stdout) {
+            if let Some(ips) = val
+                .get("Self")
+                .and_then(|s| s.get("TailscaleIPs"))
+                .and_then(|arr| arr.as_array())
+            {
+                for ip_val in ips {
+                    if let Some(ip_str) = ip_val.as_str() {
+                        if !ip_str.contains(':') && !ip_str.is_empty() {
+                            return Some(ip_str.to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
+#[allow(dead_code)]
+fn rewrite_localhost_to_tailscale(url: &str, tailscale_ip: Option<&str>) -> String {
+    let Some(ts_ip) = tailscale_ip else {
+        return url.to_string();
+    };
+    if ts_ip.is_empty() {
+        return url.to_string();
+    }
+
+    let mut u = url.trim().to_string();
+    if !u.starts_with("http://")
+        && !u.starts_with("https://")
+        && !u.starts_with("about:")
+        && !u.starts_with("file://")
+    {
+        if u.starts_with("localhost") || u.starts_with("127.0.0.1") {
+            u = format!("http://{}", u);
+        } else {
+            u = format!("https://{}", u);
+        }
+    }
+
+    let patterns = [
+        ("://localhost:", format!("://{}:", ts_ip)),
+        ("://localhost/", format!("://{}/", ts_ip)),
+        ("://localhost?", format!("://{}?", ts_ip)),
+        ("://localhost#", format!("://{}#", ts_ip)),
+        ("://127.0.0.1:", format!("://{}:", ts_ip)),
+        ("://127.0.0.1/", format!("://{}/", ts_ip)),
+        ("://127.0.0.1?", format!("://{}?", ts_ip)),
+        ("://127.0.0.1#", format!("://{}#", ts_ip)),
+    ];
+
+    for (pat, repl) in &patterns {
+        if u.contains(pat) {
+            return u.replace(pat, repl);
+        }
+    }
+
+    if u.ends_with("://localhost") {
+        return u.replace("://localhost", &format!("://{}", ts_ip));
+    }
+    if u.ends_with("://127.0.0.1") {
+        return u.replace("://127.0.0.1", &format!("://{}", ts_ip));
+    }
+
+    u
+}
+
+#[cfg(windows)]
 fn looks_like_url(s: &str) -> bool {
     let t = s.trim();
     if t.len() < 4 || t.chars().any(char::is_whitespace) {
@@ -1962,7 +2039,8 @@ fn looks_like_url(s: &str) -> bool {
         || t.starts_with("file://")
         || t.starts_with("www.")
         || t.contains('.')
-        || t.starts_with("localhost:")
+        || t.starts_with("localhost")
+        || t.starts_with("127.0.0.1")
 }
 
 #[cfg(windows)]
@@ -2039,11 +2117,14 @@ fn execute_handoff(slot_idx: usize, source_hwnd: HWND, fallback_hwnd: HWND, from
                         tap_chord(VK_CONTROL, b'W' as u16);
                     }
 
-                    let final_url = copied_url
+                    let raw_url = copied_url
                         .as_deref()
                         .map(str::trim)
                         .filter(|u| looks_like_url(u))
                         .unwrap_or("about:newtab");
+
+                    let local_ts_ip = get_local_tailscale_ip();
+                    let final_url = rewrite_localhost_to_tailscale(raw_url, local_ts_ip.as_deref());
 
                     let pkt = format!("U {}\n", final_url);
                     let _ = send_bytes_to_slot(slot_idx, pkt.as_bytes());
@@ -2551,6 +2632,28 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
                 WM_LBUTTONUP => b"C left up\n",
                 WM_RBUTTONUP => b"C right up\n",
                 _ => b"C middle up\n",
+            };
+            send_to_active_remote(pkt);
+            return 1;
+        }
+
+        if msg == WM_XBUTTONDOWN {
+            let xbtn = (mouse_data.mouseData >> 16) as u16;
+            let pkt: &[u8] = if xbtn == XBUTTON1 {
+                b"C back down\n"
+            } else {
+                b"C forward down\n"
+            };
+            send_to_active_remote(pkt);
+            return 1;
+        }
+
+        if msg == WM_XBUTTONUP {
+            let xbtn = (mouse_data.mouseData >> 16) as u16;
+            let pkt: &[u8] = if xbtn == XBUTTON1 {
+                b"C back up\n"
+            } else {
+                b"C forward up\n"
             };
             send_to_active_remote(pkt);
             return 1;

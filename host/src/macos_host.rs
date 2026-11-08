@@ -68,6 +68,7 @@ const K_CG_EVENT_OTHER_MOUSE_UP: u32 = 26;
 const K_CG_EVENT_OTHER_MOUSE_DRAGGED: u32 = 27;
 const K_CG_EVENT_TAP_DISABLED_BY_TIMEOUT: u32 = 0xFFFFFFFE;
 
+const K_CG_MOUSE_EVENT_BUTTON_NUMBER: u32 = 3;
 const K_CG_MOUSE_EVENT_DELTA_X: u32 = 4;
 const K_CG_MOUSE_EVENT_DELTA_Y: u32 = 5;
 const K_CG_KEYBOARD_EVENT_KEYCODE: u32 = 9;
@@ -307,11 +308,23 @@ unsafe extern "C" fn macos_tap_callback(
             return std::ptr::null_mut();
         }
         K_CG_EVENT_OTHER_MOUSE_DOWN => {
-            send_to_active_remote(b"C middle down\n");
+            let btn_num = CGEventGetIntegerValueField(event, K_CG_MOUSE_EVENT_BUTTON_NUMBER);
+            let pkt: &[u8] = match btn_num {
+                3 => b"C back down\n",
+                4 => b"C forward down\n",
+                _ => b"C middle down\n",
+            };
+            send_to_active_remote(pkt);
             return std::ptr::null_mut();
         }
         K_CG_EVENT_OTHER_MOUSE_UP => {
-            send_to_active_remote(b"C middle up\n");
+            let btn_num = CGEventGetIntegerValueField(event, K_CG_MOUSE_EVENT_BUTTON_NUMBER);
+            let pkt: &[u8] = match btn_num {
+                3 => b"C back up\n",
+                4 => b"C forward up\n",
+                _ => b"C middle up\n",
+            };
+            send_to_active_remote(pkt);
             return std::ptr::null_mut();
         }
         K_CG_EVENT_SCROLL_WHEEL => {

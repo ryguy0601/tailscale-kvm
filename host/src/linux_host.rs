@@ -397,6 +397,18 @@ pub fn run_linux_host_loop() {
                                                         } else {
                                                             b"C middle up\n"
                                                         });
+                                                    } else if code == Key::BTN_SIDE.code() {
+                                                        send_to_active_remote(if is_down {
+                                                            b"C back down\n"
+                                                        } else {
+                                                            b"C back up\n"
+                                                        });
+                                                    } else if code == Key::BTN_EXTRA.code() {
+                                                        send_to_active_remote(if is_down {
+                                                            b"C forward down\n"
+                                                        } else {
+                                                            b"C forward up\n"
+                                                        });
                                                     } else if code < 248 {
                                                         let mut buf = [0u8; 24];
                                                         let mut cur = Cursor::new(&mut buf[..]);

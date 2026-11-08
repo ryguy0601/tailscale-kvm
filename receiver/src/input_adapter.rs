@@ -216,6 +216,8 @@ impl InputAdapter {
             let btn_code = match btn {
                 "right" => Key::BTN_RIGHT.code(),
                 "middle" => Key::BTN_MIDDLE.code(),
+                "back" => Key::BTN_SIDE.code(),
+                "forward" => Key::BTN_EXTRA.code(),
                 _ => Key::BTN_LEFT.code(),
             };
             let act_val = if is_down { 1 } else { 0 };
@@ -227,27 +229,46 @@ impl InputAdapter {
         #[cfg(windows)]
         {
             use windows_sys::Win32::UI::Input::KeyboardAndMouse::*;
-            let flag = match btn {
+            let (flag, data) = match btn {
                 "right" => {
-                    if is_down {
+                    let f = if is_down {
                         MOUSEEVENTF_RIGHTDOWN
                     } else {
                         MOUSEEVENTF_RIGHTUP
-                    }
+                    };
+                    (f, 0)
                 }
                 "middle" => {
-                    if is_down {
+                    let f = if is_down {
                         MOUSEEVENTF_MIDDLEDOWN
                     } else {
                         MOUSEEVENTF_MIDDLEUP
-                    }
+                    };
+                    (f, 0)
+                }
+                "back" => {
+                    let f = if is_down {
+                        MOUSEEVENTF_XDOWN
+                    } else {
+                        MOUSEEVENTF_XUP
+                    };
+                    (f, XBUTTON1 as u32)
+                }
+                "forward" => {
+                    let f = if is_down {
+                        MOUSEEVENTF_XDOWN
+                    } else {
+                        MOUSEEVENTF_XUP
+                    };
+                    (f, XBUTTON2 as u32)
                 }
                 _ => {
-                    if is_down {
+                    let f = if is_down {
                         MOUSEEVENTF_LEFTDOWN
                     } else {
                         MOUSEEVENTF_LEFTUP
-                    }
+                    };
+                    (f, 0)
                 }
             };
             let input = INPUT {
@@ -256,7 +277,7 @@ impl InputAdapter {
                     mi: MOUSEINPUT {
                         dx: 0,
                         dy: 0,
-                        mouseData: 0,
+                        mouseData: data,
                         dwFlags: flag,
                         time: 0,
                         dwExtraInfo: 0,
@@ -713,6 +734,22 @@ pub mod macos_ffi {
                     K_CG_EVENT_OTHER_MOUSE_UP
                 },
                 2,
+            ),
+            "back" => (
+                if is_down {
+                    K_CG_EVENT_OTHER_MOUSE_DOWN
+                } else {
+                    K_CG_EVENT_OTHER_MOUSE_UP
+                },
+                3,
+            ),
+            "forward" => (
+                if is_down {
+                    K_CG_EVENT_OTHER_MOUSE_DOWN
+                } else {
+                    K_CG_EVENT_OTHER_MOUSE_UP
+                },
+                4,
             ),
             _ => (
                 if is_down {

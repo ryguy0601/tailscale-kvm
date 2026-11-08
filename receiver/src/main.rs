@@ -1473,6 +1473,70 @@ fn percent_decode_str(s: &str) -> String {
 }
 
 #[cfg(target_os = "linux")]
+async fn get_local_tailscale_ip() -> Option<String> {
+    if let Ok(out) = tokio::process::Command::new("tailscale")
+        .args(["ip", "-4"])
+        .output()
+        .await
+    {
+        let ip = String::from_utf8_lossy(&out.stdout).trim().to_string();
+        if !ip.is_empty() && !ip.contains(':') && ip.chars().all(|c| c.is_ascii_digit() || c == '.') {
+            return Some(ip);
+        }
+    }
+    None
+}
+
+#[cfg(target_os = "linux")]
+fn rewrite_localhost_to_tailscale(url: &str, tailscale_ip: Option<&str>) -> String {
+    let Some(ts_ip) = tailscale_ip else {
+        return url.to_string();
+    };
+    if ts_ip.is_empty() {
+        return url.to_string();
+    }
+
+    let mut u = url.trim().to_string();
+    if !u.starts_with("http://")
+        && !u.starts_with("https://")
+        && !u.starts_with("about:")
+        && !u.starts_with("file://")
+    {
+        if u.starts_with("localhost") || u.starts_with("127.0.0.1") {
+            u = format!("http://{}", u);
+        } else {
+            u = format!("https://{}", u);
+        }
+    }
+
+    let patterns = [
+        ("://localhost:", format!("://{}:", ts_ip)),
+        ("://localhost/", format!("://{}/", ts_ip)),
+        ("://localhost?", format!("://{}?", ts_ip)),
+        ("://localhost#", format!("://{}#", ts_ip)),
+        ("://127.0.0.1:", format!("://{}:", ts_ip)),
+        ("://127.0.0.1/", format!("://{}/", ts_ip)),
+        ("://127.0.0.1?", format!("://{}?", ts_ip)),
+        ("://127.0.0.1#", format!("://{}#", ts_ip)),
+    ];
+
+    for (pat, repl) in &patterns {
+        if u.contains(pat) {
+            return u.replace(pat, repl);
+        }
+    }
+
+    if u.ends_with("://localhost") {
+        return u.replace("://localhost", &format!("://{}", ts_ip));
+    }
+    if u.ends_with("://127.0.0.1") {
+        return u.replace("://127.0.0.1", &format!("://{}", ts_ip));
+    }
+
+    u
+}
+
+#[cfg(target_os = "linux")]
 fn looks_like_url(s: &str) -> bool {
     let t = s.trim();
     if t.len() < 4 || t.chars().any(char::is_whitespace) {
@@ -1484,7 +1548,8 @@ fn looks_like_url(s: &str) -> bool {
         || t.starts_with("file://")
         || t.starts_with("www.")
         || t.contains('.')
-        || t.starts_with("localhost:")
+        || t.starts_with("localhost")
+        || t.starts_with("127.0.0.1")
 }
 
 async fn execute_reverse_handoff() {
@@ -1529,11 +1594,14 @@ async fn execute_reverse_handoff() {
                             .await
                         {
                             let text = String::from_utf8_lossy(&out.stdout).trim().to_string();
-                            let final_url = if looks_like_url(&text) {
+                            let raw_url = if looks_like_url(&text) {
                                 text
                             } else {
                                 "about:newtab".to_string()
                             };
+
+                            let local_ts_ip = get_local_tailscale_ip().await;
+                            let final_url = rewrite_localhost_to_tailscale(&raw_url, local_ts_ip.as_deref());
 
                             let pkt = format!("U {}\n", final_url);
                             let sent_via_control = ACTIVE_CONTROL_WRITER
