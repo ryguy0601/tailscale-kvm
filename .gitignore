@@ -3,6 +3,7 @@
 Cargo.lock
 kvm_layout.json
 config.txt
+recordings/
 
 # System / IDE
 .DS_Store

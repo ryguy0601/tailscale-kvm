@@ -275,9 +275,21 @@ pub fn run_linux_host_loop() {
     );
 
     let mut warned_permissions = false;
+    let mut was_any_connected = false;
     let mut tick: u32 = 0;
 
     loop {
+        if !crate::any_slot_connected() {
+            was_any_connected = false;
+            thread::sleep(Duration::from_millis(500));
+            continue;
+        }
+        if !was_any_connected {
+            was_any_connected = true;
+            update_linux_screen_bounds();
+            tick = 0;
+        }
+
         tick = tick.wrapping_add(1);
         if tick % 200 == 0 {
             update_linux_screen_bounds();

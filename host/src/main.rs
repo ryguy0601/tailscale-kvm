@@ -1,6 +1,8 @@
 #[cfg(windows)]
 mod vk_map;
 mod web_gui;
+#[path = "../../shared/screen_record.rs"]
+pub mod screen_record;
 
 #[cfg(target_os = "linux")]
 mod linux_host;
@@ -17,12 +19,13 @@ use std::net::{Shutdown, SocketAddr, TcpStream, ToSocketAddrs};
 #[cfg(windows)]
 use std::os::windows::ffi::OsStringExt;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::AtomicBool;
 #[cfg(windows)]
 use std::sync::atomic::AtomicIsize;
-use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU32, AtomicU64, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicI32, AtomicU32, AtomicU64, AtomicU8, Ordering};
 use std::sync::{Condvar, Mutex, OnceLock};
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 #[cfg(windows)]
 use windows_sys::Win32::Foundation::*;
@@ -924,9 +927,21 @@ fn receive_binary_file_host<R: Read>(
     file_size: u64,
     raw_rel_path: &str,
 ) -> Result<String, std::io::Error> {
-    let safe_rel = sanitize_relative_path(raw_rel_path);
-    let base_downloads = get_host_downloads_dir();
-    let target_path = base_downloads.join(&safe_rel);
+    let normalized = raw_rel_path.replace('\\', "/");
+    let (is_rec_internal, effective_rel) = if let Some(rest) = normalized.strip_prefix("__kvm_rec__/")
+    {
+        (true, rest)
+    } else {
+        (false, raw_rel_path)
+    };
+
+    let safe_rel = sanitize_relative_path(effective_rel);
+    let base_dir = if is_rec_internal {
+        screen_record::recordings_base_dir()
+    } else {
+        get_host_downloads_dir()
+    };
+    let target_path = base_dir.join(&safe_rel);
 
     if let Some(parent) = target_path.parent() {
         let _ = fs::create_dir_all(parent);
@@ -950,7 +965,699 @@ fn receive_binary_file_host<R: Read>(
     }
 
     out_file.flush()?;
-    Ok(safe_rel.to_string_lossy().into_owned())
+    let rel_str = safe_rel.to_string_lossy().into_owned();
+    if is_rec_internal {
+        on_rec_binary_received(&rel_str, &target_path);
+    }
+    Ok(rel_str)
+}
+
+#[derive(Clone, Debug, Default)]
+struct RecvRecCaps {
+    backend: String,
+    has_ffmpeg: bool,
+    os: String,
+}
+
+#[derive(Clone, Debug)]
+struct HostRecState {
+    status: String,
+    session_id: String,
+    started_ms: u64,
+    slot_idx: usize,
+    slot_name: String,
+    peer_ip: String,
+    host_backend: String,
+    host_file: Option<String>,
+    recv_backend: String,
+    recv_has_ffmpeg: bool,
+    recv_os: String,
+    recv_file: Option<PathBuf>,
+    recv_err: Option<String>,
+    stitched_webp: Option<String>,
+    stitched_gif: Option<String>,
+    stitched_mp4: Option<String>,
+    exported_demo_pic: Option<String>,
+    stitch_done: bool,
+    auto_export: bool,
+    message: String,
+}
+
+impl Default for HostRecState {
+    fn default() -> Self {
+        Self {
+            status: "idle".to_string(),
+            session_id: String::new(),
+            started_ms: 0,
+            slot_idx: 0,
+            slot_name: "right".to_string(),
+            peer_ip: String::new(),
+            host_backend: screen_record::detect_capture_backend().to_string(),
+            host_file: None,
+            recv_backend: String::new(),
+            recv_has_ffmpeg: false,
+            recv_os: String::new(),
+            recv_file: None,
+            recv_err: None,
+            stitched_webp: None,
+            stitched_gif: None,
+            stitched_mp4: None,
+            exported_demo_pic: None,
+            stitch_done: false,
+            auto_export: true,
+            message: "Ready to record synchronized Host + Receiver demo".to_string(),
+        }
+    }
+}
+
+static SLOT_REC_CAPS: OnceLock<Mutex<[Option<RecvRecCaps>; 4]>> = OnceLock::new();
+static HOST_REC_COORD: OnceLock<(Mutex<HostRecState>, Condvar)> = OnceLock::new();
+
+fn slot_caps_store() -> &'static Mutex<[Option<RecvRecCaps>; 4]> {
+    SLOT_REC_CAPS.get_or_init(|| Mutex::new([None, None, None, None]))
+}
+
+fn rec_coord() -> &'static (Mutex<HostRecState>, Condvar) {
+    HOST_REC_COORD.get_or_init(|| (Mutex::new(HostRecState::default()), Condvar::new()))
+}
+
+fn on_rec_binary_received(rel_after_prefix: &str, saved_path: &Path) {
+    let norm = rel_after_prefix.replace('\\', "/");
+    let mut parts = norm.splitn(2, '/');
+    let sess = parts.next().unwrap_or("");
+    let fname = parts.next().unwrap_or("");
+    if sess.is_empty() || fname.is_empty() {
+        return;
+    }
+
+    let (lock, cv) = rec_coord();
+    if let Ok(mut st) = lock.lock() {
+        if st.session_id == sess {
+            if fname.starts_with("receiver_") {
+                st.recv_file = Some(saved_path.to_path_buf());
+            } else if fname == "dual_demo.webp" {
+                st.stitched_webp = Some(fname.to_string());
+            } else if fname == "dual_demo.gif" {
+                st.stitched_gif = Some(fname.to_string());
+            } else if fname == "dual_demo.mp4" {
+                st.stitched_mp4 = Some(fname.to_string());
+            }
+            cv.notify_all();
+        }
+    }
+}
+
+fn on_rec_control_line(slot_idx: usize, trimmed: &str) {
+    if let Some(rest) = trimmed.strip_prefix("REC_CAPS ") {
+        let mut parts = rest.split_whitespace();
+        let backend = parts.next().unwrap_or("unknown").to_string();
+        let has_ffmpeg = parts.next().unwrap_or("0") == "1";
+        let os = parts.next().unwrap_or("unknown").to_string();
+        if let Ok(mut store) = slot_caps_store().lock() {
+            if slot_idx < 4 {
+                store[slot_idx] = Some(RecvRecCaps {
+                    backend,
+                    has_ffmpeg,
+                    os,
+                });
+            }
+        }
+        return;
+    }
+
+    if let Some(rest) = trimmed.strip_prefix("REC_STARTED ") {
+        let mut parts = rest.split_whitespace();
+        let sess = parts.next().unwrap_or("");
+        let backend = parts.next().unwrap_or("");
+        let (lock, cv) = rec_coord();
+        if let Ok(mut st) = lock.lock() {
+            if st.session_id == sess && !backend.is_empty() {
+                st.recv_backend = backend.to_string();
+                cv.notify_all();
+            }
+        }
+        return;
+    }
+
+    if let Some(rest) = trimmed.strip_prefix("REC_STITCH_DONE ") {
+        let sess = rest.trim();
+        let (lock, cv) = rec_coord();
+        if let Ok(mut st) = lock.lock() {
+            if st.session_id == sess {
+                st.stitch_done = true;
+                cv.notify_all();
+            }
+        }
+        return;
+    }
+
+    if let Some(rest) = trimmed.strip_prefix("REC_ERR ") {
+        let mut parts = rest.splitn(2, ' ');
+        let sess = parts.next().unwrap_or("");
+        let msg = parts.next().unwrap_or("Receiver recording error");
+        let (lock, cv) = rec_coord();
+        if let Ok(mut st) = lock.lock() {
+            if st.session_id == sess {
+                st.recv_err = Some(msg.to_string());
+                cv.notify_all();
+            }
+        }
+    }
+}
+
+fn stream_recording_file_to_receiver(
+    target_ip: &str,
+    local_path: &Path,
+    session_id: &str,
+    remote_filename: &str,
+) -> Result<(), String> {
+    let addr = resolve_target_addr(target_ip)
+        .ok_or_else(|| format!("Failed resolving Receiver IP {}", target_ip))?;
+    let mut tx = TcpStream::connect_timeout(&addr, Duration::from_secs(5))
+        .map_err(|e| format!("Failed connecting to Receiver {}: {}", addr, e))?;
+    let _ = tx.set_nodelay(true);
+    let _ = tx.set_write_timeout(Some(Duration::from_secs(60)));
+
+    let mut file = fs::File::open(local_path)
+        .map_err(|e| format!("Failed opening {:?}: {}", local_path, e))?;
+    let total_size = file
+        .metadata()
+        .map_err(|e| format!("Failed reading metadata {:?}: {}", local_path, e))?
+        .len();
+
+    let clean_sess = screen_record::sanitize_token(session_id, "demo_session");
+    let clean_name = screen_record::sanitize_filename(remote_filename, "host.mp4");
+    let header = format!("B {} __kvm_rec__/{}/{}\n", total_size, clean_sess, clean_name);
+    tx.write_all(header.as_bytes())
+        .map_err(|e| format!("Failed writing stream header: {}", e))?;
+
+    let mut chunk = [0u8; FILE_CHUNK_SIZE];
+    let mut remaining = total_size;
+    while remaining > 0 {
+        let to_read = FILE_CHUNK_SIZE.min(remaining as usize);
+        match file.read(&mut chunk[..to_read]) {
+            Ok(0) => break,
+            Ok(n) => {
+                tx.write_all(&chunk[..n])
+                    .map_err(|e| format!("Failed streaming recording byte chunk: {}", e))?;
+                remaining -= n as u64;
+            }
+            Err(e) => return Err(format!("Failed reading host file: {}", e)),
+        }
+    }
+    let _ = tx.flush();
+    let _ = tx.shutdown(Shutdown::Write);
+    Ok(())
+}
+
+pub fn build_recording_status_json() -> serde_json::Value {
+    let (lock, _) = rec_coord();
+    let st = lock.lock().map(|g| g.clone()).unwrap_or_default();
+
+    let elapsed_secs = if st.status == "recording" && st.started_ms > 0 {
+        monotonic_ms().saturating_sub(st.started_ms) / 1000
+    } else {
+        0
+    };
+
+    let connected_caps = first_connected_slot().and_then(|idx| {
+        slot_caps_store()
+            .lock()
+            .ok()
+            .and_then(|s| s[idx].clone())
+    });
+
+    json!({
+        "status": st.status,
+        "session_id": st.session_id,
+        "elapsed_secs": elapsed_secs,
+        "slot_name": st.slot_name,
+        "host_backend": if !st.host_backend.is_empty() {
+            st.host_backend
+        } else {
+            screen_record::detect_capture_backend().to_string()
+        },
+        "host_has_ffmpeg": screen_record::has_ffmpeg(),
+        "recv_backend": if !st.recv_backend.is_empty() {
+            st.recv_backend
+        } else {
+            connected_caps.as_ref().map(|c| c.backend.clone()).unwrap_or_default()
+        },
+        "recv_os": connected_caps.as_ref().map(|c| c.os.clone()).unwrap_or(st.recv_os),
+        "recv_has_ffmpeg": connected_caps.as_ref().map(|c| c.has_ffmpeg).unwrap_or(st.recv_has_ffmpeg),
+        "host_file": st.host_file,
+        "stitched_webp": st.stitched_webp,
+        "stitched_gif": st.stitched_gif,
+        "stitched_mp4": st.stitched_mp4,
+        "exported_demo_pic": st.exported_demo_pic,
+        "auto_export": st.auto_export,
+        "demo_pics_available": screen_record::demo_pics_dir().is_some(),
+        "message": st.message,
+    })
+}
+
+pub fn start_dual_recording(
+    requested_slot: Option<&str>,
+    auto_export: bool,
+) -> Result<serde_json::Value, String> {
+    let slot_idx = if let Some(s) = requested_slot {
+        let idx = web_gui::slot_name_to_index(s)
+            .ok_or_else(|| format!("Invalid slot '{}'", s))?;
+        if !SLOT_CONNECTED[idx].load(Ordering::Relaxed) {
+            return Err(format!("Slot '{}' is not currently connected.", s));
+        }
+        idx
+    } else {
+        first_connected_slot().ok_or_else(|| {
+            "Connect a Tailscale Receiver slot first so both screens can record together."
+                .to_string()
+        })?
+    };
+
+    let peer_ip = pool()[slot_idx]
+        .target_ip
+        .lock()
+        .ok()
+        .and_then(|g| g.clone())
+        .ok_or_else(|| "No Receiver IP assigned to selected slot.".to_string())?;
+
+    let slot_name = web_gui::index_to_slot_name(slot_idx).to_string();
+
+    {
+        let (lock, _) = rec_coord();
+        let st = lock.lock().map_err(|_| "Recorder lock error".to_string())?;
+        if st.status == "recording" || st.status == "stopping" || st.status == "stitching" {
+            return Err(format!(
+                "Recording already in progress (status: {}).",
+                st.status
+            ));
+        }
+    }
+
+    let ts = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let session_id = format!("demo_{}", ts);
+
+    let caps = slot_caps_store()
+        .lock()
+        .ok()
+        .and_then(|s| s[slot_idx].clone())
+        .unwrap_or_default();
+
+    {
+        let (lock, cv) = rec_coord();
+        if let Ok(mut st) = lock.lock() {
+            *st = HostRecState {
+                status: "recording".to_string(),
+                session_id: session_id.clone(),
+                started_ms: monotonic_ms(),
+                slot_idx,
+                slot_name: slot_name.clone(),
+                peer_ip: peer_ip.clone(),
+                host_backend: screen_record::detect_capture_backend().to_string(),
+                host_file: None,
+                recv_backend: caps.backend.clone(),
+                recv_has_ffmpeg: caps.has_ffmpeg,
+                recv_os: caps.os.clone(),
+                recv_file: None,
+                recv_err: None,
+                stitched_webp: None,
+                stitched_gif: None,
+                stitched_mp4: None,
+                exported_demo_pic: None,
+                stitch_done: false,
+                auto_export,
+                message: format!(
+                    "Recording Host ({}) + {} slot Receiver ({}) simultaneously...",
+                    std::env::consts::OS,
+                    slot_name,
+                    peer_ip
+                ),
+            };
+            cv.notify_all();
+        }
+    }
+
+    let start_cmd = format!("REC_START {}\n", session_id);
+    if !send_bytes_to_slot(slot_idx, start_cmd.as_bytes()) {
+        let (lock, _) = rec_coord();
+        if let Ok(mut st) = lock.lock() {
+            st.status = "error".to_string();
+            st.message = "Failed sending REC_START to connected Receiver.".to_string();
+        }
+        return Err("Failed sending REC_START to Receiver.".to_string());
+    }
+
+    match screen_record::start_capture(&session_id, "host") {
+        Ok(info) => {
+            if let Ok(mut st) = rec_coord().0.lock() {
+                if st.session_id == session_id {
+                    st.host_backend = info.backend.clone();
+                }
+            }
+            println!(
+                "[+] Synchronized Dual Recording STARTED: session={} (host={}, receiver={})",
+                session_id, info.backend, peer_ip
+            );
+            Ok(build_recording_status_json())
+        }
+        Err(err) => {
+            let _ = send_bytes_to_slot(slot_idx, format!("REC_STOP {}\n", session_id).as_bytes());
+            let (lock, _) = rec_coord();
+            if let Ok(mut st) = lock.lock() {
+                st.status = "error".to_string();
+                st.message = format!("Host recording failed to start: {}", err);
+            }
+            Err(err)
+        }
+    }
+}
+
+pub fn stop_dual_recording() -> Result<serde_json::Value, String> {
+    let (session_id, slot_idx, slot_name, peer_ip, auto_export, recv_caps) = {
+        let (lock, cv) = rec_coord();
+        let mut st = lock.lock().map_err(|_| "Recorder lock error".to_string())?;
+        if st.status != "recording" {
+            return Err(format!(
+                "Cannot stop recording while state is '{}'",
+                st.status
+            ));
+        }
+        st.status = "stopping".to_string();
+        st.message = "Stopping Host & Receiver captures and syncing files...".to_string();
+        cv.notify_all();
+        let caps = slot_caps_store()
+            .lock()
+            .ok()
+            .and_then(|s| s[st.slot_idx].clone())
+            .unwrap_or_default();
+        (
+            st.session_id.clone(),
+            st.slot_idx,
+            st.slot_name.clone(),
+            st.peer_ip.clone(),
+            st.auto_export,
+            caps,
+        )
+    };
+
+    // Signal Receiver first so both stop cleanly in lockstep
+    let _ = send_bytes_to_slot(slot_idx, format!("REC_STOP {}\n", session_id).as_bytes());
+
+    thread::spawn(move || {
+        let host_path = match screen_record::stop_capture(&session_id) {
+            Ok(p) => p,
+            Err(e) => {
+                let (lock, cv) = rec_coord();
+                if let Ok(mut st) = lock.lock() {
+                    st.status = "error".to_string();
+                    st.message = format!("Host capture stop error: {}", e);
+                    cv.notify_all();
+                }
+                return;
+            }
+        };
+
+        let host_fname = host_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("host.mp4")
+            .to_string();
+
+        {
+            let (lock, cv) = rec_coord();
+            if let Ok(mut st) = lock.lock() {
+                st.host_file = Some(host_fname.clone());
+                st.message = format!(
+                    "Host clip saved ({}); waiting for Receiver upload...",
+                    host_fname
+                );
+                cv.notify_all();
+            }
+        }
+
+        // Wait up to 25 seconds for Receiver upload or error
+        let wait_deadline = Instant::now() + Duration::from_secs(25);
+        let mut recv_path_opt: Option<PathBuf> = None;
+        let mut recv_err_opt: Option<String> = None;
+        {
+            let (lock, cv) = rec_coord();
+            if let Ok(mut st) = lock.lock() {
+                while Instant::now() < wait_deadline {
+                    if let Some(ref p) = st.recv_file {
+                        recv_path_opt = Some(p.clone());
+                        break;
+                    }
+                    if let Some(ref err) = st.recv_err {
+                        recv_err_opt = Some(err.clone());
+                        break;
+                    }
+                    let rem = wait_deadline.saturating_duration_since(Instant::now());
+                    let (guard, _) = cv
+                        .wait_timeout(st, rem.min(Duration::from_millis(250)))
+                        .unwrap();
+                    st = guard;
+                }
+            }
+        }
+
+        let Some(recv_path) = recv_path_opt else {
+            let (lock, cv) = rec_coord();
+            if let Ok(mut st) = lock.lock() {
+                st.status = "ready".to_string();
+                st.message = if let Some(err) = recv_err_opt {
+                    format!(
+                        "Host clip saved ({}), Receiver recording failed: {}",
+                        host_fname, err
+                    )
+                } else {
+                    format!(
+                        "Host clip saved ({}); Receiver upload timed out (make sure Receiver was rebuilt/updated).",
+                        host_fname
+                    )
+                };
+                cv.notify_all();
+            }
+            return;
+        };
+
+        let session_dir = screen_record::recordings_base_dir().join(&session_id);
+        let host_lbl = format!("HOST ({})", std::env::consts::OS.to_uppercase());
+        let recv_lbl = if recv_caps.os.is_empty() {
+            "RECEIVER".to_string()
+        } else {
+            format!("RECEIVER ({})", recv_caps.os.to_uppercase())
+        };
+
+        {
+            let (lock, cv) = rec_coord();
+            if let Ok(mut st) = lock.lock() {
+                st.status = "stitching".to_string();
+                st.message = format!(
+                    "Stitching Host + Receiver screens side-by-side ({} slot)...",
+                    slot_name
+                );
+                cv.notify_all();
+            }
+        }
+
+        if screen_record::has_ffmpeg() {
+            match screen_record::stitch_dual_demo(
+                &session_dir,
+                &host_path,
+                &recv_path,
+                &slot_name,
+                &host_lbl,
+                &recv_lbl,
+            ) {
+                Ok(out) => {
+                    let mut exported_name = None;
+                    if auto_export {
+                        if let Ok(dest) = screen_record::export_to_demo_pics(
+                            &out.webp_path,
+                            "02-dual-screen-demo.webp",
+                        ) {
+                            exported_name = dest
+                                .file_name()
+                                .and_then(|n| n.to_str())
+                                .map(|s| s.to_string());
+                        }
+                    }
+                    let (lock, cv) = rec_coord();
+                    if let Ok(mut st) = lock.lock() {
+                        st.status = "ready".to_string();
+                        st.stitched_webp = Some("dual_demo.webp".to_string());
+                        st.stitched_gif = if out.gif_path.is_file() {
+                            Some("dual_demo.gif".to_string())
+                        } else {
+                            None
+                        };
+                        st.stitched_mp4 = Some("dual_demo.mp4".to_string());
+                        st.exported_demo_pic = exported_name.clone();
+                        st.message = match exported_name {
+                            Some(n) => format!(
+                                "Synced dual-PC demo stitched & exported to demoPics/{}!",
+                                n
+                            ),
+                            None => "Synced dual-PC demo stitched (.webp / .gif / .mp4 ready)!"
+                                .to_string(),
+                        };
+                        cv.notify_all();
+                    }
+                }
+                Err(err) => {
+                    let (lock, cv) = rec_coord();
+                    if let Ok(mut st) = lock.lock() {
+                        st.status = "error".to_string();
+                        st.message = format!("Stitch error: {}", err);
+                        cv.notify_all();
+                    }
+                }
+            }
+            return;
+        }
+
+        // Host lacks ffmpeg: delegate stitch to Linux/ffmpeg-capable Receiver!
+        if recv_caps.has_ffmpeg {
+            let recv_fname = recv_path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("receiver.mp4")
+                .to_string();
+            if let Err(err) =
+                stream_recording_file_to_receiver(&peer_ip, &host_path, &session_id, &host_fname)
+            {
+                let (lock, cv) = rec_coord();
+                if let Ok(mut st) = lock.lock() {
+                    st.status = "error".to_string();
+                    st.message = format!("Remote stitch upload error: {}", err);
+                    cv.notify_all();
+                }
+                return;
+            }
+
+            let host_lbl_tok = host_lbl.replace(' ', "_");
+            let stitch_cmd = format!(
+                "REC_STITCH {} {} {} {} {} {}\n",
+                session_id,
+                slot_name,
+                host_fname,
+                recv_fname,
+                if auto_export { "1" } else { "0" },
+                host_lbl_tok
+            );
+            let _ = send_bytes_to_slot(slot_idx, stitch_cmd.as_bytes());
+
+            let stitch_deadline = Instant::now() + Duration::from_secs(60);
+            let mut done = false;
+            let mut done_seen_at: Option<Instant> = None;
+            {
+                let (lock, cv) = rec_coord();
+                if let Ok(mut st) = lock.lock() {
+                    while Instant::now() < stitch_deadline {
+                        if (st.stitch_done && st.stitched_webp.is_some()) || st.recv_err.is_some() {
+                            done = st.stitch_done;
+                            break;
+                        }
+                        if st.stitch_done {
+                            let seen = *done_seen_at.get_or_insert_with(Instant::now);
+                            if seen.elapsed() >= Duration::from_secs(3) {
+                                done = true;
+                                break;
+                            }
+                        }
+                        let rem = stitch_deadline.saturating_duration_since(Instant::now());
+                        let (guard, _) = cv
+                            .wait_timeout(st, rem.min(Duration::from_millis(250)))
+                            .unwrap();
+                        st = guard;
+                    }
+                    if !done && st.stitch_done {
+                        done = true;
+                    }
+                }
+            }
+
+            let mut exported_local = None;
+            if done && auto_export {
+                let webp_local = session_dir.join("dual_demo.webp");
+                if webp_local.is_file() {
+                    if let Ok(dest) = screen_record::export_to_demo_pics(
+                        &webp_local,
+                        "02-dual-screen-demo.webp",
+                    ) {
+                        exported_local = dest
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .map(|s| s.to_string());
+                    }
+                }
+            }
+
+            let (lock, cv) = rec_coord();
+            if let Ok(mut st) = lock.lock() {
+                if done {
+                    st.status = "ready".to_string();
+                    st.exported_demo_pic = exported_local;
+                    st.message = "Receiver stitched both screens & returned dual_demo.webp / .gif / .mp4!".to_string();
+                } else {
+                    st.status = "ready".to_string();
+                    st.message = st
+                        .recv_err
+                        .clone()
+                        .unwrap_or_else(|| "Remote stitch timed out; raw clips saved locally.".to_string());
+                }
+                cv.notify_all();
+            }
+        } else {
+            let (lock, cv) = rec_coord();
+            if let Ok(mut st) = lock.lock() {
+                st.status = "ready".to_string();
+                st.message = format!(
+                    "Saved both clips to recordings/{} (install ffmpeg on either PC to auto-stitch .webp/.gif).",
+                    session_id
+                );
+                cv.notify_all();
+            }
+        }
+    });
+
+    Ok(build_recording_status_json())
+}
+
+pub fn export_latest_recording(dest_name: Option<&str>) -> Result<PathBuf, String> {
+    let (session_id, webp_opt, gif_opt) = {
+        let (lock, _) = rec_coord();
+        let st = lock.lock().map_err(|_| "Recorder lock error".to_string())?;
+        (
+            st.session_id.clone(),
+            st.stitched_webp.clone(),
+            st.stitched_gif.clone(),
+        )
+    };
+    if session_id.is_empty() {
+        return Err("No finished dual-screen recording session yet.".to_string());
+    }
+    let sdir = screen_record::recordings_base_dir().join(&session_id);
+    let src = if let Some(w) = webp_opt {
+        sdir.join(w)
+    } else if let Some(g) = gif_opt {
+        sdir.join(g)
+    } else {
+        sdir.join("dual_demo.webp")
+    };
+    let default_target = if src.extension().and_then(|e| e.to_str()) == Some("gif") {
+        "02-dual-screen-demo.gif"
+    } else {
+        "02-dual-screen-demo.webp"
+    };
+    let dest = screen_record::export_to_demo_pics(&src, dest_name.unwrap_or(default_target))?;
+    if let Ok(mut st) = rec_coord().0.lock() {
+        st.exported_demo_pic = dest.file_name().and_then(|n| n.to_str()).map(|s| s.to_string());
+    }
+    Ok(dest)
 }
 
 fn open_url_on_host(url: &str) {
@@ -1986,14 +2693,16 @@ fn spawn_slot_worker(slot_idx: usize) {
     thread::spawn(move || {
         let slot_name = web_gui::index_to_slot_name(slot_idx);
         let chan = &pool()[slot_idx];
+        let mut retry_delay_ms: u64 = 1000;
 
         loop {
             let gen_snapshot = chan.generation.load(Ordering::SeqCst);
             let target_opt = chan.target_ip.lock().ok().and_then(|g| g.clone());
 
             let Some(target_ip) = target_opt else {
+                retry_delay_ms = 1000;
                 SLOT_CONNECTED[slot_idx].store(false, Ordering::SeqCst);
-                chan.wait_timeout(Duration::from_secs(5));
+                chan.wait_timeout(Duration::from_secs(30));
                 continue;
             };
 
@@ -2006,13 +2715,15 @@ fn spawn_slot_worker(slot_idx: usize) {
                     // Abort immediately if slot assignment changed during connect handshake
                     if chan.generation.load(Ordering::SeqCst) != gen_snapshot {
                         let _ = stream.shutdown(Shutdown::Both);
+                        retry_delay_ms = 1000;
                         continue;
                     }
 
                     let reciprocal = EdgeDirection::reciprocal_return_edge(slot_idx);
-                    let handshake = format!("H control\nE {}\n", reciprocal);
+                    let handshake = format!("H control\nE {}\nREC_PING\n", reciprocal);
 
                     if stream.write_all(handshake.as_bytes()).is_ok() {
+                        retry_delay_ms = 1000;
                         if let Ok(reader_stream) = stream.try_clone() {
                             if let Ok(mut w_lock) = chan.writer.lock() {
                                 *w_lock = Some(stream);
@@ -2058,6 +2769,8 @@ fn spawn_slot_worker(slot_idx: usize) {
                                             open_url_on_host(url.trim());
                                         } else if let Some(dir_p) = trimmed.strip_prefix("D ") {
                                             open_terminal_on_host(dir_p.trim());
+                                        } else if trimmed.starts_with("REC_") {
+                                            on_rec_control_line(slot_idx, trimmed);
                                         }
                                     }
                                     Err(_) => break,
@@ -2078,7 +2791,10 @@ fn spawn_slot_worker(slot_idx: usize) {
                 {
                     switch_to_local(slot_idx, None, None);
                 }
-                chan.wait_timeout(Duration::from_millis(850));
+                chan.wait_timeout(Duration::from_millis(retry_delay_ms));
+                retry_delay_ms = (retry_delay_ms * 2).min(15_000);
+            } else {
+                retry_delay_ms = 1000;
             }
         }
     });

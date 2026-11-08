@@ -1,8 +1,8 @@
 {
   "README.md": {
-    "mtime": 1794026512.1417994,
-    "seen": 1794026525.8101864,
-    "ast_hash": "77fbbcaaec504fbfe83c8123bd1f4320",
+    "mtime": 1794160678.086919,
+    "seen": 1794160685.8147407,
+    "ast_hash": "d75833ce79dce29d379bd11c6ea2d1f2",
     "semantic_hash": ""
   },
   "demoPics/01-architecture-graph.png": {
@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "host/src/main.rs": {
-    "mtime": 1794026567.5039775,
-    "seen": 1794026585.4736378,
-    "ast_hash": "d8362d5f6e54a6b0331ca8287a3197f1",
+    "mtime": 1794160631.7469258,
+    "seen": 1794160685.8147304,
+    "ast_hash": "4828742d4980d779baa2f1939d66b74b",
     "semantic_hash": ""
   },
   "host/src/vk_map.rs": {
@@ -84,9 +84,9 @@
     "semantic_hash": ""
   },
   "host/src/web_gui.rs": {
-    "mtime": 1794025812.8121982,
-    "seen": 1794026525.8101735,
-    "ast_hash": "d4f2a73499ab0d0f43a5c3d4209c7135",
+    "mtime": 1794160582.3080978,
+    "seen": 1794160685.8147323,
+    "ast_hash": "7bdb85eed6ccc9af79a62ec83d9469c0",
     "semantic_hash": ""
   },
   "receiver/Cargo.toml": {
@@ -96,33 +96,51 @@
     "semantic_hash": ""
   },
   "receiver/src/main.rs": {
-    "mtime": 1794026379.116633,
-    "seen": 1794026525.8101788,
-    "ast_hash": "19b2658344836fd99893e85c72cdae75",
+    "mtime": 1794160566.668493,
+    "seen": 1794160685.8147352,
+    "ast_hash": "aa35bddf4501129fa9625c57d1be392f",
     "semantic_hash": ""
   },
   "host/gui_static/index.html": {
-    "mtime": 1794025893.7804697,
-    "seen": 1794026525.810188,
-    "ast_hash": "51ac962f6c0048771c8c3b9b922f23da",
+    "mtime": 1794160605.1225433,
+    "seen": 1794160685.8147416,
+    "ast_hash": "e7ad8c4713da1b40ce9aa6f3f8c2ef2c",
     "semantic_hash": ""
   },
   "receiver/src/input_adapter.rs": {
-    "mtime": 1794025503.2358243,
-    "seen": 1794026525.8101773,
-    "ast_hash": "d32d7c0721642bff914c62a3a009b1ea",
+    "mtime": 1794159928.9342597,
+    "seen": 1794160685.8147342,
+    "ast_hash": "71b5a4050b4a03bb6db31d9284a74529",
     "semantic_hash": ""
   },
   "host/src/linux_host.rs": {
-    "mtime": 1794025751.7385032,
-    "seen": 1794026525.8101656,
-    "ast_hash": "419d9c1882c0caf2e4733b044b6fb521",
+    "mtime": 1794159959.5873075,
+    "seen": 1794160685.814729,
+    "ast_hash": "b4b426c40734ad1f2f2f36f8f6d7eeea",
     "semantic_hash": ""
   },
   "host/src/macos_host.rs": {
     "mtime": 1794025753.7024612,
     "seen": 1794026525.8101676,
     "ast_hash": "8e31e1ec395fd2460639fa7ea1154b02",
+    "semantic_hash": ""
+  },
+  "scripts/stitch-demo.ps1": {
+    "mtime": 1794160618.03724,
+    "seen": 1794160685.8147388,
+    "ast_hash": "f1a8c046c5bb72fb78046aeb2df20c2f",
+    "semantic_hash": ""
+  },
+  "scripts/stitch-demo.sh": {
+    "mtime": 1794160616.5942736,
+    "seen": 1794160685.8147395,
+    "ast_hash": "f14bd80252a14a353be5b8c77e005433",
+    "semantic_hash": ""
+  },
+  "shared/screen_record.rs": {
+    "mtime": 1794160633.5668848,
+    "seen": 1794160685.81474,
+    "ast_hash": "acc1b28c1d9f935a5d97da3d06225bad",
     "semantic_hash": ""
   }
 }

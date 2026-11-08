@@ -1,4 +1,6 @@
 mod input_adapter;
+#[path = "../../shared/screen_record.rs"]
+mod screen_record;
 use input_adapter::InputAdapter;
 
 use std::env;
@@ -88,6 +90,22 @@ static ACTIVE_CONTROL_WRITER: StdMutex<Option<tokio::sync::mpsc::UnboundedSender
 static ACTIVE_HOST_PEER: StdMutex<Option<std::net::IpAddr>> = StdMutex::new(None);
 
 static START_INSTANT: OnceLock<Instant> = OnceLock::new();
+static CONTROL_ACTIVE_NOTIFY: OnceLock<tokio::sync::Notify> = OnceLock::new();
+
+fn control_active_notify() -> &'static tokio::sync::Notify {
+    CONTROL_ACTIVE_NOTIFY.get_or_init(tokio::sync::Notify::new)
+}
+
+async fn wait_until_control_active() {
+    let notify = control_active_notify();
+    loop {
+        let notified = notify.notified();
+        if ACTIVE_CONTROL_CLIENTS.load(Ordering::SeqCst) > 0 {
+            return;
+        }
+        notified.await;
+    }
+}
 
 const STREAM_CHUNK_SIZE: usize = 65_536; // 64 KB fixed streaming buffer
 const MAX_SINGLE_FILE_BYTES: u64 = 64 * 1024 * 1024 * 1024; // 64 GB sanity cap
@@ -521,8 +539,9 @@ fn select_entry_monitor(return_edge: ReturnEdge) -> MonitorBounds {
 fn start_bounds_refresh_worker() {
     tokio::spawn(async {
         loop {
+            wait_until_control_active().await;
+            let _ = tokio::task::spawn_blocking(update_current_monitor_bounds).await;
             sleep(Duration::from_secs(3)).await;
-            tokio::task::spawn_blocking(update_current_monitor_bounds);
         }
     });
 }
@@ -530,16 +549,16 @@ fn start_bounds_refresh_worker() {
 fn start_cursorpos_worker() {
     #[cfg(target_os = "linux")]
     tokio::spawn(async {
-        let xdg = env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/run/user/1000".to_string());
-        let sig = env::var("HYPRLAND_INSTANCE_SIGNATURE").unwrap_or_default();
-        if sig.is_empty() {
-            return;
-        }
-        let sock_path = format!("{}/hypr/{}/.socket.sock", xdg, sig);
-
         let mut buf = [0u8; 128];
         loop {
+            if ACTIVE_CONTROL_CLIENTS.load(Ordering::Relaxed) == 0 {
+                wait_until_control_active().await;
+            }
             if monotonic_ms().saturating_sub(LAST_ENTRY_MS.load(Ordering::Relaxed)) >= 75 {
+                let Some(sock_path) = input_adapter::resolve_hyprland_socket_path() else {
+                    sleep(Duration::from_millis(500)).await;
+                    continue;
+                };
                 if let Ok(mut stream) = UnixStream::connect(&sock_path).await {
                     if stream.write_all(b"cursorpos").await.is_ok() {
                         if let Ok(n) = stream.read(&mut buf).await {
@@ -568,6 +587,9 @@ fn start_cursorpos_worker() {
         use windows_sys::Win32::Foundation::POINT;
         use windows_sys::Win32::UI::WindowsAndMessaging::GetCursorPos;
         loop {
+            if ACTIVE_CONTROL_CLIENTS.load(Ordering::Relaxed) == 0 {
+                wait_until_control_active().await;
+            }
             if monotonic_ms().saturating_sub(LAST_ENTRY_MS.load(Ordering::Relaxed)) >= 75 {
                 let mut pt = POINT { x: 0, y: 0 };
                 unsafe {
@@ -584,6 +606,9 @@ fn start_cursorpos_worker() {
     #[cfg(target_os = "macos")]
     tokio::spawn(async {
         loop {
+            if ACTIVE_CONTROL_CLIENTS.load(Ordering::Relaxed) == 0 {
+                wait_until_control_active().await;
+            }
             if monotonic_ms().saturating_sub(LAST_ENTRY_MS.load(Ordering::Relaxed)) >= 75 {
                 if let Some((x, y)) = input_adapter::macos_ffi::cursor_pos() {
                     CURSOR_X.store(x, Ordering::Relaxed);
@@ -679,7 +704,7 @@ async fn receive_binary_file<R: tokio::io::AsyncRead + Unpin>(
     reader: &mut R,
     file_size: u64,
     raw_rel_path: &str,
-) -> Result<String, std::io::Error> {
+) -> Result<(String, bool), std::io::Error> {
     if file_size > MAX_SINGLE_FILE_BYTES {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
@@ -687,9 +712,21 @@ async fn receive_binary_file<R: tokio::io::AsyncRead + Unpin>(
         ));
     }
 
-    let safe_rel = sanitize_relative_path(raw_rel_path);
-    let base_downloads = downloads_dir();
-    let target_path = base_downloads.join(&safe_rel);
+    let normalized = raw_rel_path.replace('\\', "/");
+    let (is_rec_internal, effective_rel) = if let Some(rest) = normalized.strip_prefix("__kvm_rec__/")
+    {
+        (true, rest)
+    } else {
+        (false, raw_rel_path)
+    };
+
+    let safe_rel = sanitize_relative_path(effective_rel);
+    let base_dir = if is_rec_internal {
+        screen_record::recordings_base_dir()
+    } else {
+        downloads_dir()
+    };
+    let target_path = base_dir.join(&safe_rel);
 
     if let Some(parent) = target_path.parent() {
         fs::create_dir_all(parent).await?;
@@ -713,7 +750,238 @@ async fn receive_binary_file<R: tokio::io::AsyncRead + Unpin>(
     }
 
     out_file.flush().await?;
-    Ok(safe_rel.to_string_lossy().into_owned())
+    Ok((safe_rel.to_string_lossy().into_owned(), is_rec_internal))
+}
+
+async fn stream_recording_file_to_host(
+    host_ip: std::net::IpAddr,
+    local_path: &Path,
+    session_id: &str,
+    remote_filename: &str,
+) -> Result<(), String> {
+    let addr = std::net::SocketAddr::new(host_ip, 9876);
+    let mut tx = TcpStream::connect(addr)
+        .await
+        .map_err(|e| format!("Failed connecting to host {} to upload recording: {}", addr, e))?;
+    let _ = tx.set_nodelay(true);
+
+    let mut file = File::open(local_path)
+        .await
+        .map_err(|e| format!("Failed opening {:?}: {}", local_path, e))?;
+    let meta = file
+        .metadata()
+        .await
+        .map_err(|e| format!("Failed reading metadata {:?}: {}", local_path, e))?;
+    let total_size = meta.len();
+
+    let clean_sess = screen_record::sanitize_token(session_id, "demo_session");
+    let clean_name = screen_record::sanitize_filename(remote_filename, "recording.mp4");
+    let header = format!("B {} __kvm_rec__/{}/{}\n", total_size, clean_sess, clean_name);
+    tx.write_all(header.as_bytes())
+        .await
+        .map_err(|e| format!("Failed writing recording header: {}", e))?;
+
+    let mut chunk_buf = vec![0u8; STREAM_CHUNK_SIZE];
+    let mut remaining = total_size;
+    while remaining > 0 {
+        let to_read = STREAM_CHUNK_SIZE.min(remaining as usize);
+        match file.read(&mut chunk_buf[..to_read]).await {
+            Ok(0) => break,
+            Ok(n) => {
+                tx.write_all(&chunk_buf[..n])
+                    .await
+                    .map_err(|e| format!("Failed streaming recording chunk: {}", e))?;
+                remaining -= n as u64;
+            }
+            Err(e) => return Err(format!("Failed reading recording chunk: {}", e)),
+        }
+    }
+    let _ = tx.flush().await;
+    let _ = tx.shutdown().await;
+    Ok(())
+}
+
+fn send_receiver_rec_caps(msg_tx: &tokio::sync::mpsc::UnboundedSender<Vec<u8>>) {
+    let backend = screen_record::detect_capture_backend();
+    let has_ffmpeg = if screen_record::has_ffmpeg() { "1" } else { "0" };
+    let os = std::env::consts::OS;
+    let pkt = format!("REC_CAPS {} {} {}\n", backend, has_ffmpeg, os);
+    let _ = msg_tx.send(pkt.into_bytes());
+}
+
+fn handle_receiver_record_command(
+    trimmed: &str,
+    msg_tx: tokio::sync::mpsc::UnboundedSender<Vec<u8>>,
+    peer_ip: Option<std::net::IpAddr>,
+) {
+    if trimmed == "REC_PING" {
+        send_receiver_rec_caps(&msg_tx);
+        return;
+    }
+
+    if let Some(raw_sess) = trimmed.strip_prefix("REC_START ") {
+        let session_id = screen_record::sanitize_token(raw_sess.trim(), "demo_session");
+        println!("[*] Synchronized demo recording START: session={}", session_id);
+        tokio::spawn(async move {
+            let sid = session_id.clone();
+            let res =
+                tokio::task::spawn_blocking(move || screen_record::start_capture(&sid, "receiver"))
+                    .await;
+            match res {
+                Ok(Ok(info)) => {
+                    let pkt = format!("REC_STARTED {} {}\n", info.session_id, info.backend);
+                    let _ = msg_tx.send(pkt.into_bytes());
+                }
+                Ok(Err(err)) => {
+                    let clean_err = err.replace(['\r', '\n'], " ");
+                    eprintln!("[!] Receiver screen capture error: {}", clean_err);
+                    let pkt = format!("REC_ERR {} {}\n", session_id, clean_err);
+                    let _ = msg_tx.send(pkt.into_bytes());
+                }
+                Err(e) => {
+                    let pkt = format!("REC_ERR {} join_error:{}\n", session_id, e);
+                    let _ = msg_tx.send(pkt.into_bytes());
+                }
+            }
+        });
+        return;
+    }
+
+    if let Some(raw_sess) = trimmed.strip_prefix("REC_STOP ") {
+        let session_id = screen_record::sanitize_token(raw_sess.trim(), "demo_session");
+        println!("[*] Synchronized demo recording STOP: session={}", session_id);
+        tokio::spawn(async move {
+            let sid = session_id.clone();
+            let stop_res =
+                tokio::task::spawn_blocking(move || screen_record::stop_capture(&sid)).await;
+            match stop_res {
+                Ok(Ok(file_path)) => {
+                    let fname = file_path
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("receiver.mp4")
+                        .to_string();
+                    let target_ip = peer_ip
+                        .or_else(|| ACTIVE_HOST_PEER.lock().ok().and_then(|l| *l));
+                    if let Some(host_ip) = target_ip {
+                        match stream_recording_file_to_host(host_ip, &file_path, &session_id, &fname)
+                            .await
+                        {
+                            Ok(()) => {
+                                println!(
+                                    "[+] Uploaded Receiver recording {} to Host {}",
+                                    fname, host_ip
+                                );
+                                let pkt = format!("REC_SENT {} {}\n", session_id, fname);
+                                let _ = msg_tx.send(pkt.into_bytes());
+                            }
+                            Err(err) => {
+                                let clean = err.replace(['\r', '\n'], " ");
+                                eprintln!("[!] Failed uploading recording: {}", clean);
+                                let pkt = format!("REC_ERR {} {}\n", session_id, clean);
+                                let _ = msg_tx.send(pkt.into_bytes());
+                            }
+                        }
+                    } else {
+                        let pkt = format!(
+                            "REC_ERR {} Unknown Host IP for recording upload\n",
+                            session_id
+                        );
+                        let _ = msg_tx.send(pkt.into_bytes());
+                    }
+                }
+                Ok(Err(err)) => {
+                    let clean_err = err.replace(['\r', '\n'], " ");
+                    eprintln!("[!] Receiver stop_capture failed: {}", clean_err);
+                    let pkt = format!("REC_ERR {} {}\n", session_id, clean_err);
+                    let _ = msg_tx.send(pkt.into_bytes());
+                }
+                Err(e) => {
+                    let pkt = format!("REC_ERR {} join_error:{}\n", session_id, e);
+                    let _ = msg_tx.send(pkt.into_bytes());
+                }
+            }
+        });
+        return;
+    }
+
+    if let Some(rest) = trimmed.strip_prefix("REC_STITCH ") {
+        let mut parts = rest.split_whitespace();
+        let session_id =
+            screen_record::sanitize_token(parts.next().unwrap_or(""), "demo_session");
+        let slot_name = screen_record::sanitize_token(parts.next().unwrap_or("right"), "right");
+        let host_fname =
+            screen_record::sanitize_filename(parts.next().unwrap_or(""), "host_windows.avi");
+        let recv_fname =
+            screen_record::sanitize_filename(parts.next().unwrap_or(""), "receiver_linux.mp4");
+        let auto_export = parts.next().unwrap_or("0") == "1";
+        let host_label = parts.next().unwrap_or("HOST").replace('_', " ");
+
+        tokio::spawn(async move {
+            let sid = session_id.clone();
+            let slot_copy = slot_name.clone();
+            let h_name = host_fname.clone();
+            let r_name = recv_fname.clone();
+            let h_lbl = host_label.clone();
+            let r_lbl = format!("RECEIVER ({})", std::env::consts::OS.to_uppercase());
+
+            let res = tokio::task::spawn_blocking(move || {
+                let sdir = screen_record::recordings_base_dir().join(&sid);
+                let host_path = sdir.join(&h_name);
+                let recv_path = sdir.join(&r_name);
+                let out = screen_record::stitch_dual_demo(
+                    &sdir,
+                    &host_path,
+                    &recv_path,
+                    &slot_copy,
+                    &h_lbl,
+                    &r_lbl,
+                )?;
+                if auto_export {
+                    let _ = screen_record::export_to_demo_pics(
+                        &out.webp_path,
+                        "02-dual-screen-demo.webp",
+                    );
+                }
+                Ok::<_, String>(out)
+            })
+            .await;
+
+            match res {
+                Ok(Ok(outputs)) => {
+                    let target_ip = peer_ip
+                        .or_else(|| ACTIVE_HOST_PEER.lock().ok().and_then(|l| *l));
+                    if let Some(host_ip) = target_ip {
+                        for p in [&outputs.webp_path, &outputs.gif_path, &outputs.mp4_path] {
+                            if !p.is_file() {
+                                continue;
+                            }
+                            if let Some(name) = p.file_name().and_then(|n| n.to_str()) {
+                                let _ = stream_recording_file_to_host(
+                                    host_ip,
+                                    p,
+                                    &session_id,
+                                    name,
+                                )
+                                .await;
+                            }
+                        }
+                    }
+                    let pkt = format!("REC_STITCH_DONE {}\n", session_id);
+                    let _ = msg_tx.send(pkt.into_bytes());
+                }
+                Ok(Err(err)) => {
+                    let clean = err.replace(['\r', '\n'], " ");
+                    let pkt = format!("REC_ERR {} {}\n", session_id, clean);
+                    let _ = msg_tx.send(pkt.into_bytes());
+                }
+                Err(e) => {
+                    let pkt = format!("REC_ERR {} stitch_join:{}\n", session_id, e);
+                    let _ = msg_tx.send(pkt.into_bytes());
+                }
+            }
+        });
+    }
 }
 
 async fn receive_image_to_clipboard<R: tokio::io::AsyncRead + Unpin>(
@@ -1000,6 +1268,7 @@ fn mark_control_session(
         }
         let is_loopback = peer_ip.map(|ip| ip.is_loopback()).unwrap_or(false);
         if ACTIVE_CONTROL_CLIENTS.fetch_add(1, Ordering::SeqCst) == 0 {
+            control_active_notify().notify_waiters();
             apply_single_monitor_if_docked_async(is_loopback);
         }
     }
@@ -1377,6 +1646,9 @@ async fn execute_reverse_handoff() {
 fn start_clipboard_monitor() {
     tokio::spawn(async {
         loop {
+            if ACTIVE_CONTROL_CLIENTS.load(Ordering::Relaxed) == 0 {
+                wait_until_control_active().await;
+            }
             sleep(Duration::from_millis(650)).await;
 
             if ACTIVE_CONTROL_CLIENTS.load(Ordering::Relaxed) == 0 {
@@ -1634,6 +1906,14 @@ async fn handle_connection(stream: TcpStream, device: Arc<Mutex<InputAdapter>>, 
                 );
                 tokio::task::spawn_blocking(update_current_monitor_bounds);
                 mark_control_session(&mut is_control, session_id, &msg_tx, peer_ip);
+                send_receiver_rec_caps(&msg_tx);
+            }
+
+            // "REC_*" -> Synchronized dual-computer screen recording commands
+            b'R' => {
+                if trimmed.starts_with("REC_") {
+                    handle_receiver_record_command(trimmed, msg_tx.clone(), peer_ip);
+                }
             }
 
             // "E <edge>" -> Dynamic return edge configuration from Host GUI
@@ -1663,12 +1943,19 @@ async fn handle_connection(stream: TcpStream, device: Arc<Mutex<InputAdapter>>, 
                         let rel_path = rest[space_idx + 1..].trim();
                         if let Ok(file_size) = size_str.parse::<u64>() {
                             match receive_binary_file(&mut reader, file_size, rel_path).await {
-                                Ok(saved_name) => {
-                                    println!(
-                                        "[+] Saved streamed file: {} ({} bytes)",
-                                        saved_name, file_size
-                                    );
-                                    received_files.push(saved_name);
+                                Ok((saved_name, is_rec_internal)) => {
+                                    if is_rec_internal {
+                                        println!(
+                                            "[+] Saved synchronized recording asset: {} ({} bytes)",
+                                            saved_name, file_size
+                                        );
+                                    } else {
+                                        println!(
+                                            "[+] Saved streamed file: {} ({} bytes)",
+                                            saved_name, file_size
+                                        );
+                                        received_files.push(saved_name);
+                                    }
                                 }
                                 Err(e) => {
                                     eprintln!("[!] File stream error: {}", e);
@@ -1951,7 +2238,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         return_edge
     );
 
-    let adapter = InputAdapter::new()?;
+    let mut warned_input = false;
+    let adapter = loop {
+        match InputAdapter::new() {
+            Ok(a) => break a,
+            Err(e) => {
+                if !warned_input {
+                    warned_input = true;
+                    eprintln!(
+                        "[!] Waiting for virtual input device access (/dev/uinput): {}. Checking gently every 20s...",
+                        e
+                    );
+                }
+                sleep(Duration::from_secs(20)).await;
+            }
+        }
+    };
     let device = Arc::new(Mutex::new(adapter));
     update_current_monitor_bounds();
     println!(

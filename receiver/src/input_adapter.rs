@@ -335,18 +335,45 @@ impl InputAdapter {
 }
 
 #[cfg(target_os = "linux")]
+pub fn resolve_hyprland_socket_path() -> Option<String> {
+    let xdg = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/run/user/1000".to_string());
+    if let Ok(sig) = std::env::var("HYPRLAND_INSTANCE_SIGNATURE") {
+        let sig = sig.trim();
+        if !sig.is_empty() {
+            let p = format!("{}/hypr/{}/.socket.sock", xdg, sig);
+            if std::path::Path::new(&p).exists() {
+                return Some(p);
+            }
+        }
+    }
+
+    let hypr_dir = std::path::PathBuf::from(&xdg).join("hypr");
+    let entries = std::fs::read_dir(hypr_dir).ok()?;
+    let mut best: Option<(std::time::SystemTime, String)> = None;
+    for entry in entries.flatten() {
+        let sock = entry.path().join(".socket.sock");
+        if sock.exists() {
+            let mtime = entry
+                .metadata()
+                .and_then(|m| m.modified())
+                .unwrap_or(std::time::UNIX_EPOCH);
+            let sock_str = sock.to_string_lossy().into_owned();
+            if best.as_ref().map(|(t, _)| mtime > *t).unwrap_or(true) {
+                best = Some((mtime, sock_str));
+            }
+        }
+    }
+    best.map(|(_, p)| p)
+}
+
+#[cfg(target_os = "linux")]
 fn warp_hyprland_cursor(x: i32, y: i32) -> bool {
     use std::io::Write;
     use std::os::unix::net::UnixStream;
 
-    let Ok(sig) = std::env::var("HYPRLAND_INSTANCE_SIGNATURE") else {
+    let Some(sock_path) = resolve_hyprland_socket_path() else {
         return false;
     };
-    if sig.is_empty() {
-        return false;
-    }
-    let xdg = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/run/user/1000".to_string());
-    let sock_path = format!("{}/hypr/{}/.socket.sock", xdg, sig);
     if let Ok(mut stream) = UnixStream::connect(&sock_path) {
         let cmd = format!("dispatch movecursor {} {}", x, y);
         if stream.write_all(cmd.as_bytes()).is_ok() {

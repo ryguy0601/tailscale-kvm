@@ -26,6 +26,9 @@
       padding: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
     }
+    html {
+      background: var(--bg);
+    }
     body {
       background: radial-gradient(circle at top, #131c2e 0%, var(--bg) 60%);
       color: var(--text);
@@ -408,6 +411,200 @@
       font-family: monospace;
       margin-top: 2px;
     }
+
+    /* Synchronized Dual-PC Screen Recorder */
+    .recorder-section {
+      width: 100%;
+      max-width: 785px;
+      margin-top: 18px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .recorder-section.recording {
+      border-color: rgba(248, 81, 73, 0.7);
+      box-shadow: 0 0 24px rgba(248, 81, 73, 0.16);
+    }
+    .recorder-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .recorder-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-bright);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .rec-status-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(139, 148, 158, 0.14);
+      color: var(--muted);
+      border: 1px solid rgba(139, 148, 158, 0.28);
+      font-variant-numeric: tabular-nums;
+    }
+    .rec-status-pill.live {
+      background: rgba(248, 81, 73, 0.2);
+      color: #ff7b72;
+      border-color: rgba(248, 81, 73, 0.55);
+      animation: recPulse 1.3s ease-in-out infinite;
+    }
+    .rec-status-pill.busy {
+      background: rgba(210, 153, 34, 0.18);
+      color: #e3b341;
+      border-color: rgba(210, 153, 34, 0.45);
+    }
+    .rec-status-pill.ready {
+      background: rgba(0, 212, 190, 0.14);
+      color: var(--accent);
+      border-color: rgba(0, 212, 190, 0.45);
+    }
+    @keyframes recPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(248, 81, 73, 0.35); }
+      50% { box-shadow: 0 0 0 6px rgba(248, 81, 73, 0); }
+    }
+    .rec-caps-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .cap-badge {
+      font-size: 11px;
+      color: var(--text);
+      background: #1a2334;
+      border: 1px solid var(--border);
+      padding: 4px 9px;
+      border-radius: 7px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .rec-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 11px 14px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .rec-options {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      font-size: 11.5px;
+      color: var(--text);
+    }
+    .rec-select {
+      background: #0f1623;
+      color: var(--text-bright);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 5px 8px;
+      font-size: 11.5px;
+      outline: none;
+    }
+    .rec-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 11.5px;
+      color: var(--muted);
+    }
+    .rec-check input {
+      accent-color: var(--accent);
+      width: 14px;
+      height: 14px;
+    }
+    .rec-btn {
+      background: linear-gradient(135deg, #00d4be 0%, #0ea5e9 100%);
+      color: #041311;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.12s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 4px 16px rgba(0, 212, 190, 0.25);
+      white-space: nowrap;
+    }
+    .rec-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0, 212, 190, 0.35);
+    }
+    .rec-btn.stop {
+      background: linear-gradient(135deg, #f85149 0%, #da3633 100%);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(248, 81, 73, 0.3);
+    }
+    .rec-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .rec-msg {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .rec-preview-wrap {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+    .rec-preview-img {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid rgba(0, 212, 190, 0.35);
+      background: #0b0f17;
+      display: block;
+    }
+    .rec-actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .rec-downloads {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .dl-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-bright);
+      background: #1c273b;
+      border: 1px solid var(--border);
+      padding: 6px 11px;
+      border-radius: 7px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .dl-chip:hover {
+      border-color: var(--accent);
+      background: #223049;
+    }
   </style>
 </head>
 <body>
@@ -465,6 +662,52 @@
     <div class="peers-list" id="peers-pool"></div>
   </div>
 
+  <!-- Synchronized Dual-PC Screen Recorder -->
+  <div class="recorder-section" id="recorder-section">
+    <div class="recorder-header">
+      <div class="recorder-title">🎬 Synchronized Dual-PC Demo Recorder <span style="font-weight:400; color:#8b949e; font-size:12px;">(Captures Host & Receiver together + auto-stitches side-by-side)</span></div>
+      <span class="rec-status-pill" id="rec-status-pill">Idle</span>
+    </div>
+
+    <div class="rec-caps-row" id="rec-caps-row">
+      <span class="cap-badge" id="cap-host">Host Capture: detecting...</span>
+      <span class="cap-badge" id="cap-recv">Receiver Capture: awaiting slot connection</span>
+    </div>
+
+    <div class="rec-controls">
+      <div class="rec-options">
+        <label style="display:inline-flex; align-items:center; gap:6px;">
+          <span>Target:</span>
+          <select id="rec-slot-select" class="rec-select">
+            <option value="">Auto (First Connected)</option>
+          </select>
+        </label>
+        <label style="display:inline-flex; align-items:center; gap:6px;">
+          <span>Delay:</span>
+          <select id="rec-delay-select" class="rec-select">
+            <option value="3">3s Countdown</option>
+            <option value="0">Instant Start</option>
+          </select>
+        </label>
+        <label class="rec-check" id="rec-auto-export-wrap" title="Copy stitched animated WebP directly into demoPics/ for GitHub & Portfolio">
+          <input type="checkbox" id="rec-auto-export" checked />
+          <span>Auto-export to <code>demoPics/</code></span>
+        </label>
+      </div>
+      <button type="button" class="rec-btn" id="rec-toggle-btn">🔴 Record Both Screens</button>
+    </div>
+
+    <div class="rec-msg" id="rec-message">Connect a Receiver screen above, then record both monitors synchronously for your portfolio demo.</div>
+
+    <div class="rec-preview-wrap" id="rec-preview-wrap">
+      <img id="rec-preview-img" class="rec-preview-img" alt="Stitched Dual-PC KVM Demo Preview" />
+      <div class="rec-actions-row">
+        <div class="rec-downloads" id="rec-downloads"></div>
+        <button type="button" class="dl-chip" id="rec-export-btn" style="border-color: var(--accent); color: var(--accent);">📌 Export to demoPics/02-dual-screen-demo.webp</button>
+      </div>
+    </div>
+  </div>
+
   <div id="drag-ghost">
     <div class="g-name" id="ghost-name"></div>
     <div class="g-ip" id="ghost-ip"></div>
@@ -479,6 +722,10 @@
     let currentConnected = { right: false, left: false, up: false, down: false };
     let activeRemoteSlot = null;
     let hostOs = '';
+    let recordingState = null;
+    let countdownRemaining = 0;
+    let countdownTimer = null;
+    let lastPreviewUrl = '';
     let lastStateSignature = '';
 
     // Selection state for click-to-move convenience alongside drag-and-drop
@@ -522,6 +769,7 @@
         currentConnected = Object.assign({ right: false, left: false, up: false, down: false }, data.connected || {});
         activeRemoteSlot = data.active_remote_slot || null;
         hostOs = data.host_os || '';
+        recordingState = data.recording || null;
 
         renderAll();
       } catch (err) {
@@ -545,7 +793,241 @@
 
       renderSlots();
       renderPeers();
+      renderRecorder();
     }
+
+    function formatElapsed(secs) {
+      const m = String(Math.floor((secs || 0) / 60)).padStart(2, '0');
+      const s = String((secs || 0) % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function renderRecorder() {
+      const section = document.getElementById('recorder-section');
+      const pill = document.getElementById('rec-status-pill');
+      const capHost = document.getElementById('cap-host');
+      const capRecv = document.getElementById('cap-recv');
+      const slotSelect = document.getElementById('rec-slot-select');
+      const btn = document.getElementById('rec-toggle-btn');
+      const msgEl = document.getElementById('rec-message');
+      const previewWrap = document.getElementById('rec-preview-wrap');
+      const previewImg = document.getElementById('rec-preview-img');
+      const dlContainer = document.getElementById('rec-downloads');
+      const exportBtn = document.getElementById('rec-export-btn');
+      const autoExportWrap = document.getElementById('rec-auto-export-wrap');
+
+      const rec = recordingState || {};
+      const status = rec.status || 'idle';
+      const connectedSlots = SLOTS.filter(s => !!currentConnected[s]);
+
+      // Keep Target Slot dropdown synced without clobbering selection
+      const prevSel = slotSelect.value;
+      slotSelect.innerHTML = '<option value="">Auto (First Connected)</option>';
+      connectedSlots.forEach(s => {
+        const ip = currentSlots[s] || '';
+        const peer = peersData.find(p => p.ip === ip);
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = `${SLOT_LABELS[s]} (${peer ? peer.name : ip})`;
+        slotSelect.appendChild(opt);
+      });
+      if (prevSel && connectedSlots.includes(prevSel)) {
+        slotSelect.value = prevSel;
+      }
+
+      const hostBackend = rec.host_backend || 'detecting';
+      const hostFfmpeg = rec.host_has_ffmpeg ? 'ffmpeg ✓' : 'native fallback';
+      capHost.textContent = `Host Capture: ${hostBackend} (${hostFfmpeg})`;
+
+      if (connectedSlots.length > 0 && rec.recv_backend) {
+        const recvFfmpeg = rec.recv_has_ffmpeg ? 'ffmpeg ✓' : 'native capture';
+        capRecv.textContent = `Receiver (${rec.recv_os || 'peer'}): ${rec.recv_backend} (${recvFfmpeg})`;
+      } else if (connectedSlots.length > 0) {
+        capRecv.textContent = `Receiver Capture: handshaking capabilities...`;
+      } else {
+        capRecv.textContent = `Receiver Capture: awaiting slot connection`;
+      }
+
+      if (rec.demo_pics_available === false) {
+        autoExportWrap.style.opacity = '0.6';
+        autoExportWrap.title = 'Run host from inside repo workspace to enable auto-export to demoPics/';
+      } else {
+        autoExportWrap.style.opacity = '1';
+      }
+
+      section.classList.toggle('recording', status === 'recording');
+      pill.className = 'rec-status-pill';
+
+      if (countdownRemaining > 0) {
+        pill.classList.add('busy');
+        pill.textContent = `Starting in ${countdownRemaining}s...`;
+        btn.disabled = false;
+        btn.className = 'rec-btn stop';
+        btn.textContent = '✖ Cancel Countdown';
+        msgEl.textContent = 'Position your cursor and windows — dual capture starts automatically!';
+      } else if (status === 'recording') {
+        pill.classList.add('live');
+        pill.textContent = `● REC ${formatElapsed(rec.elapsed_secs)}`;
+        btn.disabled = false;
+        btn.className = 'rec-btn stop';
+        btn.textContent = '⏹ Stop & Stitch Both Screens';
+        msgEl.textContent = rec.message || 'Recording both monitors simultaneously... Move cursor across screen edge, then click Stop!';
+      } else if (status === 'stopping' || status === 'stitching') {
+        pill.classList.add('busy');
+        pill.textContent = status === 'stitching' ? '⚙ Stitching Side-by-Side...' : '⏳ Syncing Clips...';
+        btn.disabled = true;
+        btn.className = 'rec-btn';
+        btn.textContent = '⏳ Processing Demo...';
+        msgEl.textContent = rec.message || 'Transferring receiver capture and generating .webp / .gif / .mp4...';
+      } else if (status === 'ready') {
+        pill.classList.add('ready');
+        pill.textContent = rec.exported_demo_pic ? `✓ Exported: ${rec.exported_demo_pic}` : '✓ Stitched Ready';
+        btn.disabled = connectedSlots.length === 0;
+        btn.className = 'rec-btn';
+        btn.textContent = '🔴 Record New Dual Demo';
+        msgEl.textContent = rec.message || 'Stitched demo ready!';
+      } else if (status === 'error') {
+        pill.textContent = '⚠ Recorder Error';
+        btn.disabled = connectedSlots.length === 0;
+        btn.className = 'rec-btn';
+        btn.textContent = '🔴 Retry Dual Recording';
+        msgEl.textContent = rec.message || 'Capture failed.';
+      } else {
+        pill.textContent = connectedSlots.length > 0 ? 'Ready' : 'No Receiver Connected';
+        btn.disabled = connectedSlots.length === 0;
+        btn.className = 'rec-btn';
+        btn.textContent = '🔴 Record Both Screens';
+        msgEl.textContent = connectedSlots.length > 0
+          ? 'Click Record, sweep cursor smoothly across the Host ↔ Receiver boundary, then click Stop & Stitch.'
+          : 'Connect a Receiver peer to Top, Left, Right, or Bottom above to unlock dual-PC recording.';
+      }
+
+      const sess = rec.session_id || '';
+      const previewName = rec.stitched_webp || rec.stitched_gif || '';
+      if (sess && (previewName || rec.stitched_mp4)) {
+        previewWrap.style.display = 'block';
+        if (previewName) {
+          const url = `/api/record/file?session=${encodeURIComponent(sess)}&name=${encodeURIComponent(previewName)}`;
+          if (lastPreviewUrl !== url) {
+            lastPreviewUrl = url;
+            previewImg.src = url;
+          }
+          previewImg.style.display = 'block';
+        } else {
+          previewImg.style.display = 'none';
+        }
+
+        dlContainer.innerHTML = '';
+        const artifacts = [
+          { file: rec.stitched_webp, label: '⬇ WebP (Portfolio)' },
+          { file: rec.stitched_gif, label: '⬇ GIF (GitHub)' },
+          { file: rec.stitched_mp4, label: '⬇ MP4 (1080p)' },
+        ];
+        artifacts.forEach(a => {
+          if (!a.file) return;
+          const link = document.createElement('a');
+          link.className = 'dl-chip';
+          link.href = `/api/record/file?session=${encodeURIComponent(sess)}&name=${encodeURIComponent(a.file)}`;
+          link.download = `${sess}_${a.file}`;
+          link.textContent = a.label;
+          dlContainer.appendChild(link);
+        });
+        exportBtn.style.display = (previewName && rec.demo_pics_available !== false) ? 'inline-flex' : 'none';
+      } else {
+        previewWrap.style.display = 'none';
+      }
+    }
+
+    async function beginDualRecordingNow() {
+      const slot = document.getElementById('rec-slot-select').value || null;
+      const autoExport = document.getElementById('rec-auto-export').checked;
+      try {
+        const res = await fetch('/api/record/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slot, auto_export: autoExport }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          setToast(`⚠ ${data.error || 'Could not start dual recording'}`, 'var(--danger)');
+        } else {
+          recordingState = data.recording;
+          lastPreviewUrl = '';
+          setToast('🔴 Recording BOTH computers synchronously!', 'var(--danger)');
+        }
+      } catch (err) {
+        setToast('⚠ Failed contacting Host recorder endpoint', 'var(--danger)');
+      }
+      await fetchStatus(true);
+    }
+
+    document.getElementById('rec-toggle-btn').addEventListener('click', async () => {
+      if (countdownRemaining > 0) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+        countdownRemaining = 0;
+        renderRecorder();
+        setToast('Countdown cancelled.');
+        return;
+      }
+
+      const status = recordingState && recordingState.status;
+      if (status === 'recording') {
+        try {
+          const res = await fetch('/api/record/stop', { method: 'POST' });
+          const data = await res.json();
+          if (res.ok && data.ok) {
+            recordingState = data.recording;
+            setToast('⚙ Stopping captures & stitching side-by-side...', 'var(--warn)');
+          } else {
+            setToast(`⚠ ${data.error || 'Stop error'}`, 'var(--danger)');
+          }
+        } catch (_) {
+          setToast('⚠ Failed stopping recording', 'var(--danger)');
+        }
+        await fetchStatus(true);
+        return;
+      }
+
+      const delaySecs = parseInt(document.getElementById('rec-delay-select').value || '0', 10);
+      if (delaySecs > 0) {
+        countdownRemaining = delaySecs;
+        renderRecorder();
+        countdownTimer = setInterval(async () => {
+          countdownRemaining -= 1;
+          if (countdownRemaining <= 0) {
+            clearInterval(countdownTimer);
+            countdownTimer = null;
+            countdownRemaining = 0;
+            await beginDualRecordingNow();
+          } else {
+            renderRecorder();
+          }
+        }, 1000);
+      } else {
+        await beginDualRecordingNow();
+      }
+    });
+
+    document.getElementById('rec-export-btn').addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/record/export', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: '02-dual-screen-demo.webp' }),
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          recordingState = data.recording;
+          setToast(`📌 Exported to ${data.exported}`, 'var(--accent)');
+          renderRecorder();
+        } else {
+          setToast(`⚠ ${data.error || 'Export failed'}`, 'var(--danger)');
+        }
+      } catch (_) {
+        setToast('⚠ Failed exporting demo asset', 'var(--danger)');
+      }
+    });
 
     function renderSlots() {
       SLOTS.forEach(slot => {

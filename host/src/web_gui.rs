@@ -1,7 +1,7 @@
 use serde_json::json;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{Shutdown, SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::thread;
 use std::time::Duration;
@@ -17,6 +17,11 @@ pub struct PeerInfo {
 
 static GUI_SLOTS: OnceLock<Mutex<[Option<String>; 4]>> = OnceLock::new();
 static CACHED_PEERS: OnceLock<Mutex<Vec<PeerInfo>>> = OnceLock::new();
+static LAST_GUI_ACTIVITY_MS: AtomicU64 = AtomicU64::new(0);
+
+fn mark_gui_active() {
+    LAST_GUI_ACTIVITY_MS.store(crate::monotonic_ms(), Ordering::Relaxed);
+}
 
 fn slots_store() -> &'static Mutex<[Option<String>; 4]> {
     GUI_SLOTS.get_or_init(|| Mutex::new([None, None, None, None]))
@@ -162,7 +167,15 @@ pub fn refresh_tailscale_peers() -> Vec<PeerInfo> {
 fn start_peer_discovery_worker() {
     thread::spawn(|| loop {
         refresh_tailscale_peers();
-        thread::sleep(Duration::from_secs(3));
+        let last_gui = LAST_GUI_ACTIVITY_MS.load(Ordering::Relaxed);
+        let gui_recently_active =
+            last_gui > 0 && crate::monotonic_ms().saturating_sub(last_gui) < 20_000;
+        let interval = if gui_recently_active {
+            Duration::from_secs(3)
+        } else {
+            Duration::from_secs(20)
+        };
+        thread::sleep(interval);
     });
 }
 
@@ -263,6 +276,7 @@ pub fn build_status_json() -> String {
         },
         "active_remote_slot": active_remote,
         "peers": peers_json,
+        "recording": crate::build_recording_status_json(),
     });
 
     payload.to_string()
@@ -319,7 +333,7 @@ fn write_http_response(stream: &mut TcpStream, status: &str, content_type: &str,
 pub fn handle_http_client(stream: TcpStream) {
     let _ = stream.set_nodelay(true);
     let _ = stream.set_read_timeout(Some(Duration::from_secs(5)));
-    let _ = stream.set_write_timeout(Some(Duration::from_secs(5)));
+    let _ = stream.set_write_timeout(Some(Duration::from_secs(20)));
 
     let mut reader = BufReader::new(stream);
     let mut request_line = String::new();
@@ -370,6 +384,7 @@ pub fn handle_http_client(stream: TcpStream) {
     }
 
     if (path_only == "/" || path_only == "/index.html") && method == "GET" {
+        mark_gui_active();
         let html = include_str!("../gui_static/index.html");
         write_http_response(
             reader.get_mut(),
@@ -381,6 +396,7 @@ pub fn handle_http_client(stream: TcpStream) {
     }
 
     if path_only == "/api/status" && method == "GET" {
+        mark_gui_active();
         let json_str = build_status_json();
         write_http_response(
             reader.get_mut(),
@@ -392,6 +408,7 @@ pub fn handle_http_client(stream: TcpStream) {
     }
 
     if path_only == "/api/layout" && method == "POST" {
+        mark_gui_active();
         if let Ok(val) = serde_json::from_slice::<serde_json::Value>(&body_bytes) {
             let right = normalize_slot_ip(val.get("right").and_then(|v| v.as_str()));
             let left = normalize_slot_ip(val.get("left").and_then(|v| v.as_str()));
@@ -418,6 +435,7 @@ pub fn handle_http_client(stream: TcpStream) {
     }
 
     if path_only == "/api/assign" && method == "POST" {
+        mark_gui_active();
         if let Some(query) = query_opt {
             let mut slot = String::new();
             let mut ip = String::new();
@@ -450,6 +468,177 @@ pub fn handle_http_client(stream: TcpStream) {
             "application/json; charset=UTF-8",
             json_str.as_bytes(),
         );
+        return;
+    }
+
+    if path_only == "/api/record/status" && method == "GET" {
+        mark_gui_active();
+        let json_str = crate::build_recording_status_json().to_string();
+        write_http_response(
+            reader.get_mut(),
+            "200 OK",
+            "application/json; charset=UTF-8",
+            json_str.as_bytes(),
+        );
+        return;
+    }
+
+    if path_only == "/api/record/start" && method == "POST" {
+        mark_gui_active();
+        let val = serde_json::from_slice::<serde_json::Value>(&body_bytes).unwrap_or_else(|_| json!({}));
+        let slot_opt = val
+            .get("slot")
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
+        let auto_export = val
+            .get("auto_export")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
+
+        match crate::start_dual_recording(slot_opt.as_deref(), auto_export) {
+            Ok(rec_json) => {
+                let body = json!({ "ok": true, "recording": rec_json }).to_string();
+                write_http_response(
+                    reader.get_mut(),
+                    "200 OK",
+                    "application/json; charset=UTF-8",
+                    body.as_bytes(),
+                );
+            }
+            Err(err) => {
+                let body = json!({ "ok": false, "error": err }).to_string();
+                write_http_response(
+                    reader.get_mut(),
+                    "400 Bad Request",
+                    "application/json; charset=UTF-8",
+                    body.as_bytes(),
+                );
+            }
+        }
+        return;
+    }
+
+    if path_only == "/api/record/stop" && method == "POST" {
+        mark_gui_active();
+        match crate::stop_dual_recording() {
+            Ok(rec_json) => {
+                let body = json!({ "ok": true, "recording": rec_json }).to_string();
+                write_http_response(
+                    reader.get_mut(),
+                    "200 OK",
+                    "application/json; charset=UTF-8",
+                    body.as_bytes(),
+                );
+            }
+            Err(err) => {
+                let body = json!({ "ok": false, "error": err }).to_string();
+                write_http_response(
+                    reader.get_mut(),
+                    "400 Bad Request",
+                    "application/json; charset=UTF-8",
+                    body.as_bytes(),
+                );
+            }
+        }
+        return;
+    }
+
+    if path_only == "/api/record/export" && method == "POST" {
+        mark_gui_active();
+        let val = serde_json::from_slice::<serde_json::Value>(&body_bytes).unwrap_or_else(|_| json!({}));
+        let fname_opt = val
+            .get("filename")
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
+
+        match crate::export_latest_recording(fname_opt.as_deref()) {
+            Ok(dest) => {
+                let body = json!({
+                    "ok": true,
+                    "exported": dest.to_string_lossy(),
+                    "recording": crate::build_recording_status_json(),
+                })
+                .to_string();
+                write_http_response(
+                    reader.get_mut(),
+                    "200 OK",
+                    "application/json; charset=UTF-8",
+                    body.as_bytes(),
+                );
+            }
+            Err(err) => {
+                let body = json!({ "ok": false, "error": err }).to_string();
+                write_http_response(
+                    reader.get_mut(),
+                    "400 Bad Request",
+                    "application/json; charset=UTF-8",
+                    body.as_bytes(),
+                );
+            }
+        }
+        return;
+    }
+
+    if path_only == "/api/record/file" && method == "GET" {
+        mark_gui_active();
+        let mut raw_session = String::new();
+        let mut raw_name = String::new();
+        if let Some(query) = query_opt {
+            for pair in query.split('&') {
+                if let Some(val) = pair.strip_prefix("session=") {
+                    raw_session = percent_decode(val);
+                } else if let Some(val) = pair.strip_prefix("name=") {
+                    raw_name = percent_decode(val);
+                }
+            }
+        }
+        let safe_session = crate::screen_record::sanitize_token(&raw_session, "");
+        let safe_name = crate::screen_record::sanitize_filename(&raw_name, "");
+        if safe_session.is_empty() || safe_name.is_empty() {
+            write_http_response(
+                reader.get_mut(),
+                "400 Bad Request",
+                "application/json",
+                br#"{"error":"invalid recording file params"}"#,
+            );
+            return;
+        }
+
+        let base_dir = crate::screen_record::recordings_base_dir().join(&safe_session);
+        let file_path = base_dir.join(&safe_name);
+        if !file_path.is_file() {
+            write_http_response(
+                reader.get_mut(),
+                "404 Not Found",
+                "application/json",
+                br#"{"error":"recording file not found"}"#,
+            );
+            return;
+        }
+
+        let content_type = match file_path.extension().and_then(|e| e.to_str()).unwrap_or("") {
+            "webp" => "image/webp",
+            "gif" => "image/gif",
+            "mp4" => "video/mp4",
+            "avi" => "video/x-msvideo",
+            "mov" => "video/quicktime",
+            _ => "application/octet-stream",
+        };
+        match std::fs::read(&file_path) {
+            Ok(bytes) => {
+                write_http_response(reader.get_mut(), "200 OK", content_type, &bytes);
+            }
+            Err(_) => {
+                write_http_response(
+                    reader.get_mut(),
+                    "500 Internal Server Error",
+                    "application/json",
+                    br#"{"error":"failed reading recording file"}"#,
+                );
+            }
+        }
         return;
     }
 

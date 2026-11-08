@@ -60,16 +60,17 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 <div class="container">
 
 <h1>tailscale-kvm — Complete Call Flow &amp; Architecture Documentation</h1>
-<p class="subtitle">Generated from graphify knowledge graph: 436 nodes, 848 edges, 32 communities. Commit: 607beeb</p>
+<p class="subtitle">Generated from graphify knowledge graph: 513 nodes, 1040 edges, 33 communities. Commit: be9a009</p>
 
 <div class="nav">
     <a href="#overview">Architecture Overview</a>
     <a href="#build-graph">Graph Build</a>
     <a href="#cli-skills">CLI &amp; Skill Installers</a>
     <a href="#tests-fixtures">Tests &amp; Fixtures</a>
-    <a href="#maprs-host-translate">Maprs Host Translate</a>
+    <a href="#stitch-demosh-scripts">Stitch Demosh Scripts</a>
     <a href="#host-tailscale-kvm">Host Tailscale Kvm</a>
     <a href="#receiver-tailscale-kvm">Receiver Tailscale Kvm</a>
+    <a href="#stitch-demops1-scripts">Stitch Demops1 Scripts</a>
     <a href="#run-hostps1">Run Hostps1</a>
     <a href="#run-receiverps1">Run Receiverps1</a>
 </div>
@@ -81,25 +82,29 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    BUILD_GRAPH_321CBB04("Graph Build<br/><small>51 nodes</small>")
+    BUILD_GRAPH_321CBB04("Graph Build<br/><small>60 nodes</small>")
     class BUILD_GRAPH_321CBB04 module;
-    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>328 nodes</small>")
+    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>344 nodes</small>")
     class CLI_SKILLS_9964CBB8 module;
-    TESTS_FIXTURES_B84B1DCC("Tests &amp; Fixtures<br/><small>51 nodes</small>")
+    TESTS_FIXTURES_B84B1DCC("Tests &amp; Fixtures<br/><small>100 nodes</small>")
     class TESTS_FIXTURES_B84B1DCC module;
-    MAPRS_HOST_TRANSLATE_9DB65DBE("Maprs Host Translate<br/><small>2 nodes</small>")
-    class MAPRS_HOST_TRANSLATE_9DB65DBE module;
+    STITCH_DEMOSH_SCRIPTS_79F75FA7("Stitch Demosh Scripts<br/><small>4 nodes</small>")
+    class STITCH_DEMOSH_SCRIPTS_79F75FA7 module;
     HOST_TAILSCALE_KVM_5F916E6E("Host Tailscale Kvm<br/><small>1 nodes</small>")
     class HOST_TAILSCALE_KVM_5F916E6E module;
     RECEIVER_TAILSCALE_KVM_389A10DC("Receiver Tailscale Kvm<br/><small>1 nodes</small>")
     class RECEIVER_TAILSCALE_KVM_389A10DC module;
+    STITCH_DEMOPS1_SCRIPTS_02721621("Stitch Demops1 Scripts<br/><small>1 nodes</small>")
+    class STITCH_DEMOPS1_SCRIPTS_02721621 module;
     RUN_HOSTPS1_87DC0170("Run Hostps1<br/><small>1 nodes</small>")
     class RUN_HOSTPS1_87DC0170 module;
     RUN_RECEIVERPS1_80A96601("Run Receiverps1<br/><small>1 nodes</small>")
     class RUN_RECEIVERPS1_80A96601 module;
-    CLI_SKILLS_9964CBB8 -->|calls x11| BUILD_GRAPH_321CBB04
-    CLI_SKILLS_9964CBB8 -->|imports x7| TESTS_FIXTURES_B84B1DCC
-    BUILD_GRAPH_321CBB04 -->|imports x7| CLI_SKILLS_9964CBB8
+    CLI_SKILLS_9964CBB8 -->|imports x26| BUILD_GRAPH_321CBB04
+    CLI_SKILLS_9964CBB8 -->|imports x21| TESTS_FIXTURES_B84B1DCC
+    BUILD_GRAPH_321CBB04 -->|imports x3| CLI_SKILLS_9964CBB8
+    TESTS_FIXTURES_B84B1DCC -->|imports x2| BUILD_GRAPH_321CBB04
+    TESTS_FIXTURES_B84B1DCC -->|imports| CLI_SKILLS_9964CBB8
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -116,22 +121,22 @@ flowchart LR
     <h4>Architecture Layers</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>Layer</th><th>Nodes</th><th>Communities</th></tr>
-      <tr><td>Graph Build</td><td>51</td><td><code>22, 5, 28, 23, 27</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>328</td><td><code>7, 2, 3, 10, 6, 1, 4, 25, 14, 18, 0, 16, 8, 15, 17, 19, 24, 13, 21, 9, 34</code></td></tr><tr><td>Tests &amp; Fixtures</td><td>51</td><td><code>20</code></td></tr><tr><td>Maprs Host Translate</td><td>2</td><td><code>26</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr><tr><td>Run Hostps1</td><td>1</td><td><code>32</code></td></tr><tr><td>Run Receiverps1</td><td>1</td><td><code>33</code></td></tr>
+      <tr><td>Graph Build</td><td>60</td><td><code>22, 5, 28, 27</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>344</td><td><code>7, 2, 25, 3, 10, 6, 1, 18, 8, 0, 24, 14, 21, 23, 4, 15, 16, 17, 19, 9, 34</code></td></tr><tr><td>Tests &amp; Fixtures</td><td>100</td><td><code>20, 13</code></td></tr><tr><td>Stitch Demosh Scripts</td><td>4</td><td><code>26</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr><tr><td>Stitch Demops1 Scripts</td><td>1</td><td><code>29</code></td></tr><tr><td>Run Hostps1</td><td>1</td><td><code>32</code></td></tr><tr><td>Run Receiverps1</td><td>1</td><td><code>33</code></td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Core Flow</h4>
-    <div class="arrow-chain">Maprs Host Translate -&gt; Graph Build -&gt; CLI &amp; Skill Installers -&gt; Tests &amp; Fixtures -&gt; Host Tailscale Kvm -&gt; Receiver Tailscale Kvm -&gt; Run Hostps1</div>
+    <div class="arrow-chain">Stitch Demosh Scripts -&gt; Graph Build -&gt; CLI &amp; Skill Installers -&gt; Tests &amp; Fixtures -&gt; Host Tailscale Kvm -&gt; Receiver Tailscale Kvm -&gt; Stitch Demops1 Scripts</div>
   </div>
 </div>
 <div class="grid">
   <div class="card">
     <h4>Graph Report Highlights</h4>
     <ul>
-      <li>436 nodes · 848 edges · 32 communities (22 shown, 10 thin omitted)</li>
-      <li>Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 10 edges (avg confidence: 0.85)</li>
+      <li>513 nodes · 1040 edges · 33 communities (25 shown, 8 thin omitted)</li>
+      <li>Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 12 edges (avg confidence: 0.85)</li>
       <li>Token cost: 0 input · 0 output</li>
-      <li>1. `handle_connection()` - 25 edges</li>
+      <li>1. `handle_connection()` - 27 edges</li>
       <li>2. `execute_handoff()` - 14 edges</li>
       <li>3. `main()` - 14 edges</li>
     </ul>
@@ -140,35 +145,39 @@ flowchart LR
 <hr>
 <!-- ====== 2. Graph Build ====== -->
 <h2 id="build-graph">2. Graph Build</h2>
-<p>Graph Build groups implementation around web, host, guirs, readmemd, mostly in host/src/web_gui.rs, README.md, build.sh. This section covers 51 nodes and 76 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>Graph Build groups implementation around host, web, guirs, readmemd, mostly in host/src/web_gui.rs, README.md, build.sh. This section covers 60 nodes and 88 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Graph Build (51 nodes, 76 edges)
-    host_src_web_gui_16ccde2b("web_gui.rs")
-    host_src_web_gui_handle_http_client_20f6aea7("handle_http_client()<br/><small>host/src/web_gui.rs</small>")
-    host_src_web_gui_start_gui_server_9512f502("start_gui_server()<br/><small>host/src/web_gui.rs</small>")
-    host_src_web_gui_build_status_json_fb1174ae("build_status_json()<br/><small>host/src/web_gui.rs</small>")
-    host_src_web_gui_refresh_tailscale_peers_306770d6("refresh_tailscale_peers()<br/><small>host/src/web_gui.rs</small>")
-    host_src_web_gui_set_all_slots_mirror_c5caf572("set_all_slots_mirror()<br/><small>host/src/web_gui.rs</small>")
-    host_src_web_gui_get_all_slots_f0248782("get_all_slots()<br/><small>host/src/web_gui.rs</small>")
-    host_src_web_gui_index_to_slot_name_8f8951c0("index_to_slot_name()<br/><small>host/src/web_gui.rs</small>")
-    host_src_web_gui_peers_store_2faa650f("peers_store()<br/><small>host/src/web_gui.rs</small>")
-    host_src_web_gui_slots_store_59b1fc90("slots_store()<br/><small>host/src/web_gui.rs</small>")
-    host_src_web_gui_write_http_response_a913a66d("write_http_response()<br/><small>host/src/web_gui.rs</small>")
-    host_src_web_gui_normalize_slot_ip_40a04a12("normalize_slot_ip()<br/><small>host/src/web_gui.rs</small>")
-    host_src_web_gui_percent_decode_4682286e("percent_decode()<br/><small>host/src/web_gui.rs</small>")
-    host_src_web_gui_slot_name_to_index_19ca8d02("slot_name_to_index()<br/><small>host/src/web_gui.rs</small>")
-    host_src_web_gui_probe_kvm_receiver_port_0d58eb72("probe_kvm_receiver_port()<br/><small>host/src/web_gui.rs</small>")
-    host_src_web_gui_start_peer_discovery_worker_60725f9c("peer discovery worker()<br/><small>host/src/web_gui.rs</small>")
-    host_src_web_gui_takeover_or_bind_c7f21444("takeover_or_bind()<br/><small>host/src/web_gui.rs</small>")
-    host_src_web_gui_open_browser_6f1b17f7("open_browser()<br/><small>host/src/web_gui.rs</small>")
+    %% Section: Graph Build (60 nodes, 88 edges)
+    subgraph build_graph_host_src_web_gui_rs_13a94702["host/src/web_gui.rs"]
+        host_src_web_gui_16ccde2b("web_gui.rs")
+        host_src_web_gui_handle_http_client_20f6aea7("handle_http_client()<br/><small>host/src/web_gui.rs</small>")
+        host_src_web_gui_start_gui_server_9512f502("start_gui_server()<br/><small>host/src/web_gui.rs</small>")
+        host_src_web_gui_build_status_json_fb1174ae("build_status_json()<br/><small>host/src/web_gui.rs</small>")
+        host_src_web_gui_refresh_tailscale_peers_306770d6("refresh_tailscale_peers()<br/><small>host/src/web_gui.rs</small>")
+        host_src_web_gui_get_all_slots_f0248782("get_all_slots()<br/><small>host/src/web_gui.rs</small>")
+        host_src_web_gui_index_to_slot_name_8f8951c0("index_to_slot_name()<br/><small>host/src/web_gui.rs</small>")
+        host_src_web_gui_peers_store_2faa650f("peers_store()<br/><small>host/src/web_gui.rs</small>")
+        host_src_web_gui_slots_store_59b1fc90("slots_store()<br/><small>host/src/web_gui.rs</small>")
+        host_src_web_gui_write_http_response_a913a66d("write_http_response()<br/><small>host/src/web_gui.rs</small>")
+        host_src_web_gui_mark_gui_active_574f672d("mark_gui_active()<br/><small>host/src/web_gui.rs</small>")
+        host_src_web_gui_normalize_slot_ip_40a04a12("normalize_slot_ip()<br/><small>host/src/web_gui.rs</small>")
+        host_src_web_gui_percent_decode_4682286e("percent_decode()<br/><small>host/src/web_gui.rs</small>")
+        host_src_web_gui_slot_name_to_index_19ca8d02("slot_name_to_index()<br/><small>host/src/web_gui.rs</small>")
+        host_src_web_gui_probe_kvm_receiver_port_0d58eb72("probe_kvm_receiver_port()<br/><small>host/src/web_gui.rs</small>")
+        host_src_web_gui_set_all_slots_mirror_c5caf572("set_all_slots_mirror()<br/><small>host/src/web_gui.rs</small>")
+        host_src_web_gui_start_peer_discovery_worker_60725f9c("peer discovery worker()<br/><small>host/src/web_gui.rs</small>")
+    end
+    host_src_main_test_layout_deduplication_228c5850("test_layout_deduplication()<br/><small>host/src/main.rs</small>")
+    host_src_main_test_layout_deduplication_228c5850 -->|calls| host_src_web_gui_get_all_slots_f0248782
     host_src_web_gui_build_status_json_fb1174ae -->|calls| host_src_web_gui_get_all_slots_f0248782
     host_src_web_gui_build_status_json_fb1174ae -->|calls| host_src_web_gui_index_to_slot_name_8f8951c0
     host_src_web_gui_build_status_json_fb1174ae -->|calls| host_src_web_gui_peers_store_2faa650f
     host_src_web_gui_get_all_slots_f0248782 -->|calls| host_src_web_gui_slots_store_59b1fc90
     host_src_web_gui_handle_http_client_20f6aea7 -->|calls| host_src_web_gui_write_http_response_a913a66d
+    host_src_web_gui_handle_http_client_20f6aea7 -->|calls| host_src_web_gui_mark_gui_active_574f672d
     host_src_web_gui_handle_http_client_20f6aea7 -->|calls| host_src_web_gui_build_status_json_fb1174ae
     host_src_web_gui_handle_http_client_20f6aea7 -->|calls| host_src_web_gui_normalize_slot_ip_40a04a12
     host_src_web_gui_handle_http_client_20f6aea7 -->|calls| host_src_web_gui_percent_decode_4682286e
@@ -178,29 +187,27 @@ flowchart LR
     host_src_web_gui_refresh_tailscale_peers_306770d6 -->|calls| host_src_web_gui_peers_store_2faa650f
     host_src_web_gui_set_all_slots_mirror_c5caf572 -->|calls| host_src_web_gui_slots_store_59b1fc90
     host_src_web_gui_start_gui_server_9512f502 -->|calls| host_src_web_gui_start_peer_discovery_worker_60725f9c
-    host_src_web_gui_start_gui_server_9512f502 -->|calls| host_src_web_gui_takeover_or_bind_c7f21444
-    host_src_web_gui_start_gui_server_9512f502 -->|calls| host_src_web_gui_open_browser_6f1b17f7
     host_src_web_gui_start_gui_server_9512f502 -->|calls| host_src_web_gui_handle_http_client_20f6aea7
     host_src_web_gui_start_peer_discovery_worker_60725f9c -->|calls| host_src_web_gui_refresh_tailscale_peers_306770d6
-    %% Omitted for readability: 33 nodes, 0 edges
+    %% Omitted for readability: 42 nodes, 0 edges
     class host_src_web_gui_16ccde2b module;
     class host_src_web_gui_handle_http_client_20f6aea7 entry;
     class host_src_web_gui_start_gui_server_9512f502 function;
     class host_src_web_gui_build_status_json_fb1174ae function;
     class host_src_web_gui_refresh_tailscale_peers_306770d6 function;
-    class host_src_web_gui_set_all_slots_mirror_c5caf572 function;
     class host_src_web_gui_get_all_slots_f0248782 function;
     class host_src_web_gui_index_to_slot_name_8f8951c0 function;
     class host_src_web_gui_peers_store_2faa650f ui;
     class host_src_web_gui_slots_store_59b1fc90 ui;
     class host_src_web_gui_write_http_response_a913a66d function;
+    class host_src_web_gui_mark_gui_active_574f672d function;
     class host_src_web_gui_normalize_slot_ip_40a04a12 function;
     class host_src_web_gui_percent_decode_4682286e function;
     class host_src_web_gui_slot_name_to_index_19ca8d02 function;
     class host_src_web_gui_probe_kvm_receiver_port_0d58eb72 function;
+    class host_src_web_gui_set_all_slots_mirror_c5caf572 function;
     class host_src_web_gui_start_peer_discovery_worker_60725f9c function;
-    class host_src_web_gui_takeover_or_bind_c7f21444 function;
-    class host_src_web_gui_open_browser_6f1b17f7 function;
+    class host_src_main_test_layout_deduplication_228c5850 test;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -232,14 +239,22 @@ flowchart LR
 </tr>
 <tr>
   <td>2</td>
-  <td><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td><span class="tag tag-class">Module</span></td>
+  <td><code>test_layout_deduplication()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><span class="tag tag-func">Test</span></td>
   <td>External entry / no inbound edge</td>
-  <td><code>bufread</code><br><code>bufreader</code><br><code>duration</code><br>+12 more</td>
-  <td>web_gui.rs node in host/src/web_gui.rs.</td>
+  <td><code>apply_slot_layout()</code><br><small style="color:var(--muted)">host/src/main.rs</small><br><code>get_all_slots()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>Verifies imports, entry points, or version behavior.</td>
 </tr>
 <tr>
   <td>3</td>
+  <td><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>AtomicU64</code><br><code>bufread</code><br><code>bufreader</code><br>+13 more</td>
+  <td>web_gui.rs node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>4</td>
   <td><code>build_status_json()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
@@ -247,7 +262,7 @@ flowchart LR
   <td>build_status_json() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>4</td>
+  <td>5</td>
   <td><code>CACHED_PEERS</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -255,7 +270,7 @@ flowchart LR
   <td>Caches analysis results or computes cache keys.</td>
 </tr>
 <tr>
-  <td>5</td>
+  <td>6</td>
   <td><code>get_all_slots()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>build_status_json()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>test_layout_deduplication()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -263,7 +278,7 @@ flowchart LR
   <td>get_all_slots() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>6</td>
+  <td>7</td>
   <td><code>GUI_SLOTS</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -271,23 +286,39 @@ flowchart LR
   <td>GUI_SLOTS node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>7</td>
+  <td>8</td>
   <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-cmd">Entry</span></td>
   <td><code>start_gui_server()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td><code>build_status_json()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>get_all_slots()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>normalize_slot_ip()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br>+3 more</td>
+  <td><code>build_status_json()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>get_all_slots()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>mark_gui_active()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br>+4 more</td>
   <td>handle_http_client() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>8</td>
+  <td>9</td>
   <td><code>index_to_slot_name()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
-  <td><code>build_status_json()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>spawn_slot_worker()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
+  <td><code>build_status_json()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>spawn_slot_worker()</code><br><small style="color:var(--muted)">host/src/main.rs</small><br><code>start_dual_recording()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
   <td>No direct outbound edge</td>
   <td>index_to_slot_name() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>9</td>
+  <td>10</td>
+  <td><code>LAST_GUI_ACTIVITY_MS</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>LAST_GUI_ACTIVITY_MS node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>mark_gui_active()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>mark_gui_active() node in host/src/web_gui.rs.</td>
+</tr>
+<tr>
+  <td>12</td>
   <td><code>normalize_slot_ip()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
@@ -295,7 +326,7 @@ flowchart LR
   <td>normalize_slot_ip() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>10</td>
+  <td>13</td>
   <td><code>open_browser()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>start_gui_server()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
@@ -303,7 +334,7 @@ flowchart LR
   <td>open_browser() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>11</td>
+  <td>14</td>
   <td><code>peers_store()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-hook">UI</span></td>
   <td><code>build_status_json()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>refresh_tailscale_peers()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
@@ -311,7 +342,7 @@ flowchart LR
   <td>peers_store() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>12</td>
+  <td>15</td>
   <td><code>percent_decode()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
@@ -319,7 +350,7 @@ flowchart LR
   <td>percent_decode() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>13</td>
+  <td>16</td>
   <td><code>probe_kvm_receiver_port()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>refresh_tailscale_peers()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
@@ -327,7 +358,7 @@ flowchart LR
   <td>probe_kvm_receiver_port() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>14</td>
+  <td>17</td>
   <td><code>refresh_tailscale_peers()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>peer discovery worker()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>resolve_initial_layout()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -335,7 +366,15 @@ flowchart LR
   <td>refresh_tailscale_peers() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>15</td>
+  <td>18</td>
+  <td><code>AtomicU64</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td>No direct outbound edge</td>
+  <td>AtomicU64 node in project.</td>
+</tr>
+<tr>
+  <td>19</td>
   <td><code>Mutex</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
@@ -343,7 +382,7 @@ flowchart LR
   <td>Mutex node in project.</td>
 </tr>
 <tr>
-  <td>16</td>
+  <td>20</td>
   <td><code>OnceLock</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
@@ -351,7 +390,7 @@ flowchart LR
   <td>OnceLock node in project.</td>
 </tr>
 <tr>
-  <td>17</td>
+  <td>21</td>
   <td><code>TcpStream</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-async">Async</span></td>
   <td><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
@@ -359,7 +398,7 @@ flowchart LR
   <td>TcpStream node in project.</td>
 </tr>
 <tr>
-  <td>18</td>
+  <td>22</td>
   <td><code>set_all_slots_mirror()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>apply_slot_layout()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -367,15 +406,15 @@ flowchart LR
   <td>set_all_slots_mirror() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>19</td>
+  <td>23</td>
   <td><code>slot_name_to_index()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
-  <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
+  <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>start_dual_recording()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
   <td>No direct outbound edge</td>
   <td>slot_name_to_index() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>20</td>
+  <td>24</td>
   <td><code>slots_store()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-hook">UI</span></td>
   <td><code>get_all_slots()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small><br><code>set_all_slots_mirror()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
@@ -383,7 +422,7 @@ flowchart LR
   <td>slots_store() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>21</td>
+  <td>25</td>
   <td><code>start_gui_server()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
@@ -391,7 +430,7 @@ flowchart LR
   <td>start_gui_server() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>22</td>
+  <td>26</td>
   <td><code>start_peer_discovery_worker()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>start_gui_server()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
@@ -399,7 +438,7 @@ flowchart LR
   <td>start_peer_discovery_worker() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>23</td>
+  <td>27</td>
   <td><code>takeover_or_bind()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>start_gui_server()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
@@ -407,7 +446,7 @@ flowchart LR
   <td>takeover_or_bind() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>24</td>
+  <td>28</td>
   <td><code>write_http_response()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>handle_http_client()</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
@@ -415,7 +454,7 @@ flowchart LR
   <td>write_http_response() node in host/src/web_gui.rs.</td>
 </tr>
 <tr>
-  <td>25</td>
+  <td>29</td>
   <td><code>TcpListener</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">receiver/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
@@ -423,44 +462,12 @@ flowchart LR
   <td>TcpListener node in project.</td>
 </tr>
 <tr>
-  <td>26</td>
+  <td>30</td>
   <td><code>bufread</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
   <td>No direct outbound edge</td>
   <td>bufread node in project.</td>
-</tr>
-<tr>
-  <td>27</td>
-  <td><code>json</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>json node in project.</td>
-</tr>
-<tr>
-  <td>28</td>
-  <td><code>shutdown</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>shutdown node in project.</td>
-</tr>
-<tr>
-  <td>29</td>
-  <td><code>tosocketaddrs</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main.rs</code><br><small style="color:var(--muted)">host/src/main.rs</small><br><code>web_gui.rs</code><br><small style="color:var(--muted)">host/src/web_gui.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>tosocketaddrs node in project.</td>
-</tr>
-<tr>
-  <td>30</td>
-  <td><code>README.md</code><br><small style="color:var(--muted)">README.md</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Documentation node describing README.md.</td>
 </tr>
 </table>
 
@@ -469,30 +476,30 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>host/src/web_gui.rs</code></td><td>21 nodes</td></tr>
-<tr><td><code>README.md</code></td><td>13 nodes</td></tr>
+      <tr><td><code>host/src/web_gui.rs</code></td><td>23 nodes</td></tr>
+<tr><td><code>README.md</code></td><td>15 nodes</td></tr>
 <tr><td><code>build.sh</code></td><td>2 nodes</td></tr>
 <tr><td><code>run-host.sh</code></td><td>2 nodes</td></tr>
 <tr><td><code>run-receiver.sh</code></td><td>2 nodes</td></tr>
 <tr><td><code>build.ps1</code></td><td>1 nodes</td></tr>
-<tr><td><code>receiver/src/main.rs</code></td><td>1 nodes</td></tr>
+<tr><td><code>host/src/main.rs</code></td><td>1 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: contains x35, calls x20, references x13, imports x8. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x39, calls x22, imports x14, references x13. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
 
 <!-- ====== 3. CLI & Skill Installers ====== -->
 <h2 id="cli-skills">3. CLI &amp; Skill Installers</h2>
-<p>CLI &amp; Skill Installers groups implementation around mainrs, host, receiver, hostrs, mostly in host/src/main.rs, receiver/src/main.rs, host/src/macos_host.rs. This section covers 328 nodes and 652 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>CLI &amp; Skill Installers groups implementation around mainrs, host, receiver, hostrs, mostly in host/src/main.rs, receiver/src/main.rs, host/src/macos_host.rs. This section covers 344 nodes and 705 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: CLI &amp; Skill Installers (328 nodes, 652 edges)
+    %% Section: CLI &amp; Skill Installers (344 nodes, 705 edges)
     subgraph cli_skills_host_src_main_rs_73a5450b["host/src/main.rs"]
         host_src_main_2cf1d6ba("main.rs")
         host_src_main_main_87004234("main()<br/><small>host/src/main.rs</small>")
@@ -500,14 +507,14 @@ flowchart LR
         host_src_main_edgedirection_parse_9c2a7180("parse()<br/><small>host/src/main.rs</small>")
         host_src_main_edgedirection_to_slot_index_1de4a372("to_slot_index()<br/><small>host/src/main.rs</small>")
         host_src_main_edgedirection_reciprocal_return_ed_c956ecd4("reciprocal_return_edge()<br/><small>host/src/main.rs</small>")
+        host_src_main_hostrecstate_c2ebc064("HostRecState<br/><small>host/src/main.rs</small>")
+        host_src_main_hostrecstate_default_69494a5c("default()<br/><small>host/src/main.rs</small>")
         host_src_main_slotchannel_cf19c057("SlotChannel<br/><small>host/src/main.rs</small>")
         host_src_main_slotchannel_new_42aeb78c("new()<br/><small>host/src/main.rs</small>")
-        host_src_main_slotchannel_notify_change_13d48a70("notify_change()<br/><small>host/src/main.rs</small>")
-        host_src_main_slotchannel_wait_timeout_928e5907("wait_timeout()<br/><small>host/src/main.rs</small>")
     end
     subgraph cli_skills_receiver_src_main_rs_687ecddc["receiver/src/main.rs"]
-        receiver_src_main_27e70eb4("main.rs")
         receiver_src_main_handle_connection_6d2ddb88("handle_connection()<br/><small>receiver/src/main.rs</small>")
+        receiver_src_main_27e70eb4("main.rs")
         receiver_src_main_returnedge_725f957f("ReturnEdge<br/><small>receiver/src/main.rs</small>")
         receiver_src_main_returnedge_parse_e483e4ee("parse()<br/><small>receiver/src/main.rs</small>")
         receiver_src_main_returnedge_from_u8_80874c07("from_u8()<br/><small>receiver/src/main.rs</small>")
@@ -521,26 +528,25 @@ flowchart LR
     receiver_src_main_returnedge_725f957f -->|method| receiver_src_main_returnedge_parse_e483e4ee
     receiver_src_main_returnedge_725f957f -->|method| receiver_src_main_returnedge_from_u8_80874c07
     receiver_src_main_returnedge_725f957f -->|method| receiver_src_main_returnedge_to_u8_2ccd001c
+    host_src_main_hostrecstate_c2ebc064 -->|method| host_src_main_hostrecstate_default_69494a5c
     host_src_main_slotchannel_cf19c057 -->|method| host_src_main_slotchannel_new_42aeb78c
-    host_src_main_slotchannel_cf19c057 -->|method| host_src_main_slotchannel_notify_change_13d48a70
-    host_src_main_slotchannel_cf19c057 -->|method| host_src_main_slotchannel_wait_timeout_928e5907
     receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_returnedge_parse_e483e4ee
     receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_returnedge_to_u8_2ccd001c
     receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_returnedge_from_u8_80874c07
     host_src_linux_host_77dd91d3 -->|imports| host_src_main_edgedirection_19e25450
-    %% Omitted for readability: 310 nodes, 0 edges
+    %% Omitted for readability: 326 nodes, 0 edges
     class host_src_main_2cf1d6ba module;
     class host_src_main_main_87004234 function;
     class host_src_main_edgedirection_19e25450 klass;
     class host_src_main_edgedirection_parse_9c2a7180 function;
     class host_src_main_edgedirection_to_slot_index_1de4a372 function;
     class host_src_main_edgedirection_reciprocal_return_ed_c956ecd4 function;
+    class host_src_main_hostrecstate_c2ebc064 klass;
+    class host_src_main_hostrecstate_default_69494a5c function;
     class host_src_main_slotchannel_cf19c057 klass;
     class host_src_main_slotchannel_new_42aeb78c function;
-    class host_src_main_slotchannel_notify_change_13d48a70 function;
-    class host_src_main_slotchannel_wait_timeout_928e5907 function;
-    class receiver_src_main_27e70eb4 module;
     class receiver_src_main_handle_connection_6d2ddb88 function;
+    class receiver_src_main_27e70eb4 module;
     class receiver_src_main_returnedge_725f957f klass;
     class receiver_src_main_returnedge_parse_e483e4ee function;
     class receiver_src_main_returnedge_from_u8_80874c07 function;
@@ -578,14 +584,6 @@ flowchart LR
 </tr>
 <tr>
   <td>2</td>
-  <td><code>warp_linux_cursor()</code><br><small style="color:var(--muted)">host/src/linux_host.rs</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>switch_to_local()</code><br><small style="color:var(--muted)">host/src/main.rs</small></td>
-  <td>No direct outbound edge</td>
-  <td>warp_linux_cursor() node in host/src/linux_host.rs.</td>
-</tr>
-<tr>
-  <td>3</td>
   <td><code>macos_host.rs</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-class">Module</span></td>
   <td>External entry / no inbound edge</td>
@@ -593,7 +591,7 @@ flowchart LR
   <td>macos_host.rs node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>4</td>
+  <td>3</td>
   <td><code>CFMachPortCreateRunLoopSource()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>run_macos_host_loop()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
@@ -601,7 +599,7 @@ flowchart LR
   <td>CFMachPortCreateRunLoopSource() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>5</td>
+  <td>4</td>
   <td><code>CFRunLoopAddSource()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>run_macos_host_loop()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
@@ -609,7 +607,7 @@ flowchart LR
   <td>CFRunLoopAddSource() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>6</td>
+  <td>5</td>
   <td><code>CFRunLoopGetCurrent()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>run_macos_host_loop()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
@@ -617,7 +615,7 @@ flowchart LR
   <td>CFRunLoopGetCurrent() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>7</td>
+  <td>6</td>
   <td><code>CFRunLoopRun()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>run_macos_host_loop()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
@@ -625,7 +623,7 @@ flowchart LR
   <td>CFRunLoopRun() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>8</td>
+  <td>7</td>
   <td><code>CGAssociateMouseAndMouseCursorPosition()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>set_macos_remote_capture()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
@@ -633,7 +631,7 @@ flowchart LR
   <td>CGAssociateMouseAndMouseCursorPosition() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>9</td>
+  <td>8</td>
   <td><code>CGDisplayPixelsHigh()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>update_macos_screen_bounds()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
@@ -641,7 +639,7 @@ flowchart LR
   <td>CGDisplayPixelsHigh() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>10</td>
+  <td>9</td>
   <td><code>CGDisplayPixelsWide()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>update_macos_screen_bounds()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
@@ -649,7 +647,7 @@ flowchart LR
   <td>CGDisplayPixelsWide() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>11</td>
+  <td>10</td>
   <td><code>CGEventGetIntegerValueField()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>macos_tap_callback()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
@@ -657,7 +655,7 @@ flowchart LR
   <td>CGEventGetIntegerValueField() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>12</td>
+  <td>11</td>
   <td><code>CGEventGetLocation()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>macos_tap_callback()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
@@ -665,7 +663,7 @@ flowchart LR
   <td>CGEventGetLocation() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>13</td>
+  <td>12</td>
   <td><code>CGEventTapCreate()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>run_macos_host_loop()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
@@ -673,7 +671,7 @@ flowchart LR
   <td>CGEventTapCreate() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>14</td>
+  <td>13</td>
   <td><code>CGEventTapEnable()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>macos_tap_callback()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small><br><code>run_macos_host_loop()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
@@ -681,7 +679,7 @@ flowchart LR
   <td>CGEventTapEnable() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>15</td>
+  <td>14</td>
   <td><code>CGMainDisplayID()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>update_macos_screen_bounds()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
@@ -689,7 +687,7 @@ flowchart LR
   <td>CGMainDisplayID() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>16</td>
+  <td>15</td>
   <td><code>CGWarpMouseCursorPosition()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>set_macos_remote_capture()</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
@@ -697,7 +695,7 @@ flowchart LR
   <td>CGWarpMouseCursorPosition() node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>17</td>
+  <td>16</td>
   <td><code>EVENT_TAP_PORT</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -705,7 +703,7 @@ flowchart LR
   <td>EVENT_TAP_PORT node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>18</td>
+  <td>17</td>
   <td><code>K_CG_EVENT_KEY_DOWN</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -713,7 +711,7 @@ flowchart LR
   <td>K_CG_EVENT_KEY_DOWN node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>19</td>
+  <td>18</td>
   <td><code>K_CG_EVENT_KEY_UP</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -721,7 +719,7 @@ flowchart LR
   <td>K_CG_EVENT_KEY_UP node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>20</td>
+  <td>19</td>
   <td><code>K_CG_EVENT_LEFT_MOUSE_DOWN</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -729,7 +727,7 @@ flowchart LR
   <td>K_CG_EVENT_LEFT_MOUSE_DOWN node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>21</td>
+  <td>20</td>
   <td><code>K_CG_EVENT_LEFT_MOUSE_DRAGGED</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -737,7 +735,7 @@ flowchart LR
   <td>Supports retrieval-augmented Q&amp;A or streaming chat.</td>
 </tr>
 <tr>
-  <td>22</td>
+  <td>21</td>
   <td><code>K_CG_EVENT_LEFT_MOUSE_UP</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -745,7 +743,7 @@ flowchart LR
   <td>K_CG_EVENT_LEFT_MOUSE_UP node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>23</td>
+  <td>22</td>
   <td><code>K_CG_EVENT_MOUSE_MOVED</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -753,7 +751,7 @@ flowchart LR
   <td>K_CG_EVENT_MOUSE_MOVED node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>24</td>
+  <td>23</td>
   <td><code>K_CG_EVENT_OTHER_MOUSE_DOWN</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -761,7 +759,7 @@ flowchart LR
   <td>K_CG_EVENT_OTHER_MOUSE_DOWN node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>25</td>
+  <td>24</td>
   <td><code>K_CG_EVENT_OTHER_MOUSE_DRAGGED</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -769,7 +767,7 @@ flowchart LR
   <td>Supports retrieval-augmented Q&amp;A or streaming chat.</td>
 </tr>
 <tr>
-  <td>26</td>
+  <td>25</td>
   <td><code>K_CG_EVENT_OTHER_MOUSE_UP</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -777,7 +775,7 @@ flowchart LR
   <td>K_CG_EVENT_OTHER_MOUSE_UP node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>27</td>
+  <td>26</td>
   <td><code>K_CG_EVENT_RIGHT_MOUSE_DOWN</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -785,7 +783,7 @@ flowchart LR
   <td>K_CG_EVENT_RIGHT_MOUSE_DOWN node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>28</td>
+  <td>27</td>
   <td><code>K_CG_EVENT_RIGHT_MOUSE_DRAGGED</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -793,7 +791,7 @@ flowchart LR
   <td>Supports retrieval-augmented Q&amp;A or streaming chat.</td>
 </tr>
 <tr>
-  <td>29</td>
+  <td>28</td>
   <td><code>K_CG_EVENT_RIGHT_MOUSE_UP</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -801,12 +799,20 @@ flowchart LR
   <td>K_CG_EVENT_RIGHT_MOUSE_UP node in host/src/macos_host.rs.</td>
 </tr>
 <tr>
-  <td>30</td>
+  <td>29</td>
   <td><code>K_CG_EVENT_SCROLL_WHEEL</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
   <td>K_CG_EVENT_SCROLL_WHEEL node in host/src/macos_host.rs.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>K_CG_EVENT_TAP_DISABLED_BY_TIMEOUT</code><br><small style="color:var(--muted)">host/src/macos_host.rs</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>K_CG_EVENT_TAP_DISABLED_BY_TIMEOUT node in host/src/macos_host.rs.</td>
 </tr>
 </table>
 
@@ -815,85 +821,82 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>host/src/main.rs</code></td><td>116 nodes</td></tr>
-<tr><td><code>receiver/src/main.rs</code></td><td>78 nodes</td></tr>
+      <tr><td><code>host/src/main.rs</code></td><td>129 nodes</td></tr>
+<tr><td><code>receiver/src/main.rs</code></td><td>85 nodes</td></tr>
 <tr><td><code>host/src/macos_host.rs</code></td><td>46 nodes</td></tr>
 <tr><td><code>host/src/linux_host.rs</code></td><td>11 nodes</td></tr>
+<tr><td><code>host/src/vk_map.rs</code></td><td>2 nodes</td></tr>
 <tr><td><code>host/install_background_service.ps1</code></td><td>1 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: contains x223, calls x182, imports x114, references x109. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x243, calls x216, references x132, imports x89. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
 
 <!-- ====== 4. Tests & Fixtures ====== -->
 <h2 id="tests-fixtures">4. Tests &amp; Fixtures</h2>
-<p>Tests &amp; Fixtures groups implementation around input, adapterrs, receiver, mouse, mostly in receiver/src/input_adapter.rs. This section covers 51 nodes and 94 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>Tests &amp; Fixtures groups implementation around input, adapterrs, receiver, screen, mostly in receiver/src/input_adapter.rs, shared/screen_record.rs. This section covers 100 nodes and 189 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Tests &amp; Fixtures (51 nodes, 94 edges)
-    receiver_src_input_adapter_6fe877f0("input_adapter.rs")
-    receiver_src_input_adapter_inputadapter_4cbcd1aa("InputAdapter<br/><small>receiver/src/input_adapter.rs</small>")
-    receiver_src_input_adapter_move_mouse_relative_039f9eb0("move_mouse_relative()<br/><small>receiver/src/input_adapter.rs</small>")
-    receiver_src_input_adapter_mouse_click_de295e21("mouse_click()<br/><small>receiver/src/input_adapter.rs</small>")
-    receiver_src_input_adapter_display_bounds_6684322f("display_bounds()<br/><small>receiver/src/input_adapter.rs</small>")
-    receiver_src_input_adapter_inputadapter_emit_key_860da4c7("emit_key()<br/><small>receiver/src/input_adapter.rs</small>")
-    receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca("emit_mouse_move()<br/><small>receiver/src/input_adapter.rs</small>")
-    receiver_src_input_adapter_inputadapter_emit_mou_05efa197("emit_mouse_wheel()<br/><small>receiver/src/input_adapter.rs</small>")
-    receiver_src_input_adapter_inputadapter_new_6ef6d95c("new()<br/><small>receiver/src/input_adapter.rs</small>")
-    receiver_src_input_adapter_inputadapter_emit_mou_47c9e68d("emit_mouse_click()<br/><small>receiver/src/input_adapter.rs</small>")
-    receiver_src_input_adapter_inputadapter_warp_cur_0a03f935("warp_cursor()<br/><small>receiver/src/input_adapter.rs</small>")
-    receiver_src_input_adapter_cursor_pos_eb35a0b1("cursor_pos()<br/><small>receiver/src/input_adapter.rs</small>")
-    receiver_src_input_adapter_cgeventcreate_80bf0789("CGEventCreate()<br/><small>receiver/src/input_adapter.rs</small>")
-    receiver_src_input_adapter_cgeventgetlocation_8eab799e("CGEventGetLocation()<br/><small>receiver/src/input_adapter.rs</small>")
-    receiver_src_input_adapter_cfrelease_a4b91423("CFRelease()<br/><small>receiver/src/input_adapter.rs</small>")
-    receiver_src_input_adapter_cgmaindisplayid_6cdc73e4("CGMainDisplayID()<br/><small>receiver/src/input_adapter.rs</small>")
-    receiver_src_input_adapter_cgdisplaypixelswide_4fb7472b("CGDisplayPixelsWide()<br/><small>receiver/src/input_adapter.rs</small>")
-    receiver_src_input_adapter_cgdisplaypixelshigh_2411fbf4("CGDisplayPixelsHigh()<br/><small>receiver/src/input_adapter.rs</small>")
+    %% Section: Tests &amp; Fixtures (100 nodes, 189 edges)
+    subgraph tests_fixtures_receiver_src_input_adapter_rs_2bb08228["receiver/src/input_adapter.rs"]
+        receiver_src_input_adapter_6fe877f0("input_adapter.rs")
+        receiver_src_input_adapter_inputadapter_4cbcd1aa("InputAdapter<br/><small>receiver/src/input_adapter.rs</small>")
+        receiver_src_input_adapter_move_mouse_relative_039f9eb0("move_mouse_relative()<br/><small>receiver/src/input_adapter.rs</small>")
+        receiver_src_input_adapter_mouse_click_de295e21("mouse_click()<br/><small>receiver/src/input_adapter.rs</small>")
+        receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca("emit_mouse_move()<br/><small>receiver/src/input_adapter.rs</small>")
+        receiver_src_input_adapter_inputadapter_emit_mou_05efa197("emit_mouse_wheel()<br/><small>receiver/src/input_adapter.rs</small>")
+        receiver_src_input_adapter_inputadapter_new_6ef6d95c("new()<br/><small>receiver/src/input_adapter.rs</small>")
+        receiver_src_input_adapter_inputadapter_emit_mou_47c9e68d("emit_mouse_click()<br/><small>receiver/src/input_adapter.rs</small>")
+        receiver_src_input_adapter_inputadapter_emit_key_860da4c7("emit_key()<br/><small>receiver/src/input_adapter.rs</small>")
+        receiver_src_input_adapter_inputadapter_warp_cur_0a03f935("warp_cursor()<br/><small>receiver/src/input_adapter.rs</small>")
+    end
+    subgraph tests_fixtures_shared_screen_record_rs_4348534a["shared/screen_record.rs"]
+        shared_screen_record_330d3acb("screen_record.rs")
+        shared_screen_record_start_capture_fe6ad781("start_capture()<br/><small>shared/screen_record.rs</small>")
+        shared_screen_record_build_stitch_filtergraph_959e599d("build_stitch_filtergraph()<br/><small>shared/screen_record.rs</small>")
+        shared_screen_record_escape_drawtext_04a5cbf4("escape_drawtext()<br/><small>shared/screen_record.rs</small>")
+        shared_screen_record_demo_pics_dir_b0c304d7("demo_pics_dir()<br/><small>shared/screen_record.rs</small>")
+        shared_screen_record_resolve_repo_root_40269543("resolve_repo_root()<br/><small>shared/screen_record.rs</small>")
+        shared_screen_record_detect_capture_backend_238218f5("detect_capture_backend()<br/><small>shared/screen_record.rs</small>")
+        shared_screen_record_command_exists_a31228f8("command_exists()<br/><small>shared/screen_record.rs</small>")
+    end
     receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca
     receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_emit_mou_05efa197
     receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_new_6ef6d95c
     receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_emit_mou_47c9e68d
     receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_emit_key_860da4c7
     receiver_src_input_adapter_inputadapter_4cbcd1aa -->|method| receiver_src_input_adapter_inputadapter_warp_cur_0a03f935
-    receiver_src_input_adapter_cursor_pos_eb35a0b1 -->|calls| receiver_src_input_adapter_cgeventcreate_80bf0789
-    receiver_src_input_adapter_cursor_pos_eb35a0b1 -->|calls| receiver_src_input_adapter_cgeventgetlocation_8eab799e
-    receiver_src_input_adapter_cursor_pos_eb35a0b1 -->|calls| receiver_src_input_adapter_cfrelease_a4b91423
-    receiver_src_input_adapter_display_bounds_6684322f -->|calls| receiver_src_input_adapter_cgmaindisplayid_6cdc73e4
-    receiver_src_input_adapter_display_bounds_6684322f -->|calls| receiver_src_input_adapter_cgdisplaypixelswide_4fb7472b
-    receiver_src_input_adapter_display_bounds_6684322f -->|calls| receiver_src_input_adapter_cgdisplaypixelshigh_2411fbf4
+    shared_screen_record_build_stitch_filtergraph_959e599d -->|calls| shared_screen_record_escape_drawtext_04a5cbf4
+    shared_screen_record_demo_pics_dir_b0c304d7 -->|calls| shared_screen_record_resolve_repo_root_40269543
+    shared_screen_record_detect_capture_backend_238218f5 -->|calls| shared_screen_record_command_exists_a31228f8
     receiver_src_input_adapter_inputadapter_emit_mou_47c9e68d -->|calls| receiver_src_input_adapter_mouse_click_de295e21
     receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca -->|calls| receiver_src_input_adapter_move_mouse_relative_039f9eb0
     receiver_src_input_adapter_inputadapter_warp_cur_0a03f935 -->|calls| receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca
-    receiver_src_input_adapter_mouse_click_de295e21 -->|calls| receiver_src_input_adapter_cursor_pos_eb35a0b1
-    receiver_src_input_adapter_mouse_click_de295e21 -->|calls| receiver_src_input_adapter_cfrelease_a4b91423
-    receiver_src_input_adapter_move_mouse_relative_039f9eb0 -->|calls| receiver_src_input_adapter_display_bounds_6684322f
-    receiver_src_input_adapter_move_mouse_relative_039f9eb0 -->|calls| receiver_src_input_adapter_cursor_pos_eb35a0b1
-    receiver_src_input_adapter_move_mouse_relative_039f9eb0 -->|calls| receiver_src_input_adapter_cfrelease_a4b91423
-    %% Omitted for readability: 33 nodes, 0 edges
+    %% Omitted for readability: 82 nodes, 0 edges
     class receiver_src_input_adapter_6fe877f0 module;
     class receiver_src_input_adapter_inputadapter_4cbcd1aa klass;
     class receiver_src_input_adapter_move_mouse_relative_039f9eb0 function;
     class receiver_src_input_adapter_mouse_click_de295e21 entry;
-    class receiver_src_input_adapter_display_bounds_6684322f function;
-    class receiver_src_input_adapter_inputadapter_emit_key_860da4c7 function;
     class receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca function;
     class receiver_src_input_adapter_inputadapter_emit_mou_05efa197 function;
     class receiver_src_input_adapter_inputadapter_new_6ef6d95c function;
     class receiver_src_input_adapter_inputadapter_emit_mou_47c9e68d entry;
+    class receiver_src_input_adapter_inputadapter_emit_key_860da4c7 function;
     class receiver_src_input_adapter_inputadapter_warp_cur_0a03f935 function;
-    class receiver_src_input_adapter_cursor_pos_eb35a0b1 function;
-    class receiver_src_input_adapter_cgeventcreate_80bf0789 function;
-    class receiver_src_input_adapter_cgeventgetlocation_8eab799e function;
-    class receiver_src_input_adapter_cfrelease_a4b91423 function;
-    class receiver_src_input_adapter_cgmaindisplayid_6cdc73e4 function;
-    class receiver_src_input_adapter_cgdisplaypixelswide_4fb7472b function;
-    class receiver_src_input_adapter_cgdisplaypixelshigh_2411fbf4 function;
+    class shared_screen_record_330d3acb module;
+    class shared_screen_record_start_capture_fe6ad781 function;
+    class shared_screen_record_build_stitch_filtergraph_959e599d function;
+    class shared_screen_record_escape_drawtext_04a5cbf4 function;
+    class shared_screen_record_demo_pics_dir_b0c304d7 function;
+    class shared_screen_record_resolve_repo_root_40269543 function;
+    class shared_screen_record_detect_capture_backend_238218f5 function;
+    class shared_screen_record_command_exists_a31228f8 entry;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -1162,29 +1165,35 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>receiver/src/input_adapter.rs</code></td><td>42 nodes</td></tr>
+      <tr><td><code>receiver/src/input_adapter.rs</code></td><td>43 nodes</td></tr>
+<tr><td><code>shared/screen_record.rs</code></td><td>36 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: contains x35, calls x33, references x11, imports x9. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x69, calls x66, references x24, imports x22. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
 
-<!-- ====== 5. Maprs Host Translate ====== -->
-<h2 id="maprs-host-translate">5. Maprs Host Translate</h2>
-<p>Maprs Host Translate groups implementation around maprs, host, translate, mostly in host/src/vk_map.rs. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<!-- ====== 5. Stitch Demosh Scripts ====== -->
+<h2 id="stitch-demosh-scripts">5. Stitch Demosh Scripts</h2>
+<p>Stitch Demosh Scripts groups implementation around stitch, demosh, scripts, escape, mostly in scripts/stitch-demo.sh. This section covers 4 nodes and 5 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Maprs Host Translate (2 nodes, 1 edges)
-    host_src_vk_map_e00ee964("vk_map.rs")
-    host_src_vk_map_translate_vk_f3eae25d("translate_vk()<br/><small>host/src/vk_map.rs</small>")
-    host_src_vk_map_e00ee964 -->|contains| host_src_vk_map_translate_vk_f3eae25d
-    class host_src_vk_map_e00ee964 module;
-    class host_src_vk_map_translate_vk_f3eae25d function;
+    %% Section: Stitch Demosh Scripts (4 nodes, 5 edges)
+    scripts_stitch_demo_sh_entry_2a997ffd("stitch-demo.sh script<br/><small>scripts/stitch-demo.sh</small>")
+    scripts_stitch_demo_escape_dt_a338a236("escape_dt()<br/><small>scripts/stitch-demo.sh</small>")
+    scripts_stitch_demo_make_filter_606f67a8("make_filter()<br/><small>scripts/stitch-demo.sh</small>")
+    scripts_stitch_demo_sh_scripts_stitch_demo_cd52b2f0("stitch-demo.sh")
+    scripts_stitch_demo_sh_entry_2a997ffd -->|calls| scripts_stitch_demo_escape_dt_a338a236
+    scripts_stitch_demo_sh_entry_2a997ffd -->|calls| scripts_stitch_demo_make_filter_606f67a8
+    class scripts_stitch_demo_sh_entry_2a997ffd function;
+    class scripts_stitch_demo_escape_dt_a338a236 function;
+    class scripts_stitch_demo_make_filter_606f67a8 function;
+    class scripts_stitch_demo_sh_scripts_stitch_demo_cd52b2f0 function;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -1208,19 +1217,35 @@ flowchart LR
 </tr>
 <tr>
   <td>1</td>
-  <td><code>vk_map.rs</code><br><small style="color:var(--muted)">host/src/vk_map.rs</small></td>
-  <td><span class="tag tag-class">Module</span></td>
-  <td>External entry / no inbound edge</td>
+  <td><code>escape_dt()</code><br><small style="color:var(--muted)">scripts/stitch-demo.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>stitch-demo.sh script</code><br><small style="color:var(--muted)">scripts/stitch-demo.sh</small></td>
   <td>No direct outbound edge</td>
-  <td>vk_map.rs node in host/src/vk_map.rs.</td>
+  <td>escape_dt() node in scripts/stitch-demo.sh.</td>
 </tr>
 <tr>
   <td>2</td>
-  <td><code>translate_vk()</code><br><small style="color:var(--muted)">host/src/vk_map.rs</small></td>
+  <td><code>make_filter()</code><br><small style="color:var(--muted)">scripts/stitch-demo.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>stitch-demo.sh script</code><br><small style="color:var(--muted)">scripts/stitch-demo.sh</small></td>
+  <td>No direct outbound edge</td>
+  <td>make_filter() node in scripts/stitch-demo.sh.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>stitch-demo.sh script</code><br><small style="color:var(--muted)">scripts/stitch-demo.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>escape_dt()</code><br><small style="color:var(--muted)">scripts/stitch-demo.sh</small><br><code>make_filter()</code><br><small style="color:var(--muted)">scripts/stitch-demo.sh</small></td>
+  <td>stitch-demo.sh script node in scripts/stitch-demo.sh.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>stitch-demo.sh</code><br><small style="color:var(--muted)">scripts/stitch-demo.sh</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>translate_vk() node in host/src/vk_map.rs.</td>
+  <td>stitch-demo.sh node in scripts/stitch-demo.sh.</td>
 </tr>
 </table>
 
@@ -1229,12 +1254,12 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>host/src/vk_map.rs</code></td><td>2 nodes</td></tr>
+      <tr><td><code>scripts/stitch-demo.sh</code></td><td>4 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: contains x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: calls x2, defines x2, contains x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
@@ -1351,8 +1376,64 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 8. Run Hostps1 ====== -->
-<h2 id="run-hostps1">8. Run Hostps1</h2>
+<!-- ====== 8. Stitch Demops1 Scripts ====== -->
+<h2 id="stitch-demops1-scripts">8. Stitch Demops1 Scripts</h2>
+<p>Stitch Demops1 Scripts groups implementation around stitch, demops1, scripts, mostly in scripts/stitch-demo.ps1. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Stitch Demops1 Scripts (1 nodes, 0 edges)
+    scripts_stitch_demo_ps1_scripts_stitch_demo_728fa421("stitch-demo.ps1")
+    class scripts_stitch_demo_ps1_scripts_stitch_demo_728fa421 function;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>stitch-demo.ps1</code><br><small style="color:var(--muted)">scripts/stitch-demo.ps1</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>stitch-demo.ps1 node in scripts/stitch-demo.ps1.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>scripts/stitch-demo.ps1</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: No high-confidence call edges detected. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 9. Run Hostps1 ====== -->
+<h2 id="run-hostps1">9. Run Hostps1</h2>
 <p>Run Hostps1 groups implementation around run, hostps1, mostly in run-host.ps1. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1407,8 +1488,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 9. Run Receiverps1 ====== -->
-<h2 id="run-receiverps1">9. Run Receiverps1</h2>
+<!-- ====== 10. Run Receiverps1 ====== -->
+<h2 id="run-receiverps1">10. Run Receiverps1</h2>
 <p>Run Receiverps1 groups implementation around run, receiverps1, mostly in run-receiver.ps1. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1469,18 +1550,18 @@ flowchart LR
   <div class="card">
     <h4>Graph</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>Nodes</td><td>436</td></tr>
-      <tr><td>Edges</td><td>848</td></tr>
+      <tr><td>Nodes</td><td>513</td></tr>
+      <tr><td>Edges</td><td>1040</td></tr>
       <tr><td>Hyperedges</td><td>0</td></tr>
-      <tr><td>Communities</td><td>32</td></tr>
-      <tr><td>Documented Sections</td><td>8</td></tr>
+      <tr><td>Communities</td><td>33</td></tr>
+      <tr><td>Documented Sections</td><td>9</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Edge Confidence</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>EXTRACTED</td><td>838</td></tr>
-      <tr><td>INFERRED</td><td>10</td></tr>
+      <tr><td>EXTRACTED</td><td>1028</td></tr>
+      <tr><td>INFERRED</td><td>12</td></tr>
       <tr><td>AMBIGUOUS</td><td>0</td></tr>
     </table>
   </div>
@@ -1488,7 +1569,7 @@ flowchart LR
 
 <div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
   <p>tailscale-kvm — Architecture Documentation</p>
-  <p>Generated: 2026-11-07 04:43 UTC · graphify callflow-html</p>
+  <p>Generated: 2026-11-08 17:58 UTC · graphify callflow-html</p>
 </div>
 
 </div><!-- .container -->
