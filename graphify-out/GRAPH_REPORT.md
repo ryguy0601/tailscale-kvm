@@ -1,17 +1,17 @@
 # Graph Report - tailscale-kvm  (2026-11-08)
 
 ## Corpus Check
-- 21 files · ~33,974 words
+- 21 files · ~33,979 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 4 file(s) not represented in the graph (top: (none) 3, .toml 1)
 
 ## Summary
-- 513 nodes · 1040 edges · 33 communities (25 shown, 8 thin omitted)
+- 514 nodes · 1034 edges · 38 communities (28 shown, 10 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 12 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `be9a009d`
+- Built from commit: `8eb069a4`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -44,14 +44,17 @@
 - spawn_slot_worker
 - stitch-demo.sh script
 - build.sh script
+- EdgeDirection
+- resolve_initial_layout
+- DragKind
 
 ## God Nodes (most connected - your core abstractions)
 1. `handle_connection()` - 27 edges
 2. `execute_handoff()` - 14 edges
-3. `main()` - 14 edges
-4. `switch_to_local()` - 13 edges
-5. `spawn_slot_worker()` - 13 edges
-6. `send_bytes_to_slot()` - 12 edges
+3. `spawn_slot_worker()` - 13 edges
+4. `main()` - 13 edges
+5. `send_bytes_to_slot()` - 12 edges
+6. `switch_to_local()` - 12 edges
 7. `ReturnEdge` - 12 edges
 8. `rec_coord()` - 11 edges
 9. `start_dual_recording()` - 11 edges
@@ -72,7 +75,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (33 total, 8 thin omitted)
+## Communities (38 total, 10 thin omitted)
 
 ### Community 0 - "AtomicBool"
 Cohesion: 0.18
@@ -84,7 +87,7 @@ Nodes (12): copy_text_to_system_clipboard(), decode_base64(), downloads_dir(), h
 
 ### Community 2 - "windows-host/src/main.rs"
 Cohesion: 0.05
-Nodes (18): ACTIVE_REMOTE_SLOT, CF_DIB_FMT, CF_DIBV5_FMT, CF_HDROP_FMT, CF_UNICODETEXT_FMT, DRAG_CLICK_HWND, FILE_CHUNK_SIZE, LAST_CLIP_SEQ (+10 more)
+Nodes (17): ACTIVE_REMOTE_SLOT, CF_DIB_FMT, CF_DIBV5_FMT, CF_HDROP_FMT, CF_UNICODETEXT_FMT, DRAG_CLICK_HWND, FILE_CHUNK_SIZE, LAST_CLIP_SEQ (+9 more)
 
 ### Community 3 - "receiver/src/main.rs"
 Cohesion: 0.09
@@ -99,20 +102,20 @@ Cohesion: 0.13
 Nodes (14): 1. Build the Workspace, 2. Enable Boot-Time Linux `/dev/uinput` Access & Receiver Auto-Start, 3. Run Manually (Host & Receiver), 🏗 Architecture & Tech Stack, 🎮 Controls & Shortcuts, 🎬 Dual-Computer Demo Recording & Portfolio Sync, 🕸 Graphify Knowledge Graph, 🌟 Key Features (+6 more)
 
 ### Community 6 - "execute_handoff"
-Cohesion: 0.17
-Nodes (14): cancel_active_drag_and_release_mouse(), classify_window(), DragKind, Browser, Explorer, Other, execute_handoff(), looks_like_url() (+6 more)
+Cohesion: 0.26
+Nodes (10): cancel_active_drag_and_release_mouse(), classify_window(), execute_handoff(), looks_like_url(), make_key_input(), read_clipboard_files(), send_inputs(), tap_chord() (+2 more)
 
 ### Community 7 - "macos_host.rs"
 Cohesion: 0.07
-Nodes (47): CFMachPortCreateRunLoopSource(), CFRunLoopAddSource(), CFRunLoopGetCurrent(), CFRunLoopRun(), CGAssociateMouseAndMouseCursorPosition(), CGDisplayPixelsHigh(), CGDisplayPixelsWide(), CGEventGetIntegerValueField() (+39 more)
+Nodes (44): CFMachPortCreateRunLoopSource(), CFRunLoopAddSource(), CFRunLoopGetCurrent(), CFRunLoopRun(), CGAssociateMouseAndMouseCursorPosition(), CGDisplayPixelsHigh(), CGDisplayPixelsWide(), CGEventGetIntegerValueField() (+36 more)
 
 ### Community 8 - "start_windows_clipboard_sync"
-Cohesion: 0.18
-Nodes (11): any_slot_connected(), broadcast_clipboard_text(), collect_transfer_entries(), read_clipboard_dib_bytes(), read_clipboard_unicode_text(), resolve_target_addr(), slot_target_ip(), start_windows_clipboard_sync() (+3 more)
+Cohesion: 0.33
+Nodes (6): collect_transfer_entries(), resolve_target_addr(), slot_target_ip(), stream_files_to_receiver(), stream_image_to_connected_receivers(), stream_recording_file_to_receiver()
 
 ### Community 10 - "linux_host.rs"
-Cohesion: 0.11
-Nodes (18): fcntl(), libc_fcntl_getfl(), libc_fcntl_setfl(), open_physical_input_devices(), query_linux_cursor_pos(), run_linux_host_loop(), start_linux_clipboard_sync(), update_linux_screen_bounds() (+10 more)
+Cohesion: 0.12
+Nodes (12): fcntl(), libc_fcntl_getfl(), libc_fcntl_setfl(), open_physical_input_devices(), query_linux_cursor_pos(), run_linux_host_loop(), start_linux_clipboard_sync(), update_linux_screen_bounds() (+4 more)
 
 ### Community 13 - "screen_record.rs"
 Cohesion: 0.08
@@ -143,7 +146,7 @@ Cohesion: 0.40
 Nodes (6): ActiveApp, Browser, FileManager, Other, Terminal, get_active_hyprland_app()
 
 ### Community 20 - "input_adapter.rs"
-Cohesion: 0.07
+Cohesion: 0.08
 Nodes (36): CFRelease(), CGDisplayPixelsHigh(), CGDisplayPixelsWide(), CGEventCreate(), CGEventCreateKeyboardEvent(), CGEventCreateMouseEvent(), CGEventCreateScrollWheelEvent(), CGEventGetLocation() (+28 more)
 
 ### Community 21 - "main"
@@ -160,11 +163,11 @@ Nodes (6): ACTIVE_CONTROL_WRITER, ACTIVE_HOST_PEER, handle_receiver_record_comma
 
 ### Community 24 - "main"
 Cohesion: 0.20
-Nodes (10): explicit_cli_target(), init_edge_overlay(), legacy_env_or_config_target(), load_layout_file(), main(), print_usage(), resolve_initial_layout(), start_all_slot_workers() (+2 more)
+Nodes (11): any_slot_connected(), broadcast_clipboard_text(), init_edge_overlay(), main(), print_usage(), read_clipboard_dib_bytes(), read_clipboard_unicode_text(), start_all_slot_workers() (+3 more)
 
 ### Community 25 - "spawn_slot_worker"
-Cohesion: 0.08
-Nodes (30): warp_linux_cursor(), apply_slot_layout(), build_recording_status_json(), export_latest_recording(), first_connected_slot(), HOST_REC_COORD, HostRecState, keyboard_hook_proc() (+22 more)
+Cohesion: 0.09
+Nodes (32): warp_linux_cursor(), apply_slot_layout(), build_recording_status_json(), export_latest_recording(), first_connected_slot(), hide_edge_overlay(), HOST_REC_COORD, HostRecState (+24 more)
 
 ### Community 26 - "stitch-demo.sh script"
 Cohesion: 0.83
@@ -174,25 +177,37 @@ Nodes (3): escape_dt(), make_filter(), stitch-demo.sh script
 Cohesion: 0.33
 Nodes (3): build.sh script, run-host.sh script, run-receiver.sh script
 
+### Community 30 - "EdgeDirection"
+Cohesion: 0.29
+Nodes (6): EdgeDirection, Down, Left, Right, Up, get_config_direction()
+
+### Community 31 - "resolve_initial_layout"
+Cohesion: 0.40
+Nodes (4): explicit_cli_target(), legacy_env_or_config_target(), load_layout_file(), resolve_initial_layout()
+
+### Community 35 - "DragKind"
+Cohesion: 0.50
+Nodes (4): DragKind, Browser, Explorer, Other
+
 ## Knowledge Gaps
-- **18 isolated node(s):** `tailscale-kvm-host`, `Right`, `Left`, `Up`, `Down` (+13 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 130 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **8 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **18 isolated node(s):** `Right`, `Left`, `Up`, `Down`, `Browser` (+13 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 133 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `InputAdapter` connect `input_adapter.rs` to `handle_connection`, `receiver/src/main.rs`?**
-  _High betweenness centrality (0.042) - this node is a cross-community bridge._
-- **Are the 2 inferred relationships involving `switch_to_local()` (e.g. with `run_linux_host_loop()` and `macos_tap_callback()`) actually correct?**
-  _`switch_to_local()` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `tailscale-kvm-host`, `Right`, `Left` to the rest of the system?**
+  _High betweenness centrality (0.041) - this node is a cross-community bridge._
+- **What connects `Right`, `Left`, `Up` to the rest of the system?**
   _18 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `windows-host/src/main.rs` be split into smaller, more focused modules?**
-  _Cohesion score 0.04810360777058279 - nodes in this community are weakly interconnected._
-- **Why does `EdgeDirection` connect `linux_host.rs` to `main`, `spawn_slot_worker`, `windows-host/src/main.rs`?**
+  _Cohesion score 0.049494949494949494 - nodes in this community are weakly interconnected._
+- **Why does `EdgeDirection` connect `EdgeDirection` to `linux_host.rs`, `windows-host/src/main.rs`, `resolve_initial_layout`?**
   _High betweenness centrality (0.021) - this node is a cross-community bridge._
 - **Should `receiver/src/main.rs` be split into smaller, more focused modules?**
   _Cohesion score 0.0873440285204991 - nodes in this community are weakly interconnected._
 - **Why does `ReturnEdge` connect `ReturnEdge` to `receiver/src/main.rs`, `main`?**
   _High betweenness centrality (0.018) - this node is a cross-community bridge._
+- **Should `⚡ Tailscale Software KVM — Universal Multi-Directional Mesh (Pure Rust)` be split into smaller, more focused modules?**
+  _Cohesion score 0.13333333333333333 - nodes in this community are weakly interconnected._

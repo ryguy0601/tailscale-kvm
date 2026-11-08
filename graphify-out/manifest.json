@@ -5,18 +5,6 @@
     "ast_hash": "d75833ce79dce29d379bd11c6ea2d1f2",
     "semantic_hash": ""
   },
-  "demoPics/01-architecture-graph.png": {
-    "mtime": 1794009551.8829772,
-    "seen": 1794009574.3973706,
-    "ast_hash": "5c88bc2aad6d116ecec73555fa5bf8e1",
-    "semantic_hash": ""
-  },
-  "demoPics/02-callflow-diagram.png": {
-    "mtime": 1794009554.5909483,
-    "seen": 1794009574.3973749,
-    "ast_hash": "a0094794d4a5ba111a2aff1622b59232",
-    "semantic_hash": ""
-  },
   "Cargo.toml": {
     "mtime": 1794022758.6867192,
     "seen": 1794022773.281518,
@@ -102,9 +90,9 @@
     "semantic_hash": ""
   },
   "host/gui_static/index.html": {
-    "mtime": 1794160605.1225433,
-    "seen": 1794160685.8147416,
-    "ast_hash": "e7ad8c4713da1b40ce9aa6f3f8c2ef2c",
+    "mtime": 1794160814.2753427,
+    "seen": 1794161218.0270147,
+    "ast_hash": "0a0b69f7ab8eb55352d98e7b97b2ce4d",
     "semantic_hash": ""
   },
   "receiver/src/input_adapter.rs": {
@@ -141,6 +129,24 @@
     "mtime": 1794160633.5668848,
     "seen": 1794160685.81474,
     "ast_hash": "acc1b28c1d9f935a5d97da3d06225bad",
+    "semantic_hash": ""
+  },
+  "demoPics/01-web-dashboard.png": {
+    "mtime": 1794160830.0760725,
+    "seen": 1794161218.0270166,
+    "ast_hash": "8e3091498fd6955858317d943a456bcd",
+    "semantic_hash": ""
+  },
+  "demoPics/02-dashboard-demo.webp": {
+    "mtime": 1794160851.2447174,
+    "seen": 1794161218.0270188,
+    "ast_hash": "8e1ba00f5a4fd3043e4ba9e2939070a3",
+    "semantic_hash": ""
+  },
+  "demoPics/03-architecture-graph.png": {
+    "mtime": 1794160849.8357408,
+    "seen": 1794161218.0270202,
+    "ast_hash": "5d9e28a4b30255f37900fd716fd51acd",
     "semantic_hash": ""
   }
 }
