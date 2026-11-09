@@ -48,9 +48,9 @@
     "semantic_hash": ""
   },
   "host/Cargo.toml": {
-    "mtime": 1794025431.7613592,
-    "seen": 1794026525.8101616,
-    "ast_hash": "f797c2201040d5f1449204197801a114",
+    "mtime": 1794196132.3729506,
+    "seen": 1794196207.1556828,
+    "ast_hash": "c1588da6803a12f1a2a0154502ac1a94",
     "semantic_hash": ""
   },
   "host/install_background_service.ps1": {
@@ -60,9 +60,9 @@
     "semantic_hash": ""
   },
   "host/src/main.rs": {
-    "mtime": 1794191416.860687,
-    "seen": 1794191501.5603056,
-    "ast_hash": "cf4563755827aad8f264e8fc4428f50c",
+    "mtime": 1794196112.5993152,
+    "seen": 1794196207.1556866,
+    "ast_hash": "25757e037fa28a2f99308d0039515afa",
     "semantic_hash": ""
   },
   "host/src/vk_map.rs": {
@@ -72,15 +72,15 @@
     "semantic_hash": ""
   },
   "host/src/web_gui.rs": {
-    "mtime": 1794191387.5923858,
-    "seen": 1794191501.5603082,
-    "ast_hash": "590155233516fb52383d8443acf0c158",
+    "mtime": 1794196135.1848986,
+    "seen": 1794196207.1556888,
+    "ast_hash": "1573057fc6d0b6ec489efc24002f5cc4",
     "semantic_hash": ""
   },
   "receiver/Cargo.toml": {
-    "mtime": 1794025430.5413857,
-    "seen": 1794026525.8101754,
-    "ast_hash": "471b94408efb61c6f2fd53dadaf59db3",
+    "mtime": 1794195800.4638178,
+    "seen": 1794195810.0611851,
+    "ast_hash": "ba47b835324182e5cfcd9c4374987f15",
     "semantic_hash": ""
   },
   "receiver/src/main.rs": {
@@ -90,9 +90,9 @@
     "semantic_hash": ""
   },
   "host/gui_static/index.html": {
-    "mtime": 1794191466.643791,
-    "seen": 1794191501.5603175,
-    "ast_hash": "4a7ea74eb1d7c32e6ee41790af881dd2",
+    "mtime": 1794196191.1688578,
+    "seen": 1794196207.1556985,
+    "ast_hash": "3a81122c7cb0a2ea96332498d28d4c46",
     "semantic_hash": ""
   },
   "receiver/src/input_adapter.rs": {
@@ -102,9 +102,9 @@
     "semantic_hash": ""
   },
   "host/src/linux_host.rs": {
-    "mtime": 1794180251.509742,
-    "seen": 1794180448.9878078,
-    "ast_hash": "feece265f8081b11f1e65a6228a12989",
+    "mtime": 1794196098.359577,
+    "seen": 1794196207.155685,
+    "ast_hash": "d7b9c8ec5bec30265e0dd95f50acbd6c",
     "semantic_hash": ""
   },
   "host/src/macos_host.rs": {

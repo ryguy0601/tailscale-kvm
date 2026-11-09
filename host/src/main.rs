@@ -2404,12 +2404,12 @@ unsafe extern "system" fn enum_monitors_callback(
         return 1;
     }
     let mut mi: MONITORINFOEXW = std::mem::zeroed();
-    mi.cbSize = std::mem::size_of::<MONITORINFOEXW>() as u32;
+    mi.monitorInfo.cbSize = std::mem::size_of::<MONITORINFOEXW>() as u32;
     if GetMonitorInfoW(hmon, &mut mi as *mut _ as *mut MONITORINFO) != 0 {
-        let rc = mi.rcMonitor;
+        let rc = mi.monitorInfo.rcMonitor;
         let w = (rc.right - rc.left).max(1);
         let h = (rc.bottom - rc.top).max(1);
-        let is_pri = (mi.dwFlags & 1) != 0; // MONITORINFOF_PRIMARY = 1
+        let is_pri = (mi.monitorInfo.dwFlags & 1) != 0; // MONITORINFOF_PRIMARY = 1
 
         let dev_name = {
             let len = mi.szDevice.iter().position(|&c| c == 0).unwrap_or(mi.szDevice.len());
