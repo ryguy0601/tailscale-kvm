@@ -8,6 +8,29 @@ set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 cd "$DIR"
 
+if [ "$1" = "--install-startup" ]; then
+    AUTOSTART_DIR="$HOME/.config/autostart"
+    mkdir -p "$AUTOSTART_DIR"
+    cat <<EOF > "$AUTOSTART_DIR/tailscale-kvm.desktop"
+[Desktop Entry]
+Type=Application
+Name=Tailscale Universal KVM
+Exec=$DIR/run-kvm.sh
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Comment=Tailscale Universal KVM Unified Node
+EOF
+    echo "[OK] Registered Tailscale Universal KVM in ~/.config/autostart/tailscale-kvm.desktop"
+    exit 0
+fi
+
+if [ "$1" = "--uninstall-startup" ]; then
+    rm -f "$HOME/.config/autostart/tailscale-kvm.desktop"
+    echo "[OK] Removed Tailscale Universal KVM from autostart."
+    exit 0
+fi
+
 MODE="${1:-all}"
 if [ "$MODE" = "host" ] || [ "$MODE" = "receiver" ] || [ "$MODE" = "all" ] || [ "$MODE" = "both" ]; then
     shift || true

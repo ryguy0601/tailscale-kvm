@@ -8,17 +8,19 @@
     
     Any computer running 'run-kvm' can be either a Host, a Receiver, or both!
 
-.PARAMETER Mode
-    Optional override:
-      'all' (default): Runs Receiver daemon in the background and launches Host controller in foreground.
-      'host': Runs Host controller only.
-      'receiver': Runs Receiver daemon only.
+.PARAMETER InstallStartup
+    Registers Tailscale Universal KVM to run automatically on Windows startup.
+.PARAMETER UninstallStartup
+    Removes the Windows startup registration.
 #>
 [CmdletBinding()]
 param (
     [Parameter(Position = 0)]
     [ValidateSet("all", "host", "receiver", "both")]
     [string]$Mode = "all",
+
+    [switch]$InstallStartup,
+    [switch]$UninstallStartup,
 
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$ExtraArgs
@@ -28,6 +30,33 @@ $ErrorActionPreference = "Stop"
 
 $repoDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $repoDir
+
+$StartupFolder = [Environment]::GetFolderPath("Startup")
+$ShortcutPath = Join-Path $StartupFolder "TailscaleUniversalKVM.lnk"
+
+if ($UninstallStartup) {
+    if (Test-Path $ShortcutPath) {
+        Remove-Item -Path $ShortcutPath -Force
+        Write-Host "[OK] Removed Tailscale Universal KVM from Windows Startup." -ForegroundColor Green
+    } else {
+        Write-Host "[*] No startup shortcut found to remove." -ForegroundColor Yellow
+    }
+    exit 0
+}
+
+if ($InstallStartup) {
+    $WScriptShell = New-Object -ComObject WScript.Shell
+    $Shortcut = $WScriptShell.CreateShortcut($ShortcutPath)
+    $Shortcut.TargetPath = "powershell.exe"
+    $Shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$repoDir\run-kvm.ps1`""
+    $Shortcut.WorkingDirectory = $repoDir
+    $Shortcut.WindowStyle = 7
+    $Shortcut.Description = "Tailscale Universal KVM Unified Node (Host & Receiver)"
+    $Shortcut.Save()
+    Write-Host "[OK] Tailscale Universal KVM registered to run automatically on startup!" -ForegroundColor Green
+    Write-Host "     Shortcut: $ShortcutPath" -ForegroundColor Cyan
+    exit 0
+}
 
 $hostExe = Join-Path $repoDir "target\release\tailscale-kvm-host.exe"
 $recvExe = Join-Path $repoDir "target\release\tailscale-kvm-receiver.exe"
