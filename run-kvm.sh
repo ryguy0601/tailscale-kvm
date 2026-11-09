@@ -18,8 +18,20 @@ fi
 HOST_BIN="$DIR/target/release/tailscale-kvm-host"
 RECV_BIN="$DIR/target/release/tailscale-kvm-receiver"
 
+NEEDS_BUILD=false
 if [ ! -x "$HOST_BIN" ] || [ ! -x "$RECV_BIN" ]; then
-    echo "[*] Release binaries not found. Building release binaries first..."
+    NEEDS_BUILD=true
+else
+    GIT_COMMIT_TS=$(git log -1 --format="%ct" 2>/dev/null || echo 0)
+    HOST_TS=$(stat -c %Y "$HOST_BIN" 2>/dev/null || stat -f %m "$HOST_BIN" 2>/dev/null || echo 0)
+    RECV_TS=$(stat -c %Y "$RECV_BIN" 2>/dev/null || stat -f %m "$RECV_BIN" 2>/dev/null || echo 0)
+    if [ "$HOST_TS" -lt "$GIT_COMMIT_TS" ] || [ "$RECV_TS" -lt "$GIT_COMMIT_TS" ]; then
+        echo "[*] Source code updated since last build. Recompiling..."
+        NEEDS_BUILD=true
+    fi
+fi
+
+if [ "$NEEDS_BUILD" = true ]; then
     "$DIR/build.sh"
 fi
 

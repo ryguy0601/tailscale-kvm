@@ -32,9 +32,28 @@ Set-Location $repoDir
 $hostExe = Join-Path $repoDir "target\release\tailscale-kvm-host.exe"
 $recvExe = Join-Path $repoDir "target\release\tailscale-kvm-receiver.exe"
 
-# If binaries are missing, run the release build first
+# Check if binaries are missing OR outdated compared to source code git HEAD
+$needsBuild = $false
 if ((-not (Test-Path $hostExe)) -or (-not (Test-Path $recvExe))) {
-    Write-Host "[*] Release binaries not found. Building workspace first..." -ForegroundColor Cyan
+    $needsBuild = $true
+} else {
+    try {
+        $gitCommitUnix = [int64](git log -1 --format="%ct" 2>$null)
+        if ($gitCommitUnix -gt 0) {
+            $commitDate = [DateTimeOffset]::FromUnixTimeSeconds($gitCommitUnix).UtcDateTime
+            $hostDate = (Get-Item $hostExe).LastWriteTimeUtc
+            $recvDate = (Get-Item $recvExe).LastWriteTimeUtc
+            if ($hostDate -lt $commitDate -or $recvDate -lt $commitDate) {
+                Write-Host "[*] Source code updated since last build. Recompiling..." -ForegroundColor Cyan
+                $needsBuild = $true
+            }
+        }
+    } catch {
+        # Fallback if git is unavailable
+    }
+}
+
+if ($needsBuild) {
     & "$repoDir\build.ps1"
 }
 

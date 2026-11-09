@@ -1,8 +1,8 @@
 {
   "README.md": {
-    "mtime": 1794191495.0673063,
-    "seen": 1794191501.5603166,
-    "ast_hash": "7d5b8b03273f4b679aac68e21f8eecdc",
+    "mtime": 1794197906.1771019,
+    "seen": 1794197911.478358,
+    "ast_hash": "8efcf63ef99dc11b20913a1e6bbc0d75",
     "semantic_hash": ""
   },
   "Cargo.toml": {
@@ -60,9 +60,9 @@
     "semantic_hash": ""
   },
   "host/src/main.rs": {
-    "mtime": 1794196288.272028,
-    "seen": 1794196294.9690843,
-    "ast_hash": "9b72fb9db8b3822702120e7615fa6b38",
+    "mtime": 1794197652.8610678,
+    "seen": 1794197663.3840106,
+    "ast_hash": "25143096f44af342563b30031a773c52",
     "semantic_hash": ""
   },
   "host/src/vk_map.rs": {
@@ -90,9 +90,9 @@
     "semantic_hash": ""
   },
   "host/gui_static/index.html": {
-    "mtime": 1794196191.1688578,
-    "seen": 1794196207.1556985,
-    "ast_hash": "3a81122c7cb0a2ea96332498d28d4c46",
+    "mtime": 1794197211.9467669,
+    "seen": 1794197663.384022,
+    "ast_hash": "7db7773c01b42e61f9bed7c886b894d4",
     "semantic_hash": ""
   },
   "receiver/src/input_adapter.rs": {
@@ -153,6 +153,18 @@
     "mtime": 1794162317.232962,
     "seen": 1794180448.9878275,
     "ast_hash": "ef21c9ea5c40edc364661a49f1a309ba",
+    "semantic_hash": ""
+  },
+  "run-kvm.ps1": {
+    "mtime": 1794197888.6355636,
+    "seen": 1794197911.4783473,
+    "ast_hash": "7256be09b7a9a74a8dfad9ca6460e3ec",
+    "semantic_hash": ""
+  },
+  "run-kvm.sh": {
+    "mtime": 1794197894.0144217,
+    "seen": 1794197911.478349,
+    "ast_hash": "1fdfd14792c36b3ae8da426ebf57c33a",
     "semantic_hash": ""
   }
 }
