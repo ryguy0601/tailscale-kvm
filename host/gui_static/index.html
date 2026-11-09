@@ -242,6 +242,87 @@
       color: #8ab4f8;
       font-family: monospace;
     }
+
+    /* Windows Settings-Style Interactive Monitor Display Canvas */
+    .display-stage-section {
+      width: 100%;
+      max-width: 820px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 22px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+    .display-stage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .display-stage-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-bright);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .display-canvas-board {
+      width: 100%;
+      height: 180px;
+      background: rgba(11, 15, 23, 0.95);
+      border: 1px dashed #30363d;
+      border-radius: 10px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .display-screen-box {
+      position: absolute;
+      background: linear-gradient(145deg, #1f293d 0%, #162032 100%);
+      border: 2px solid var(--blue);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+      user-select: none;
+      transition: box-shadow 0.15s ease, border-color 0.15s ease;
+      cursor: default;
+    }
+    .display-screen-box.primary {
+      border-color: var(--accent);
+      box-shadow: 0 0 18px var(--accent-glow);
+    }
+    .display-screen-box.active-filter {
+      border-color: #f0883e;
+      box-shadow: 0 0 18px rgba(240, 136, 62, 0.35);
+    }
+    .display-num {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text-bright);
+      line-height: 1;
+    }
+    .display-meta {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 4px;
+      font-family: monospace;
+    }
+    .display-tag {
+      font-size: 9px;
+      background: rgba(0, 212, 190, 0.15);
+      color: var(--accent);
+      padding: 1px 4px;
+      border-radius: 3px;
+      margin-top: 3px;
+      font-weight: 600;
+    }
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -701,6 +782,20 @@
     </div>
   </div>
 
+  <!-- Windows Settings-Style Multi-Monitor Spatial Layout Stage -->
+  <div class="display-stage-section" id="display-stage-section" style="display:none;">
+    <div class="display-stage-header">
+      <div class="display-stage-title">
+        <span>🖥️ Physical Host Displays</span>
+        <span style="font-weight:400; color:#8b949e; font-size:12px;">(Arranged spatially like Windows Display Settings)</span>
+      </div>
+      <span style="font-size:11.5px; color:#58a6ff; font-family:monospace;" id="display-stage-info">Multi-Monitor Detected</span>
+    </div>
+    <div class="display-canvas-board" id="display-canvas-board">
+      <!-- Injected Monitor Boxes -->
+    </div>
+  </div>
+
   <!-- Detected Tailscale Peers -->
   <div class="peers-section" id="peers-section">
     <div class="peers-header">
@@ -846,8 +941,81 @@
       }
 
       renderSlots();
+      renderHostDisplaysStage();
       renderPeers();
       renderRecorder();
+    }
+
+    function renderHostDisplaysStage() {
+      const section = document.getElementById('display-stage-section');
+      const board = document.getElementById('display-canvas-board');
+      const infoEl = document.getElementById('display-stage-info');
+      if (!section || !board) return;
+
+      if (!hostMonitors || hostMonitors.length <= 1) {
+        section.style.display = 'none';
+        return;
+      }
+
+      section.style.display = 'block';
+      infoEl.textContent = `${hostMonitors.length} Displays Active`;
+      board.innerHTML = '';
+
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      hostMonitors.forEach(m => {
+        minX = Math.min(minX, m.x);
+        maxX = Math.max(maxX, m.x + m.width);
+        minY = Math.min(minY, m.y);
+        maxY = Math.max(maxY, m.y + m.height);
+      });
+
+      const totalW = Math.max(maxX - minX, 100);
+      const totalH = Math.max(maxY - minY, 100);
+      const boardW = board.clientWidth || 770;
+      const boardH = 180;
+      const pad = 24;
+
+      const scale = Math.min((boardW - pad * 2) / totalW, (boardH - pad * 2) / totalH);
+      const renderW = totalW * scale;
+      const renderH = totalH * scale;
+      const offsetX = (boardW - renderW) / 2;
+      const offsetY = (boardH - renderH) / 2;
+
+      hostMonitors.forEach((m) => {
+        const box = document.createElement('div');
+        box.className = 'display-screen-box' + (m.primary ? ' primary' : '');
+        
+        const boxLeft = offsetX + (m.x - minX) * scale;
+        const boxTop = offsetY + (m.y - minY) * scale;
+        const boxW = Math.max(m.width * scale, 55);
+        const boxH = Math.max(m.height * scale, 45);
+
+        box.style.left = `${boxLeft}px`;
+        box.style.top = `${boxTop}px`;
+        box.style.width = `${boxW}px`;
+        box.style.height = `${boxH}px`;
+
+        const filterEdges = [];
+        if (edgeFilters.right === m.index) filterEdges.push('Right');
+        if (edgeFilters.left === m.index) filterEdges.push('Left');
+        if (edgeFilters.up === m.index) filterEdges.push('Top');
+        if (edgeFilters.down === m.index) filterEdges.push('Bottom');
+
+        let filterTag = '';
+        if (filterEdges.length > 0) {
+          box.classList.add('active-filter');
+          filterTag = `<span class="display-tag" style="background:rgba(240,136,62,0.2); color:#f0883e;">Triggers: ${filterEdges.join(', ')}</span>`;
+        }
+
+        box.innerHTML = `
+          <div class="display-num">${m.index + 1}</div>
+          <div class="display-meta">${m.width}x${m.height}</div>
+          ${m.primary ? '<span class="display-tag">Primary</span>' : ''}
+          ${filterTag}
+        `;
+        box.title = `${m.name} (${m.width}x${m.height}) at pos [${m.x}, ${m.y}]`;
+        board.appendChild(box);
+      });
     }
 
     function formatElapsed(secs) {

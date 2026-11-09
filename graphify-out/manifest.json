@@ -60,9 +60,9 @@
     "semantic_hash": ""
   },
   "host/src/main.rs": {
-    "mtime": 1794196112.5993152,
-    "seen": 1794196207.1556866,
-    "ast_hash": "25757e037fa28a2f99308d0039515afa",
+    "mtime": 1794196288.272028,
+    "seen": 1794196294.9690843,
+    "ast_hash": "9b72fb9db8b3822702120e7615fa6b38",
     "semantic_hash": ""
   },
   "host/src/vk_map.rs": {
