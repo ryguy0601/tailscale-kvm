@@ -291,8 +291,31 @@
       justify-content: center;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
       user-select: none;
+      touch-action: none;
       transition: box-shadow 0.15s ease, border-color 0.15s ease;
-      cursor: default;
+      cursor: grab;
+      z-index: 2;
+    }
+    .display-screen-box:hover {
+      border-color: #79c0ff;
+      box-shadow: 0 6px 20px rgba(88, 166, 255, 0.25);
+    }
+    .display-screen-box.dragging {
+      cursor: grabbing !important;
+      z-index: 10 !important;
+      opacity: 0.92;
+      border-color: var(--accent) !important;
+      box-shadow: 0 10px 28px rgba(0, 212, 190, 0.45) !important;
+      transform: scale(1.02);
+    }
+    .display-snap-guide {
+      position: absolute;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+      pointer-events: none;
+      z-index: 5;
+      display: none;
+      border-radius: 2px;
     }
     .display-screen-box.primary {
       border-color: var(--accent);
@@ -787,9 +810,12 @@
     <div class="display-stage-header">
       <div class="display-stage-title">
         <span>🖥️ Physical Host Displays</span>
-        <span style="font-weight:400; color:#8b949e; font-size:12px;">(Arranged spatially like Windows Display Settings)</span>
+        <span style="font-weight:400; color:#8b949e; font-size:12px;">(Drag & snap displays to match your desk layout — just like Windows Display Settings)</span>
       </div>
-      <span style="font-size:11.5px; color:#58a6ff; font-family:monospace;" id="display-stage-info">Multi-Monitor Detected</span>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button id="reset-mon-layout-btn" type="button" style="background:#21262d; border:1px solid #30363d; color:#c9d1d9; font-size:11px; padding:3px 8px; border-radius:6px; cursor:pointer;" title="Reset positions to OS detected virtual desktop coords">Reset to OS</button>
+        <span style="font-size:11.5px; color:#58a6ff; font-family:monospace;" id="display-stage-info">Multi-Monitor Detected</span>
+      </div>
     </div>
     <div class="display-canvas-board" id="display-canvas-board">
       <!-- Injected Monitor Boxes -->
@@ -876,8 +902,11 @@
 
     // Selection state for click-to-move convenience alongside drag-and-drop
     let selectedPayload = null; // { ip, name, sourceSlot }
-    // Pointer drag state
+    // Pointer drag state for peers/slot cards
     let dragState = null; // { ip, name, sourceSlot, startX, startY, active, sourceEl }
+    // Pointer drag state for host monitor boxes
+    let monDragState = null; // { index, startClientX, startClientY, startLeft, startTop, boxEl, origPositions }
+    let customMonPositions = null; // Map index -> { left, top, width, height }
     let saveInFlight = false;
 
     const ghostEl = document.getElementById('drag-ghost');
@@ -899,12 +928,12 @@
     }
 
     async function fetchStatus(forceRender = false) {
-      if (dragState || saveInFlight) return;
+      if (dragState || monDragState || saveInFlight) return;
       try {
         const res = await fetch('/api/status', { cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
-        if (dragState || saveInFlight) return;
+        if (dragState || monDragState || saveInFlight) return;
 
         const sig = JSON.stringify(data);
         if (!forceRender && sig === lastStateSignature) return;
@@ -950,6 +979,7 @@
       const section = document.getElementById('display-stage-section');
       const board = document.getElementById('display-canvas-board');
       const infoEl = document.getElementById('display-stage-info');
+      const resetBtn = document.getElementById('reset-mon-layout-btn');
       if (!section || !board) return;
 
       if (!hostMonitors || hostMonitors.length <= 1) {
@@ -961,6 +991,27 @@
       infoEl.textContent = `${hostMonitors.length} Displays Active`;
       board.innerHTML = '';
 
+      // Create reusable snap guideline elements
+      const snapH = document.createElement('div');
+      snapH.id = 'mon-snap-guide-h';
+      snapH.className = 'display-snap-guide';
+      board.appendChild(snapH);
+
+      const snapV = document.createElement('div');
+      snapV.id = 'mon-snap-guide-v';
+      snapV.className = 'display-snap-guide';
+      board.appendChild(snapV);
+
+      if (resetBtn && !resetBtn.dataset.listenerAttached) {
+        resetBtn.dataset.listenerAttached = 'true';
+        resetBtn.addEventListener('click', () => {
+          customMonPositions = null;
+          renderAll();
+          setToast('Reset displays to operating system layout', 'var(--blue)');
+        });
+      }
+
+      // Compute OS coordinate boundaries
       let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
       hostMonitors.forEach(m => {
         minX = Math.min(minX, m.x);
@@ -981,19 +1032,34 @@
       const offsetX = (boardW - renderW) / 2;
       const offsetY = (boardH - renderH) / 2;
 
+      // Initialize default custom positions if not yet populated
+      if (!customMonPositions) {
+        customMonPositions = {};
+        hostMonitors.forEach(m => {
+          const w = Math.max(m.width * scale, 55);
+          const h = Math.max(m.height * scale, 45);
+          const left = offsetX + (m.x - minX) * scale;
+          const top = offsetY + (m.y - minY) * scale;
+          customMonPositions[m.index] = { left, top, width: w, height: h };
+        });
+      }
+
       hostMonitors.forEach((m) => {
         const box = document.createElement('div');
         box.className = 'display-screen-box' + (m.primary ? ' primary' : '');
-        
-        const boxLeft = offsetX + (m.x - minX) * scale;
-        const boxTop = offsetY + (m.y - minY) * scale;
-        const boxW = Math.max(m.width * scale, 55);
-        const boxH = Math.max(m.height * scale, 45);
+        box.setAttribute('data-mon-index', String(m.index));
 
-        box.style.left = `${boxLeft}px`;
-        box.style.top = `${boxTop}px`;
-        box.style.width = `${boxW}px`;
-        box.style.height = `${boxH}px`;
+        const pos = customMonPositions[m.index] || {
+          left: offsetX + (m.x - minX) * scale,
+          top: offsetY + (m.y - minY) * scale,
+          width: Math.max(m.width * scale, 55),
+          height: Math.max(m.height * scale, 45),
+        };
+
+        box.style.left = `${pos.left}px`;
+        box.style.top = `${pos.top}px`;
+        box.style.width = `${pos.width}px`;
+        box.style.height = `${pos.height}px`;
 
         const filterEdges = [];
         if (edgeFilters.right === m.index) filterEdges.push('Right');
@@ -1013,9 +1079,234 @@
           ${m.primary ? '<span class="display-tag">Primary</span>' : ''}
           ${filterTag}
         `;
-        box.title = `${m.name} (${m.width}x${m.height}) at pos [${m.x}, ${m.y}]`;
+        box.title = `${m.name} (${m.width}x${m.height}) — Drag to snap adjacent edges`;
+
+        attachMonitorDraggable(box, m.index);
         board.appendChild(box);
       });
+    }
+
+    function attachMonitorDraggable(boxEl, monIndex) {
+      boxEl.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const board = document.getElementById('display-canvas-board');
+        if (!board) return;
+
+        const startLeft = parseFloat(boxEl.style.left) || 0;
+        const startTop = parseFloat(boxEl.style.top) || 0;
+
+        boxEl.classList.add('dragging');
+        boxEl.setPointerCapture(e.pointerId);
+
+        monDragState = {
+          index: monIndex,
+          pointerId: e.pointerId,
+          startClientX: e.clientX,
+          startClientY: e.clientY,
+          startLeft: startLeft,
+          startTop: startTop,
+          currentLeft: startLeft,
+          currentTop: startTop,
+          boxEl: boxEl,
+          boardEl: board,
+        };
+      });
+
+      boxEl.addEventListener('pointermove', (e) => {
+        if (!monDragState || monDragState.index !== monIndex) return;
+        e.preventDefault();
+
+        const dx = e.clientX - monDragState.startClientX;
+        const dy = e.clientY - monDragState.startClientY;
+
+        let targetLeft = monDragState.startLeft + dx;
+        let targetTop = monDragState.startTop + dy;
+
+        const currentW = parseFloat(boxEl.style.width) || 60;
+        const currentH = parseFloat(boxEl.style.height) || 45;
+        const boardW = monDragState.boardEl.clientWidth || 770;
+        const boardH = monDragState.boardEl.clientHeight || 180;
+
+        const snapH = document.getElementById('mon-snap-guide-h');
+        const snapV = document.getElementById('mon-snap-guide-v');
+        if (snapH) snapH.style.display = 'none';
+        if (snapV) snapV.style.display = 'none';
+
+        // Check snapping against other monitors
+        const SNAP_THRESHOLD = 18;
+        let snappedEdge = null;
+
+        hostMonitors.forEach(other => {
+          if (other.index === monIndex) return;
+          const otherPos = customMonPositions[other.index];
+          if (!otherPos) return;
+
+          const oL = otherPos.left;
+          const oT = otherPos.top;
+          const oR = oL + otherPos.width;
+          const oB = oT + otherPos.height;
+
+          // 1. Snap to RIGHT of other monitor (targetLeft snaps to oR)
+          if (Math.abs(targetLeft - oR) < SNAP_THRESHOLD) {
+            targetLeft = oR;
+            // Snap alignment on Y axis: top-align or center-align
+            if (Math.abs(targetTop - oT) < SNAP_THRESHOLD) {
+              targetTop = oT;
+            } else if (Math.abs((targetTop + currentH / 2) - (oT + otherPos.height / 2)) < SNAP_THRESHOLD) {
+              targetTop = oT + (otherPos.height - currentH) / 2;
+            }
+            snappedEdge = { side: 'right', otherIdx: other.index };
+            if (snapV) {
+              snapV.style.display = 'block';
+              snapV.style.left = `${oR - 1}px`;
+              snapV.style.top = `${Math.min(targetTop, oT) - 6}px`;
+              snapV.style.width = '2px';
+              snapV.style.height = `${Math.max(targetTop + currentH, oB) - Math.min(targetTop, oT) + 12}px`;
+            }
+          }
+          // 2. Snap to LEFT of other monitor (targetLeft + currentW snaps to oL)
+          else if (Math.abs((targetLeft + currentW) - oL) < SNAP_THRESHOLD) {
+            targetLeft = oL - currentW;
+            if (Math.abs(targetTop - oT) < SNAP_THRESHOLD) {
+              targetTop = oT;
+            } else if (Math.abs((targetTop + currentH / 2) - (oT + otherPos.height / 2)) < SNAP_THRESHOLD) {
+              targetTop = oT + (otherPos.height - currentH) / 2;
+            }
+            snappedEdge = { side: 'left', otherIdx: other.index };
+            if (snapV) {
+              snapV.style.display = 'block';
+              snapV.style.left = `${oL - 1}px`;
+              snapV.style.top = `${Math.min(targetTop, oT) - 6}px`;
+              snapV.style.width = '2px';
+              snapV.style.height = `${Math.max(targetTop + currentH, oB) - Math.min(targetTop, oT) + 12}px`;
+            }
+          }
+          // 3. Snap to BOTTOM of other monitor (targetTop snaps to oB)
+          else if (Math.abs(targetTop - oB) < SNAP_THRESHOLD) {
+            targetTop = oB;
+            if (Math.abs(targetLeft - oL) < SNAP_THRESHOLD) {
+              targetLeft = oL;
+            } else if (Math.abs((targetLeft + currentW / 2) - (oL + otherPos.width / 2)) < SNAP_THRESHOLD) {
+              targetLeft = oL + (otherPos.width - currentW) / 2;
+            }
+            snappedEdge = { side: 'bottom', otherIdx: other.index };
+            if (snapH) {
+              snapH.style.display = 'block';
+              snapH.style.top = `${oB - 1}px`;
+              snapH.style.left = `${Math.min(targetLeft, oL) - 6}px`;
+              snapH.style.height = '2px';
+              snapH.style.width = `${Math.max(targetLeft + currentW, oR) - Math.min(targetLeft, oL) + 12}px`;
+            }
+          }
+          // 4. Snap to TOP of other monitor (targetTop + currentH snaps to oT)
+          else if (Math.abs((targetTop + currentH) - oT) < SNAP_THRESHOLD) {
+            targetTop = oT - currentH;
+            if (Math.abs(targetLeft - oL) < SNAP_THRESHOLD) {
+              targetLeft = oL;
+            } else if (Math.abs((targetLeft + currentW / 2) - (oL + otherPos.width / 2)) < SNAP_THRESHOLD) {
+              targetLeft = oL + (otherPos.width - currentW) / 2;
+            }
+            snappedEdge = { side: 'top', otherIdx: other.index };
+            if (snapH) {
+              snapH.style.display = 'block';
+              snapH.style.top = `${oT - 1}px`;
+              snapH.style.left = `${Math.min(targetLeft, oL) - 6}px`;
+              snapH.style.height = '2px';
+              snapH.style.width = `${Math.max(targetLeft + currentW, oR) - Math.min(targetLeft, oL) + 12}px`;
+            }
+          }
+        });
+
+        // Keep inside board boundaries
+        targetLeft = Math.max(6, Math.min(boardW - currentW - 6, targetLeft));
+        targetTop = Math.max(6, Math.min(boardH - currentH - 6, targetTop));
+
+        boxEl.style.left = `${targetLeft}px`;
+        boxEl.style.top = `${targetTop}px`;
+        monDragState.currentLeft = targetLeft;
+        monDragState.currentTop = targetTop;
+        monDragState.snappedEdge = snappedEdge;
+      });
+
+      const finishDrag = async (e) => {
+        if (!monDragState || monDragState.index !== monIndex) return;
+
+        try {
+          boxEl.releasePointerCapture(monDragState.pointerId);
+        } catch (_) {}
+
+        boxEl.classList.remove('dragging');
+        const snapH = document.getElementById('mon-snap-guide-h');
+        const snapV = document.getElementById('mon-snap-guide-v');
+        if (snapH) snapH.style.display = 'none';
+        if (snapV) snapV.style.display = 'none';
+
+        const state = monDragState;
+        monDragState = null;
+
+        // Save position into customMonPositions
+        if (customMonPositions && customMonPositions[state.index]) {
+          customMonPositions[state.index].left = state.currentLeft;
+          customMonPositions[state.index].top = state.currentTop;
+        }
+
+        // Determine edge snapping feedback
+        if (state.snappedEdge) {
+          const { side, otherIdx } = state.snappedEdge;
+          const sideName = side.charAt(0).toUpperCase() + side.slice(1);
+          setToast(`✓ Snapped Display ${state.index + 1} to the ${sideName} of Display ${otherIdx + 1}`, 'var(--accent)');
+        }
+
+        // Check if user reordered primary display relative to others and auto-update edge filters
+        await autoAlignEdgeFiltersFromArrangement();
+        renderAll();
+      };
+
+      boxEl.addEventListener('pointerup', finishDrag);
+      boxEl.addEventListener('pointercancel', finishDrag);
+    }
+
+    async function autoAlignEdgeFiltersFromArrangement() {
+      if (!hostMonitors || hostMonitors.length < 2 || !customMonPositions) return;
+
+      // Find the monitor that is furthest right, furthest left, highest (top), lowest (bottom)
+      let minLeftMon = 0, maxRightMon = 0;
+      let minTopMon = 0, maxBottomMon = 0;
+      let minL = Infinity, maxR = -Infinity;
+      let minT = Infinity, maxB = -Infinity;
+
+      hostMonitors.forEach(m => {
+        const p = customMonPositions[m.index];
+        if (!p) return;
+        if (p.left < minL) { minL = p.left; minLeftMon = m.index; }
+        if (p.left + p.width > maxR) { maxR = p.left + p.width; maxRightMon = m.index; }
+        if (p.top < minT) { minT = p.top; minTopMon = m.index; }
+        if (p.top + p.height > maxB) { maxB = p.top + p.height; maxBottomMon = m.index; }
+      });
+
+      // Update right edge filter to furthest right monitor, left to furthest left, etc.
+      const updates = [];
+      if (edgeFilters.right !== maxRightMon) updates.push({ slot: 'right', monitor: maxRightMon });
+      if (edgeFilters.left !== minLeftMon) updates.push({ slot: 'left', monitor: minLeftMon });
+      if (edgeFilters.up !== minTopMon) updates.push({ slot: 'up', monitor: minTopMon });
+      if (edgeFilters.down !== maxBottomMon) updates.push({ slot: 'down', monitor: maxBottomMon });
+
+      for (const u of updates) {
+        try {
+          const res = await fetch('/api/edge-filter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(u),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            edgeFilters = Object.assign(edgeFilters, data.edge_filters || {});
+          }
+        } catch (_) {}
+      }
     }
 
     function formatElapsed(secs) {
