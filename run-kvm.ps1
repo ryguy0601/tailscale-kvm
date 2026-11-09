@@ -110,7 +110,15 @@ Write-Host "  Any computer running this can be a Host or Receiver!  " -Foregroun
 Write-Host "========================================================`n" -ForegroundColor Cyan
 
 Write-Host "[1/2] Starting Background Receiver Daemon (Port 9876)..." -ForegroundColor Green
-$recvProcess = Start-Process -FilePath $recvExe -ArgumentList $ExtraArgs -PassThru -WindowStyle Hidden
+$startParams = @{
+    FilePath    = $recvExe
+    PassThru    = $true
+    WindowStyle = "Hidden"
+}
+if ($ExtraArgs -and $ExtraArgs.Count -gt 0) {
+    $startParams["ArgumentList"] = $ExtraArgs
+}
+$recvProcess = Start-Process @startParams
 
 Register-EngineEvent -SourceIdentifier ([System.Guid]::NewGuid().ToString()) -Action {
     Stop-Process -Name "tailscale-kvm-receiver" -Force -ErrorAction SilentlyContinue
