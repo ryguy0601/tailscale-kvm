@@ -98,251 +98,194 @@
       text-align: center;
     }
 
-    /* 2D Spatial Monitor Grid */
-    .canvas-container {
-      background: rgba(11, 15, 23, 0.85);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 28px;
-      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
-      display: grid;
-      grid-template-columns: 235px 235px 235px;
-      grid-template-rows: 158px 158px 158px;
-      gap: 18px;
-      align-items: stretch;
-      justify-items: stretch;
-      margin-bottom: 26px;
-      position: relative;
-      user-select: none;
-    }
-
-    @media (max-width: 800px) {
-      .canvas-container {
-        grid-template-columns: 1fr 1fr 1fr;
-        width: 100%;
-        padding: 14px;
-        gap: 10px;
-      }
-    }
-
-    .slot-card {
+    /* Windows Settings-Style Unified Multi-Display Canvas Stage */
+    .unified-stage-section {
       width: 100%;
-      height: 100%;
-      background: var(--card-bg);
-      border: 2px dashed var(--border);
-      border-radius: 13px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 10px 12px;
-      text-align: center;
-      transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
-      position: relative;
-      touch-action: none;
-    }
-    .slot-card[data-slot] {
-      cursor: pointer;
-    }
-    .slot-card.active {
-      border: 2px solid var(--accent);
-      background: #102329;
-      box-shadow: 0 0 22px var(--accent-glow);
-    }
-    .slot-card.active.connecting {
-      border-color: var(--warn);
-      background: #211d13;
-      box-shadow: 0 0 18px rgba(210, 153, 34, 0.2);
-    }
-    .slot-card.dragover,
-    .slot-card.selectable-target:hover {
-      border: 2px solid var(--blue) !important;
-      background: #15253d !important;
-      transform: scale(1.03);
-      box-shadow: 0 0 24px rgba(88, 166, 255, 0.35) !important;
-    }
-    .slot-label {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      color: var(--muted);
-      margin-bottom: 6px;
-      pointer-events: none;
-    }
-
-    .host-card {
-      grid-column: 2;
-      grid-row: 2;
-      border: 2px solid var(--blue);
-      background: linear-gradient(180deg, #13233a 0%, #0e1a2b 100%);
-      box-shadow: 0 0 28px rgba(88, 166, 255, 0.22);
-      cursor: default;
-    }
-    .host-card .host-title {
-      color: var(--text-bright);
-      font-weight: 700;
-      font-size: 16px;
-    }
-    .host-sub {
-      font-size: 11px;
-      color: #8ab4f8;
-      margin-top: 5px;
-    }
-
-    .slot-top    { grid-column: 2; grid-row: 1; }
-    .slot-left   { grid-column: 1; grid-row: 2; }
-    .slot-right  { grid-column: 3; grid-row: 2; }
-    .slot-bottom { grid-column: 2; grid-row: 3; }
-
-    .slot-content {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .empty-hint {
-      color: #6e7681;
-      font-size: 12px;
-      pointer-events: none;
-    }
-
-    .slot-filter-select {
-      margin-top: 5px;
-      font-size: 10.5px;
-      padding: 2px 6px;
-      background: #0d1522;
-      border: 1px solid var(--border);
-      border-radius: 5px;
-      color: var(--text-bright);
-      outline: none;
-      cursor: pointer;
-      max-width: 95%;
-    }
-    .slot-filter-select:hover {
-      border-color: var(--blue);
-    }
-
-    .host-monitors-list {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 4px;
-      margin-top: 6px;
-      max-width: 210px;
-    }
-    .host-mon-chip {
-      font-size: 9.5px;
-      background: rgba(88, 166, 255, 0.12);
-      border: 1px solid rgba(88, 166, 255, 0.3);
-      padding: 1px 5px;
-      border-radius: 4px;
-      color: #8ab4f8;
-      font-family: monospace;
-    }
-
-    /* Windows Settings-Style Interactive Monitor Display Canvas */
-    .display-stage-section {
-      width: 100%;
-      max-width: 820px;
+      max-width: 860px;
       background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 18px 22px;
+      border-radius: 18px;
+      padding: 22px 24px;
       margin-bottom: 24px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
     }
-    .display-stage-header {
+    .unified-stage-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
     }
-    .display-stage-title {
-      font-size: 14px;
+    .unified-stage-title {
+      font-size: 15px;
       font-weight: 700;
       color: var(--text-bright);
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .display-canvas-board {
+    .unified-canvas-board {
       width: 100%;
-      height: 180px;
-      background: rgba(11, 15, 23, 0.95);
-      border: 1px dashed #30363d;
-      border-radius: 10px;
+      height: 380px;
+      background: radial-gradient(circle at center, #111827 0%, #090d15 100%);
+      border: 1px solid #30363d;
+      border-radius: 14px;
       position: relative;
       overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      user-select: none;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.7);
+    }
+    .unified-canvas-board.drag-target-active {
+      border-color: var(--accent);
+      box-shadow: inset 0 0 20px rgba(0, 212, 190, 0.2);
     }
     .display-screen-box {
       position: absolute;
-      background: linear-gradient(145deg, #1f293d 0%, #162032 100%);
-      border: 2px solid var(--blue);
-      border-radius: 8px;
+      border-radius: 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65);
       user-select: none;
       touch-action: none;
-      transition: box-shadow 0.15s ease, border-color 0.15s ease;
+      transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
       cursor: grab;
       z-index: 2;
+      text-align: center;
+      padding: 6px;
     }
     .display-screen-box:hover {
-      border-color: #79c0ff;
-      box-shadow: 0 6px 20px rgba(88, 166, 255, 0.25);
+      box-shadow: 0 8px 24px rgba(88, 166, 255, 0.35);
+      transform: translateY(-1px);
+    }
+    .display-screen-box.host-mon {
+      background: linear-gradient(145deg, #18263d 0%, #0f1a2e 100%);
+      border: 2px solid var(--blue);
+    }
+    .display-screen-box.host-mon.primary {
+      border-color: var(--accent);
+      box-shadow: 0 0 22px var(--accent-glow);
+    }
+    .display-screen-box.host-mon.active-filter {
+      border-color: #f0883e;
+      box-shadow: 0 0 20px rgba(240, 136, 62, 0.35);
+    }
+    .display-screen-box.receiver-box {
+      background: linear-gradient(145deg, #15323a 0%, #0d2228 100%);
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 20px var(--accent-glow);
+      z-index: 3;
+    }
+    .display-screen-box.receiver-box.connecting {
+      background: linear-gradient(145deg, #2d2414 0%, #1c170d 100%);
+      border-color: var(--warn);
+      box-shadow: 0 0 16px rgba(210, 153, 34, 0.3);
+    }
+    .display-screen-box.receiver-box.selected {
+      border-color: #58a6ff;
+      box-shadow: 0 0 24px rgba(88, 166, 255, 0.55);
     }
     .display-screen-box.dragging {
       cursor: grabbing !important;
       z-index: 10 !important;
-      opacity: 0.92;
-      border-color: var(--accent) !important;
-      box-shadow: 0 10px 28px rgba(0, 212, 190, 0.45) !important;
-      transform: scale(1.02);
+      opacity: 0.94;
+      border-color: #ffffff !important;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.8), 0 0 24px var(--accent-glow) !important;
+      transform: scale(1.03);
     }
     .display-snap-guide {
       position: absolute;
       background: var(--accent);
       box-shadow: 0 0 10px var(--accent);
       pointer-events: none;
-      z-index: 5;
+      z-index: 6;
       display: none;
       border-radius: 2px;
     }
-    .display-screen-box.primary {
-      border-color: var(--accent);
-      box-shadow: 0 0 18px var(--accent-glow);
-    }
-    .display-screen-box.active-filter {
-      border-color: #f0883e;
-      box-shadow: 0 0 18px rgba(240, 136, 62, 0.35);
-    }
     .display-num {
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 800;
       color: var(--text-bright);
       line-height: 1;
     }
+    .display-recv-icon {
+      font-size: 20px;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+    .display-recv-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f0f6fc;
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .display-meta {
-      font-size: 10px;
+      font-size: 10.5px;
       color: var(--muted);
-      margin-top: 4px;
+      margin-top: 3px;
       font-family: monospace;
     }
     .display-tag {
       font-size: 9px;
       background: rgba(0, 212, 190, 0.15);
       color: var(--accent);
-      padding: 1px 4px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-top: 3px;
+      font-weight: 600;
+    }
+    .display-tag.slot-tag {
+      background: rgba(88, 166, 255, 0.2);
+      color: #79c0ff;
+    }
+    .display-disconnect-btn {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #f85149;
+      color: #fff;
+      border: 2px solid #0d1117;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+      transition: transform 0.15s ease;
+    }
+    .display-disconnect-btn:hover {
+      transform: scale(1.15);
+      background: #ff7b72;
+    }
+    .canvas-legend-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+      font-size: 11.5px;
+      color: var(--muted);
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
       border-radius: 3px;
+    }
       margin-top: 3px;
       font-weight: 600;
     }
@@ -756,76 +699,40 @@
     </div>
   </div>
 
-  <div class="toast-bar" id="toast-msg">Drag a device onto any side of your Host screen (or click a device, then click a slot)</div>
+  <div class="toast-bar" id="toast-msg">Drag any receiver device or host display to snap them adjacent to each other</div>
 
-  <!-- 2D Screen Arrangement Canvas -->
-  <div class="canvas-container" id="topology-canvas">
-    <!-- TOP SLOT -->
-    <div class="slot-card slot-top" id="slot-up" data-slot="up">
-      <div class="slot-label">⬆️ Top Screen</div>
-      <div class="slot-content" id="content-up"><span class="empty-hint">Drag screen here</span></div>
-      <select class="slot-filter-select" id="filter-select-up" title="Filter which physical host monitor can trigger this edge">
-        <option value="255">Trigger: Any Monitor</option>
-      </select>
-    </div>
-
-    <!-- LEFT SLOT -->
-    <div class="slot-card slot-left" id="slot-left" data-slot="left">
-      <div class="slot-label">⬅️ Left Screen</div>
-      <div class="slot-content" id="content-left"><span class="empty-hint">Drag screen here</span></div>
-      <select class="slot-filter-select" id="filter-select-left" title="Filter which physical host monitor can trigger this edge">
-        <option value="255">Trigger: Any Monitor</option>
-      </select>
-    </div>
-
-    <!-- CENTER HOST -->
-    <div class="slot-card host-card">
-      <div class="slot-label" style="color: #58a6ff;">Primary Controller</div>
-      <div class="host-title" id="host-label">🖥️ Host (You)</div>
-      <div class="host-sub" id="host-sub-status">Mouse & Keyboard Center</div>
-      <div class="host-monitors-list" id="host-monitors-chips"></div>
-    </div>
-
-    <!-- RIGHT SLOT -->
-    <div class="slot-card slot-right" id="slot-right" data-slot="right">
-      <div class="slot-label">➡️ Right Screen</div>
-      <div class="slot-content" id="content-right"><span class="empty-hint">Drag screen here</span></div>
-      <select class="slot-filter-select" id="filter-select-right" title="Filter which physical host monitor can trigger this edge">
-        <option value="255">Trigger: Any Monitor</option>
-      </select>
-    </div>
-
-    <!-- BOTTOM SLOT (ID matches slot-down!) -->
-    <div class="slot-card slot-bottom" id="slot-down" data-slot="down">
-      <div class="slot-label">⬇️ Bottom Screen</div>
-      <div class="slot-content" id="content-down"><span class="empty-hint">Drag screen here</span></div>
-      <select class="slot-filter-select" id="filter-select-down" title="Filter which physical host monitor can trigger this edge">
-        <option value="255">Trigger: Any Monitor</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Windows Settings-Style Multi-Monitor Spatial Layout Stage -->
-  <div class="display-stage-section" id="display-stage-section" style="display:none;">
-    <div class="display-stage-header">
-      <div class="display-stage-title">
-        <span>🖥️ Physical Host Displays</span>
-        <span style="font-weight:400; color:#8b949e; font-size:12px;">(Drag & snap displays to match your desk layout — just like Windows Display Settings)</span>
+  <!-- Windows Settings-Style Unified Multi-Display Spatial Arrangement Canvas -->
+  <div class="unified-stage-section" id="unified-stage-section">
+    <div class="unified-stage-header">
+      <div class="unified-stage-title">
+        <span>🖥️ Display Arrangement</span>
+        <span style="font-weight:400; color:#8b949e; font-size:12px;">(Select a display to change settings. Drag & snap receiver screens directly onto your host monitors)</span>
       </div>
       <div style="display:flex; align-items:center; gap:8px;">
-        <button id="reset-mon-layout-btn" type="button" style="background:#21262d; border:1px solid #30363d; color:#c9d1d9; font-size:11px; padding:3px 8px; border-radius:6px; cursor:pointer;" title="Reset positions to OS detected virtual desktop coords">Reset to OS</button>
-        <span style="font-size:11.5px; color:#58a6ff; font-family:monospace;" id="display-stage-info">Multi-Monitor Detected</span>
+        <button id="reset-mon-layout-btn" type="button" style="background:#21262d; border:1px solid #30363d; color:#c9d1d9; font-size:11px; padding:4px 10px; border-radius:6px; cursor:pointer;" title="Reset host displays to OS detected virtual desktop coords">Reset to OS</button>
+        <span style="font-size:12px; color:#58a6ff; font-family:monospace;" id="display-stage-info">Scanning Displays...</span>
       </div>
     </div>
-    <div class="display-canvas-board" id="display-canvas-board">
-      <!-- Injected Monitor Boxes -->
+
+    <!-- Interactive Canvas Board -->
+    <div class="unified-canvas-board" id="display-canvas-board">
+      <!-- Injected Host & Receiver Display Boxes -->
+    </div>
+
+    <div class="canvas-legend-strip">
+      <div style="display:flex; align-items:center; gap:16px;">
+        <span class="legend-item"><span class="legend-dot" style="background:var(--blue); border:1px solid #79c0ff;"></span> Host Physical Monitor</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--accent); border:1px solid #ffffff;"></span> Receiver Device (Snapped)</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--warn); border:1px solid #fff;"></span> Connecting :9876</span>
+      </div>
+      <span style="color:#8b949e; font-size:11px;">Tip: Drag receiver box off canvas or click ✖ to disconnect</span>
     </div>
   </div>
 
   <!-- Detected Tailscale Peers -->
   <div class="peers-section" id="peers-section">
     <div class="peers-header">
-      <span>🌐 Tailscale Devices <span style="font-weight:400; color:#8b949e; font-size:12px;">(drag onto a slot above, or drag a connected screen here to disconnect)</span></span>
+      <span>🌐 Tailscale Devices <span style="font-weight:400; color:#8b949e; font-size:12px;">(Drag device onto any side of your physical monitors above, or click a device then click near a display edge)</span></span>
       <span style="font-size: 12px; color: #8b949e;" id="peer-count">Scanning Tailscale...</span>
     </div>
     <div class="peers-list" id="peers-pool"></div>
@@ -902,11 +809,11 @@
 
     // Selection state for click-to-move convenience alongside drag-and-drop
     let selectedPayload = null; // { ip, name, sourceSlot }
-    // Pointer drag state for peers/slot cards
+    // Pointer drag state for peers from list
     let dragState = null; // { ip, name, sourceSlot, startX, startY, active, sourceEl }
-    // Pointer drag state for host monitor boxes
-    let monDragState = null; // { index, startClientX, startClientY, startLeft, startTop, boxEl, origPositions }
-    let customMonPositions = null; // Map index -> { left, top, width, height }
+    // Pointer drag state for display boxes (host monitor OR snapped receiver)
+    let monDragState = null; // { type: 'host'|'receiver', index, slot, startClientX, startClientY, startLeft, startTop, boxEl, boardEl }
+    let customMonPositions = null; // Map host mon index -> { left, top, width, height }
     let saveInFlight = false;
 
     const ghostEl = document.getElementById('drag-ghost');
@@ -958,40 +865,39 @@
     function renderAll() {
       if (hostOs) {
         const prettyOs = hostOs.charAt(0).toUpperCase() + hostOs.slice(1);
-        document.getElementById('host-label').textContent = `🖥️ Host (${prettyOs})`;
+        const hostLbl = document.getElementById('host-label');
+        if (hostLbl) hostLbl.textContent = `🖥️ Host (${prettyOs})`;
       }
       const subEl = document.getElementById('host-sub-status');
-      if (activeRemoteSlot) {
-        subEl.textContent = `Controlling ${SLOT_LABELS[activeRemoteSlot]} Screen (F12 to return)`;
-        subEl.style.color = 'var(--accent)';
-      } else {
-        subEl.textContent = 'Mouse & Keyboard Center';
-        subEl.style.color = '#8ab4f8';
+      if (subEl) {
+        if (activeRemoteSlot) {
+          subEl.textContent = `Controlling ${SLOT_LABELS[activeRemoteSlot]} Screen (F12 to return)`;
+          subEl.style.color = 'var(--accent)';
+        } else {
+          subEl.textContent = 'Mouse & Keyboard Center';
+          subEl.style.color = '#8ab4f8';
+        }
       }
 
-      renderSlots();
-      renderHostDisplaysStage();
+      renderUnifiedDisplaysStage();
       renderPeers();
       renderRecorder();
     }
 
-    function renderHostDisplaysStage() {
-      const section = document.getElementById('display-stage-section');
+    function renderUnifiedDisplaysStage() {
+      const stage = document.getElementById('unified-stage-section');
       const board = document.getElementById('display-canvas-board');
       const infoEl = document.getElementById('display-stage-info');
       const resetBtn = document.getElementById('reset-mon-layout-btn');
-      if (!section || !board) return;
+      if (!stage || !board) return;
 
-      if (!hostMonitors || hostMonitors.length <= 1) {
-        section.style.display = 'none';
-        return;
-      }
+      const hostCount = (hostMonitors && hostMonitors.length > 0) ? hostMonitors.length : 1;
+      const connectedCount = SLOTS.filter(s => !!currentSlots[s]).length;
+      infoEl.textContent = `${hostCount} Host Display${hostCount > 1 ? 's' : ''} · ${connectedCount} Receiver${connectedCount === 1 ? '' : 's'} Mesh-Ready`;
 
-      section.style.display = 'block';
-      infoEl.textContent = `${hostMonitors.length} Displays Active`;
       board.innerHTML = '';
 
-      // Create reusable snap guideline elements
+      // Reusable magnetic alignment guide lines
       const snapH = document.createElement('div');
       snapH.id = 'mon-snap-guide-h';
       snapH.className = 'display-snap-guide';
@@ -1007,13 +913,17 @@
         resetBtn.addEventListener('click', () => {
           customMonPositions = null;
           renderAll();
-          setToast('Reset displays to operating system layout', 'var(--blue)');
+          setToast('Reset host displays to operating system desktop coordinates', 'var(--blue)');
         });
       }
 
-      // Compute OS coordinate boundaries
+      // 1. Gather virtual display coordinates
+      let effMons = hostMonitors && hostMonitors.length > 0 ? hostMonitors : [
+        { index: 0, name: 'Main Display', primary: true, x: 0, y: 0, width: 1920, height: 1080 }
+      ];
+
       let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-      hostMonitors.forEach(m => {
+      effMons.forEach(m => {
         minX = Math.min(minX, m.x);
         maxX = Math.max(maxX, m.x + m.width);
         minY = Math.min(minY, m.y);
@@ -1022,38 +932,41 @@
 
       const totalW = Math.max(maxX - minX, 100);
       const totalH = Math.max(maxY - minY, 100);
-      const boardW = board.clientWidth || 770;
-      const boardH = 180;
-      const pad = 24;
+      const boardW = board.clientWidth || 810;
+      const boardH = board.clientHeight || 380;
+      const pad = 36;
 
-      const scale = Math.min((boardW - pad * 2) / totalW, (boardH - pad * 2) / totalH);
+      // Provide generous margin around host screens so receiver boxes snap neatly outside
+      const scale = Math.min((boardW - pad * 3) / (totalW * 1.55), (boardH - pad * 3) / (totalH * 1.55));
       const renderW = totalW * scale;
       const renderH = totalH * scale;
-      const offsetX = (boardW - renderW) / 2;
-      const offsetY = (boardH - renderH) / 2;
+      const centerOffsetX = (boardW - renderW) / 2;
+      const centerOffsetY = (boardH - renderH) / 2;
 
-      // Initialize default custom positions if not yet populated
+      // Initialize default positions for host displays
       if (!customMonPositions) {
         customMonPositions = {};
-        hostMonitors.forEach(m => {
-          const w = Math.max(m.width * scale, 55);
-          const h = Math.max(m.height * scale, 45);
-          const left = offsetX + (m.x - minX) * scale;
-          const top = offsetY + (m.y - minY) * scale;
+        effMons.forEach(m => {
+          const w = Math.max(m.width * scale, 85);
+          const h = Math.max(m.height * scale, 60);
+          const left = centerOffsetX + (m.x - minX) * scale;
+          const top = centerOffsetY + (m.y - minY) * scale;
           customMonPositions[m.index] = { left, top, width: w, height: h };
         });
       }
 
-      hostMonitors.forEach((m) => {
+      // Render Host Monitor Boxes
+      effMons.forEach(m => {
         const box = document.createElement('div');
-        box.className = 'display-screen-box' + (m.primary ? ' primary' : '');
+        box.className = 'display-screen-box host-mon' + (m.primary ? ' primary' : '');
+        box.setAttribute('data-kind', 'host');
         box.setAttribute('data-mon-index', String(m.index));
 
         const pos = customMonPositions[m.index] || {
-          left: offsetX + (m.x - minX) * scale,
-          top: offsetY + (m.y - minY) * scale,
-          width: Math.max(m.width * scale, 55),
-          height: Math.max(m.height * scale, 45),
+          left: centerOffsetX + (m.x - minX) * scale,
+          top: centerOffsetY + (m.y - minY) * scale,
+          width: Math.max(m.width * scale, 85),
+          height: Math.max(m.height * scale, 60),
         };
 
         box.style.left = `${pos.left}px`;
@@ -1076,17 +989,127 @@
         box.innerHTML = `
           <div class="display-num">${m.index + 1}</div>
           <div class="display-meta">${m.width}x${m.height}</div>
-          ${m.primary ? '<span class="display-tag">Primary</span>' : ''}
+          ${m.primary ? '<span class="display-tag">Primary Host</span>' : '<span class="display-tag" style="background:rgba(88,166,255,0.18); color:#79c0ff;">Host Monitor</span>'}
           ${filterTag}
         `;
-        box.title = `${m.name} (${m.width}x${m.height}) — Drag to snap adjacent edges`;
+        box.title = `${m.name} (${m.width}x${m.height}) — Drag to reposition host displays`;
 
-        attachMonitorDraggable(box, m.index);
+        attachHostMonitorDraggable(box, m.index);
         board.appendChild(box);
+      });
+
+      // Render Snapped Receiver Display Boxes
+      SLOTS.forEach(slot => {
+        const ip = (currentSlots[slot] || '').trim();
+        if (!ip) return;
+
+        const peer = peersData.find(p => p.ip === ip) || { name: ip, ip: ip, os: '' };
+        const isConn = !!currentConnected[slot];
+        const rtt = currentRtt[slot] || 0;
+        const rttText = (isConn && rtt > 0) ? `${rtt}ms` : (isConn ? 'Synced' : 'Connecting');
+
+        const recvBox = document.createElement('div');
+        recvBox.className = 'display-screen-box receiver-box'
+          + (!isConn ? ' connecting' : '')
+          + (selectedPayload && selectedPayload.ip === ip ? ' selected' : '');
+        recvBox.setAttribute('data-kind', 'receiver');
+        recvBox.setAttribute('data-slot', slot);
+        recvBox.setAttribute('data-ip', ip);
+
+        const rPos = computeReceiverBoxPosition(slot);
+        recvBox.style.left = `${rPos.left}px`;
+        recvBox.style.top = `${rPos.top}px`;
+        recvBox.style.width = `${rPos.width}px`;
+        recvBox.style.height = `${rPos.height}px`;
+
+        recvBox.innerHTML = `
+          <button type="button" class="display-disconnect-btn" title="Disconnect receiver">✖</button>
+          <div class="display-recv-icon">${getOsIcon(peer.os)}</div>
+          <div class="display-recv-name">${escapeHtml(peer.name)}</div>
+          <div class="display-meta">${peer.ip} · ${rttText}</div>
+          <span class="display-tag slot-tag">Snapped: ${SLOT_LABELS[slot]} Edge</span>
+        `;
+
+        const disBtn = recvBox.querySelector('.display-disconnect-btn');
+        disBtn.addEventListener('pointerdown', e => e.stopPropagation());
+        disBtn.addEventListener('click', async e => {
+          e.stopPropagation();
+          const next = Object.assign({}, currentSlots);
+          next[slot] = '';
+          await commitLayout(next, `Disconnected ${peer.name} from ${SLOT_LABELS[slot]} edge`);
+        });
+
+        attachReceiverDraggable(recvBox, slot, peer);
+        board.appendChild(recvBox);
       });
     }
 
-    function attachMonitorDraggable(boxEl, monIndex) {
+    function getOsIcon(os) {
+      const o = (os || '').toLowerCase();
+      if (o.includes('windows')) return '🪟';
+      if (o.includes('linux')) return '🐧';
+      if (o.includes('darwin') || o.includes('macos') || o.includes('mac')) return '🍎';
+      return '💻';
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function computeReceiverBoxPosition(slot) {
+      const defaultW = 110;
+      const defaultH = 75;
+      const GAP = 12;
+
+      // Calculate anchor monitor based on edge filter or bounding edge
+      let anchorMonIdx = edgeFilters[slot];
+      if (anchorMonIdx === undefined || anchorMonIdx === 255 || !customMonPositions[anchorMonIdx]) {
+        anchorMonIdx = findBoundingHostMonIndex(slot);
+      }
+
+      const anchor = customMonPositions[anchorMonIdx] || { left: 160, top: 120, width: 120, height: 80 };
+
+      let left = 0, top = 0;
+      if (slot === 'right') {
+        left = anchor.left + anchor.width + GAP;
+        top = anchor.top + (anchor.height - defaultH) / 2;
+      } else if (slot === 'left') {
+        left = anchor.left - defaultW - GAP;
+        top = anchor.top + (anchor.height - defaultH) / 2;
+      } else if (slot === 'up') {
+        left = anchor.left + (anchor.width - defaultW) / 2;
+        top = anchor.top - defaultH - GAP;
+      } else { // down
+        left = anchor.left + (anchor.width - defaultW) / 2;
+        top = anchor.top + anchor.height + GAP;
+      }
+
+      return { left: Math.max(6, left), top: Math.max(6, top), width: defaultW, height: defaultH };
+    }
+
+    function findBoundingHostMonIndex(direction) {
+      if (!customMonPositions) return 0;
+      let targetIdx = 0;
+      let extremeVal = (direction === 'right' || direction === 'down') ? -Infinity : Infinity;
+
+      for (const [idxStr, pos] of Object.entries(customMonPositions)) {
+        const idx = parseInt(idxStr, 10);
+        if (direction === 'right') {
+          const right = pos.left + pos.width;
+          if (right > extremeVal) { extremeVal = right; targetIdx = idx; }
+        } else if (direction === 'left') {
+          if (pos.left < extremeVal) { extremeVal = pos.left; targetIdx = idx; }
+        } else if (direction === 'up') {
+          if (pos.top < extremeVal) { extremeVal = pos.top; targetIdx = idx; }
+        } else if (direction === 'down') {
+          const bottom = pos.top + pos.height;
+          if (bottom > extremeVal) { extremeVal = bottom; targetIdx = idx; }
+        }
+      }
+      return targetIdx;
+    }
+
+    function attachHostMonitorDraggable(boxEl, monIndex) {
       boxEl.addEventListener('pointerdown', (e) => {
         if (e.button !== 0) return;
         e.preventDefault();
@@ -1102,6 +1125,7 @@
         boxEl.setPointerCapture(e.pointerId);
 
         monDragState = {
+          type: 'host',
           index: monIndex,
           pointerId: e.pointerId,
           startClientX: e.clientX,
@@ -1116,7 +1140,7 @@
       });
 
       boxEl.addEventListener('pointermove', (e) => {
-        if (!monDragState || monDragState.index !== monIndex) return;
+        if (!monDragState || monDragState.type !== 'host' || monDragState.index !== monIndex) return;
         e.preventDefault();
 
         const dx = e.clientX - monDragState.startClientX;
@@ -1125,102 +1149,76 @@
         let targetLeft = monDragState.startLeft + dx;
         let targetTop = monDragState.startTop + dy;
 
-        const currentW = parseFloat(boxEl.style.width) || 60;
-        const currentH = parseFloat(boxEl.style.height) || 45;
-        const boardW = monDragState.boardEl.clientWidth || 770;
-        const boardH = monDragState.boardEl.clientHeight || 180;
+        const currentW = parseFloat(boxEl.style.width) || 85;
+        const currentH = parseFloat(boxEl.style.height) || 60;
+        const boardW = monDragState.boardEl.clientWidth || 810;
+        const boardH = monDragState.boardEl.clientHeight || 380;
 
         const snapH = document.getElementById('mon-snap-guide-h');
         const snapV = document.getElementById('mon-snap-guide-v');
         if (snapH) snapH.style.display = 'none';
         if (snapV) snapV.style.display = 'none';
 
-        // Check snapping against other monitors
-        const SNAP_THRESHOLD = 18;
+        const SNAP_THRESHOLD = 20;
         let snappedEdge = null;
 
-        hostMonitors.forEach(other => {
-          if (other.index === monIndex) return;
-          const otherPos = customMonPositions[other.index];
-          if (!otherPos) return;
+        // Snap against other host monitors
+        if (customMonPositions) {
+          for (const [oIdxStr, oPos] of Object.entries(customMonPositions)) {
+            const oIdx = parseInt(oIdxStr, 10);
+            if (oIdx === monIndex) continue;
 
-          const oL = otherPos.left;
-          const oT = otherPos.top;
-          const oR = oL + otherPos.width;
-          const oB = oT + otherPos.height;
+            const oL = oPos.left, oT = oPos.top;
+            const oR = oL + oPos.width, oB = oT + oPos.height;
 
-          // 1. Snap to RIGHT of other monitor (targetLeft snaps to oR)
-          if (Math.abs(targetLeft - oR) < SNAP_THRESHOLD) {
-            targetLeft = oR;
-            // Snap alignment on Y axis: top-align or center-align
-            if (Math.abs(targetTop - oT) < SNAP_THRESHOLD) {
-              targetTop = oT;
-            } else if (Math.abs((targetTop + currentH / 2) - (oT + otherPos.height / 2)) < SNAP_THRESHOLD) {
-              targetTop = oT + (otherPos.height - currentH) / 2;
-            }
-            snappedEdge = { side: 'right', otherIdx: other.index };
-            if (snapV) {
-              snapV.style.display = 'block';
-              snapV.style.left = `${oR - 1}px`;
-              snapV.style.top = `${Math.min(targetTop, oT) - 6}px`;
-              snapV.style.width = '2px';
-              snapV.style.height = `${Math.max(targetTop + currentH, oB) - Math.min(targetTop, oT) + 12}px`;
-            }
-          }
-          // 2. Snap to LEFT of other monitor (targetLeft + currentW snaps to oL)
-          else if (Math.abs((targetLeft + currentW) - oL) < SNAP_THRESHOLD) {
-            targetLeft = oL - currentW;
-            if (Math.abs(targetTop - oT) < SNAP_THRESHOLD) {
-              targetTop = oT;
-            } else if (Math.abs((targetTop + currentH / 2) - (oT + otherPos.height / 2)) < SNAP_THRESHOLD) {
-              targetTop = oT + (otherPos.height - currentH) / 2;
-            }
-            snappedEdge = { side: 'left', otherIdx: other.index };
-            if (snapV) {
-              snapV.style.display = 'block';
-              snapV.style.left = `${oL - 1}px`;
-              snapV.style.top = `${Math.min(targetTop, oT) - 6}px`;
-              snapV.style.width = '2px';
-              snapV.style.height = `${Math.max(targetTop + currentH, oB) - Math.min(targetTop, oT) + 12}px`;
-            }
-          }
-          // 3. Snap to BOTTOM of other monitor (targetTop snaps to oB)
-          else if (Math.abs(targetTop - oB) < SNAP_THRESHOLD) {
-            targetTop = oB;
-            if (Math.abs(targetLeft - oL) < SNAP_THRESHOLD) {
-              targetLeft = oL;
-            } else if (Math.abs((targetLeft + currentW / 2) - (oL + otherPos.width / 2)) < SNAP_THRESHOLD) {
-              targetLeft = oL + (otherPos.width - currentW) / 2;
-            }
-            snappedEdge = { side: 'bottom', otherIdx: other.index };
-            if (snapH) {
-              snapH.style.display = 'block';
-              snapH.style.top = `${oB - 1}px`;
-              snapH.style.left = `${Math.min(targetLeft, oL) - 6}px`;
-              snapH.style.height = '2px';
-              snapH.style.width = `${Math.max(targetLeft + currentW, oR) - Math.min(targetLeft, oL) + 12}px`;
+            if (Math.abs(targetLeft - oR) < SNAP_THRESHOLD) {
+              targetLeft = oR;
+              if (Math.abs(targetTop - oT) < SNAP_THRESHOLD) targetTop = oT;
+              snappedEdge = { side: 'right', otherIdx: oIdx };
+              if (snapV) {
+                snapV.style.display = 'block';
+                snapV.style.left = `${oR - 1}px`;
+                snapV.style.top = `${Math.min(targetTop, oT) - 6}px`;
+                snapV.style.width = '2px';
+                snapV.style.height = `${Math.max(targetTop + currentH, oB) - Math.min(targetTop, oT) + 12}px`;
+              }
+            } else if (Math.abs((targetLeft + currentW) - oL) < SNAP_THRESHOLD) {
+              targetLeft = oL - currentW;
+              if (Math.abs(targetTop - oT) < SNAP_THRESHOLD) targetTop = oT;
+              snappedEdge = { side: 'left', otherIdx: oIdx };
+              if (snapV) {
+                snapV.style.display = 'block';
+                snapV.style.left = `${oL - 1}px`;
+                snapV.style.top = `${Math.min(targetTop, oT) - 6}px`;
+                snapV.style.width = '2px';
+                snapV.style.height = `${Math.max(targetTop + currentH, oB) - Math.min(targetTop, oT) + 12}px`;
+              }
+            } else if (Math.abs(targetTop - oB) < SNAP_THRESHOLD) {
+              targetTop = oB;
+              if (Math.abs(targetLeft - oL) < SNAP_THRESHOLD) targetLeft = oL;
+              snappedEdge = { side: 'bottom', otherIdx: oIdx };
+              if (snapH) {
+                snapH.style.display = 'block';
+                snapH.style.top = `${oB - 1}px`;
+                snapH.style.left = `${Math.min(targetLeft, oL) - 6}px`;
+                snapH.style.height = '2px';
+                snapH.style.width = `${Math.max(targetLeft + currentW, oR) - Math.min(targetLeft, oL) + 12}px`;
+              }
+            } else if (Math.abs((targetTop + currentH) - oT) < SNAP_THRESHOLD) {
+              targetTop = oT - currentH;
+              if (Math.abs(targetLeft - oL) < SNAP_THRESHOLD) targetLeft = oL;
+              snappedEdge = { side: 'top', otherIdx: oIdx };
+              if (snapH) {
+                snapH.style.display = 'block';
+                snapH.style.top = `${oT - 1}px`;
+                snapH.style.left = `${Math.min(targetLeft, oL) - 6}px`;
+                snapH.style.height = '2px';
+                snapH.style.width = `${Math.max(targetLeft + currentW, oR) - Math.min(targetLeft, oL) + 12}px`;
+              }
             }
           }
-          // 4. Snap to TOP of other monitor (targetTop + currentH snaps to oT)
-          else if (Math.abs((targetTop + currentH) - oT) < SNAP_THRESHOLD) {
-            targetTop = oT - currentH;
-            if (Math.abs(targetLeft - oL) < SNAP_THRESHOLD) {
-              targetLeft = oL;
-            } else if (Math.abs((targetLeft + currentW / 2) - (oL + otherPos.width / 2)) < SNAP_THRESHOLD) {
-              targetLeft = oL + (otherPos.width - currentW) / 2;
-            }
-            snappedEdge = { side: 'top', otherIdx: other.index };
-            if (snapH) {
-              snapH.style.display = 'block';
-              snapH.style.top = `${oT - 1}px`;
-              snapH.style.left = `${Math.min(targetLeft, oL) - 6}px`;
-              snapH.style.height = '2px';
-              snapH.style.width = `${Math.max(targetLeft + currentW, oR) - Math.min(targetLeft, oL) + 12}px`;
-            }
-          }
-        });
+        }
 
-        // Keep inside board boundaries
         targetLeft = Math.max(6, Math.min(boardW - currentW - 6, targetLeft));
         targetTop = Math.max(6, Math.min(boardH - currentH - 6, targetTop));
 
@@ -1232,13 +1230,11 @@
       });
 
       const finishDrag = async (e) => {
-        if (!monDragState || monDragState.index !== monIndex) return;
+        if (!monDragState || monDragState.type !== 'host' || monDragState.index !== monIndex) return;
 
-        try {
-          boxEl.releasePointerCapture(monDragState.pointerId);
-        } catch (_) {}
-
+        try { boxEl.releasePointerCapture(monDragState.pointerId); } catch (_) {}
         boxEl.classList.remove('dragging');
+
         const snapH = document.getElementById('mon-snap-guide-h');
         const snapV = document.getElementById('mon-snap-guide-v');
         if (snapH) snapH.style.display = 'none';
@@ -1247,20 +1243,17 @@
         const state = monDragState;
         monDragState = null;
 
-        // Save position into customMonPositions
         if (customMonPositions && customMonPositions[state.index]) {
           customMonPositions[state.index].left = state.currentLeft;
           customMonPositions[state.index].top = state.currentTop;
         }
 
-        // Determine edge snapping feedback
         if (state.snappedEdge) {
           const { side, otherIdx } = state.snappedEdge;
           const sideName = side.charAt(0).toUpperCase() + side.slice(1);
           setToast(`✓ Snapped Display ${state.index + 1} to the ${sideName} of Display ${otherIdx + 1}`, 'var(--accent)');
         }
 
-        // Check if user reordered primary display relative to others and auto-update edge filters
         await autoAlignEdgeFiltersFromArrangement();
         renderAll();
       };
@@ -1269,37 +1262,224 @@
       boxEl.addEventListener('pointercancel', finishDrag);
     }
 
-    async function autoAlignEdgeFiltersFromArrangement() {
-      if (!hostMonitors || hostMonitors.length < 2 || !customMonPositions) return;
+    function attachReceiverDraggable(boxEl, currentSlot, peer) {
+      boxEl.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        if (e.target.closest('.display-disconnect-btn')) return;
+        e.preventDefault();
+        e.stopPropagation();
 
-      // Find the monitor that is furthest right, furthest left, highest (top), lowest (bottom)
-      let minLeftMon = 0, maxRightMon = 0;
-      let minTopMon = 0, maxBottomMon = 0;
-      let minL = Infinity, maxR = -Infinity;
-      let minT = Infinity, maxB = -Infinity;
+        const board = document.getElementById('display-canvas-board');
+        if (!board) return;
 
-      hostMonitors.forEach(m => {
-        const p = customMonPositions[m.index];
-        if (!p) return;
-        if (p.left < minL) { minL = p.left; minLeftMon = m.index; }
-        if (p.left + p.width > maxR) { maxR = p.left + p.width; maxRightMon = m.index; }
-        if (p.top < minT) { minT = p.top; minTopMon = m.index; }
-        if (p.top + p.height > maxB) { maxB = p.top + p.height; maxBottomMon = m.index; }
+        const startLeft = parseFloat(boxEl.style.left) || 0;
+        const startTop = parseFloat(boxEl.style.top) || 0;
+
+        boxEl.classList.add('dragging');
+        boxEl.setPointerCapture(e.pointerId);
+
+        monDragState = {
+          type: 'receiver',
+          slot: currentSlot,
+          ip: peer.ip,
+          name: peer.name,
+          pointerId: e.pointerId,
+          startClientX: e.clientX,
+          startClientY: e.clientY,
+          startLeft: startLeft,
+          startTop: startTop,
+          currentLeft: startLeft,
+          currentTop: startTop,
+          boxEl: boxEl,
+          boardEl: board,
+          activeSnap: null,
+        };
       });
 
-      // Update right edge filter to furthest right monitor, left to furthest left, etc.
-      const updates = [];
-      if (edgeFilters.right !== maxRightMon) updates.push({ slot: 'right', monitor: maxRightMon });
-      if (edgeFilters.left !== minLeftMon) updates.push({ slot: 'left', monitor: minLeftMon });
-      if (edgeFilters.up !== minTopMon) updates.push({ slot: 'up', monitor: minTopMon });
-      if (edgeFilters.down !== maxBottomMon) updates.push({ slot: 'down', monitor: maxBottomMon });
+      boxEl.addEventListener('pointermove', (e) => {
+        if (!monDragState || monDragState.type !== 'receiver' || monDragState.slot !== currentSlot) return;
+        e.preventDefault();
 
-      for (const u of updates) {
+        const dx = e.clientX - monDragState.startClientX;
+        const dy = e.clientY - monDragState.startClientY;
+
+        let targetLeft = monDragState.startLeft + dx;
+        let targetTop = monDragState.startTop + dy;
+
+        const currentW = parseFloat(boxEl.style.width) || 110;
+        const currentH = parseFloat(boxEl.style.height) || 75;
+        const boardW = monDragState.boardEl.clientWidth || 810;
+        const boardH = monDragState.boardEl.clientHeight || 380;
+
+        const snapH = document.getElementById('mon-snap-guide-h');
+        const snapV = document.getElementById('mon-snap-guide-v');
+        if (snapH) snapH.style.display = 'none';
+        if (snapV) snapV.style.display = 'none';
+
+        // Calculate candidate snap edge against host monitors
+        const snapCandidate = findNearestHostEdgeForBox(targetLeft, targetTop, currentW, currentH);
+        monDragState.activeSnap = snapCandidate;
+
+        if (snapCandidate) {
+          if (snapCandidate.guideLine === 'v' && snapV) {
+            snapV.style.display = 'block';
+            snapV.style.left = `${snapCandidate.guideCoord}px`;
+            snapV.style.top = `${snapCandidate.guideSpanStart}px`;
+            snapV.style.width = '2px';
+            snapV.style.height = `${snapCandidate.guideSpanLength}px`;
+          } else if (snapCandidate.guideLine === 'h' && snapH) {
+            snapH.style.display = 'block';
+            snapH.style.top = `${snapCandidate.guideCoord}px`;
+            snapH.style.left = `${snapCandidate.guideSpanStart}px`;
+            snapH.style.height = '2px';
+            snapH.style.width = `${snapCandidate.guideSpanLength}px`;
+          }
+        }
+
+        boxEl.style.left = `${targetLeft}px`;
+        boxEl.style.top = `${targetTop}px`;
+        monDragState.currentLeft = targetLeft;
+        monDragState.currentTop = targetTop;
+      });
+
+      const finishRecvDrag = async (e) => {
+        if (!monDragState || monDragState.type !== 'receiver' || monDragState.slot !== currentSlot) return;
+
+        try { boxEl.releasePointerCapture(monDragState.pointerId); } catch (_) {}
+        boxEl.classList.remove('dragging');
+
+        const snapH = document.getElementById('mon-snap-guide-h');
+        const snapV = document.getElementById('mon-snap-guide-v');
+        if (snapH) snapH.style.display = 'none';
+        if (snapV) snapV.style.display = 'none';
+
+        const state = monDragState;
+        monDragState = null;
+
+        const boardR = state.boardEl.getBoundingClientRect();
+        const droppedOutside = e.clientX < boardR.left || e.clientX > boardR.right || e.clientY < boardR.top || e.clientY > boardR.bottom;
+
+        if (droppedOutside) {
+          // Dragged off canvas -> disconnect receiver
+          const next = Object.assign({}, currentSlots);
+          next[currentSlot] = '';
+          await commitLayout(next, `Disconnected ${state.name} from mesh`);
+          return;
+        }
+
+        if (state.activeSnap) {
+          const { slot: targetSlot, monitorIdx } = state.activeSnap;
+          await assignReceiverToEdge(state.ip, state.name, currentSlot, targetSlot, monitorIdx);
+        } else {
+          renderAll();
+        }
+      };
+
+      boxEl.addEventListener('pointerup', finishRecvDrag);
+      boxEl.addEventListener('pointercancel', finishRecvDrag);
+    }
+
+    function findNearestHostEdgeForBox(boxLeft, boxTop, boxW, boxH) {
+      if (!customMonPositions) return null;
+
+      const boxCenterX = boxLeft + boxW / 2;
+      const boxCenterY = boxTop + boxH / 2;
+
+      let bestEdge = null;
+      let minDistance = Infinity;
+
+      for (const [idxStr, mPos] of Object.entries(customMonPositions)) {
+        const monIdx = parseInt(idxStr, 10);
+        const mCenterX = mPos.left + mPos.width / 2;
+        const mCenterY = mPos.top + mPos.height / 2;
+
+        const dx = boxCenterX - mCenterX;
+        const dy = boxCenterY - mCenterY;
+
+        // Determine candidate edge: right, left, up, or down
+        let candidateSlot = 'right';
+        let edgeDist = 0;
+        let guideLine = 'v';
+        let guideCoord = 0;
+        let guideSpanStart = 0;
+        let guideSpanLength = 0;
+
+        if (Math.abs(dx) > Math.abs(dy)) {
+          if (dx > 0) {
+            candidateSlot = 'right';
+            edgeDist = Math.abs(boxLeft - (mPos.left + mPos.width));
+            guideLine = 'v';
+            guideCoord = mPos.left + mPos.width;
+            guideSpanStart = Math.min(boxTop, mPos.top) - 8;
+            guideSpanLength = Math.max(boxTop + boxH, mPos.top + mPos.height) - guideSpanStart + 16;
+          } else {
+            candidateSlot = 'left';
+            edgeDist = Math.abs((boxLeft + boxW) - mPos.left);
+            guideLine = 'v';
+            guideCoord = mPos.left;
+            guideSpanStart = Math.min(boxTop, mPos.top) - 8;
+            guideSpanLength = Math.max(boxTop + boxH, mPos.top + mPos.height) - guideSpanStart + 16;
+          }
+        } else {
+          if (dy > 0) {
+            candidateSlot = 'down';
+            edgeDist = Math.abs(boxTop - (mPos.top + mPos.height));
+            guideLine = 'h';
+            guideCoord = mPos.top + mPos.height;
+            guideSpanStart = Math.min(boxLeft, mPos.left) - 8;
+            guideSpanLength = Math.max(boxLeft + boxW, mPos.left + mPos.width) - guideSpanStart + 16;
+          } else {
+            candidateSlot = 'up';
+            edgeDist = Math.abs((boxTop + boxH) - mPos.top);
+            guideLine = 'h';
+            guideCoord = mPos.top;
+            guideSpanStart = Math.min(boxLeft, mPos.left) - 8;
+            guideSpanLength = Math.max(boxLeft + boxW, mPos.left + mPos.width) - guideSpanStart + 16;
+          }
+        }
+
+        if (edgeDist < minDistance) {
+          minDistance = edgeDist;
+          bestEdge = {
+            slot: candidateSlot,
+            monitorIdx: monIdx,
+            distance: edgeDist,
+            guideLine,
+            guideCoord,
+            guideSpanStart,
+            guideSpanLength,
+          };
+        }
+      }
+
+      return bestEdge;
+    }
+
+    async function assignReceiverToEdge(ip, name, sourceSlot, targetSlot, monitorIdx) {
+      if (!targetSlot) return;
+
+      const next = Object.assign({}, currentSlots);
+      const displacedIp = (next[targetSlot] || '').trim();
+
+      // Clear existing occurrence of ip across all slots
+      SLOTS.forEach(s => {
+        if (next[s] === ip) next[s] = '';
+      });
+
+      // If dragging onto an already occupied edge from another slot, swap them!
+      if (sourceSlot && sourceSlot !== targetSlot && displacedIp && displacedIp !== ip) {
+        next[sourceSlot] = displacedIp;
+      }
+
+      next[targetSlot] = ip;
+
+      // Update edge monitor filter so mouse triggers only from this physical monitor
+      if (monitorIdx !== undefined && monitorIdx !== null) {
         try {
           const res = await fetch('/api/edge-filter', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(u),
+            body: JSON.stringify({ slot: targetSlot, monitor: monitorIdx }),
           });
           if (res.ok) {
             const data = await res.json();
@@ -1307,6 +1487,13 @@
           }
         } catch (_) {}
       }
+
+      const monText = (monitorIdx !== undefined && monitorIdx !== 255) ? ` of Display ${monitorIdx + 1}` : '';
+      const actionDesc = (sourceSlot && sourceSlot !== targetSlot)
+        ? `Moved ${name} to ${SLOT_LABELS[targetSlot]} edge${monText}`
+        : `Snapped ${name} to ${SLOT_LABELS[targetSlot]} edge${monText}`;
+
+      await commitLayout(next, actionDesc);
     }
 
     function formatElapsed(secs) {
@@ -1542,127 +1729,6 @@
       }
     });
 
-    function renderSlots() {
-      SLOTS.forEach(slot => {
-        const container = document.getElementById(`content-${slot}`);
-        const card = document.getElementById(`slot-${slot}`);
-        if (!container || !card) return;
-
-        card.classList.toggle('selectable-target', !!selectedPayload);
-
-        const ip = (currentSlots[slot] || '').trim();
-        const isConn = !!currentConnected[slot];
-
-        if (ip) {
-          const peer = peersData.find(p => p.ip === ip) || { name: ip, ip: ip, os: '' };
-          card.classList.add('active');
-          card.classList.toggle('connecting', !isConn);
-
-          const rtt = currentRtt[slot] || 0;
-          const rttBadge = (isConn && rtt > 0)
-            ? `<span style="font-size:10.5px; color:#58a6ff; font-family:monospace; margin-left:4px;">[${rtt}ms RTT]</span>`
-            : '';
-
-          const isSelected = selectedPayload && selectedPayload.ip === ip && selectedPayload.sourceSlot === slot;
-          const div = document.createElement('div');
-          div.className = 'assigned-peer' + (isSelected ? ' selected' : '');
-
-          const statusHtml = isConn
-            ? `<span class="conn-pill ok">● Connected · Synced ${rttBadge}</span>`
-            : `<span class="conn-pill wait">◌ Connecting :9876...</span>`;
-
-          div.innerHTML = `
-            <span class="peer-name"></span>
-            <span class="peer-ip"></span>
-            ${statusHtml}
-            <div class="card-actions">
-              <span class="drag-tag">⠿ Drag to move</span>
-              <button type="button" class="remove-btn">Disconnect</button>
-            </div>
-          `;
-          div.querySelector('.peer-name').textContent = peer.name;
-          div.querySelector('.peer-ip').textContent = peer.ip;
-
-          const removeBtn = div.querySelector('.remove-btn');
-          removeBtn.addEventListener('pointerdown', (e) => {
-            e.stopPropagation();
-          });
-          removeBtn.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            selectedPayload = null;
-            const next = Object.assign({}, currentSlots);
-            next[slot] = '';
-            await commitLayout(next, `Disconnected ${peer.name} from ${SLOT_LABELS[slot]} edge`);
-          });
-
-          attachDraggable(div, { ip: peer.ip, name: peer.name, sourceSlot: slot });
-
-          container.innerHTML = '';
-          container.appendChild(div);
-        } else {
-          card.classList.remove('active', 'connecting');
-          const hintText = selectedPayload
-            ? `Click to place ${selectedPayload.name} here`
-            : 'Drag screen here';
-          container.innerHTML = `<span class="empty-hint"></span>`;
-          container.querySelector('.empty-hint').textContent = hintText;
-        }
-
-        // Render & update edge monitor filter dropdown
-        const filterSelect = document.getElementById(`filter-select-${slot}`);
-        if (filterSelect) {
-          const currentFilterVal = edgeFilters[slot] !== undefined ? edgeFilters[slot] : 255;
-          const prevVal = filterSelect.value;
-          
-          let optionsHtml = `<option value="255">Trigger: Any Monitor</option>`;
-          if (hostMonitors && hostMonitors.length > 0) {
-            hostMonitors.forEach((m) => {
-              optionsHtml += `<option value="${m.index}">Trigger: Monitor ${m.index + 1} (${m.width}x${m.height}${m.primary ? ', Primary' : ''})</option>`;
-            });
-          }
-          filterSelect.innerHTML = optionsHtml;
-          filterSelect.value = String(currentFilterVal);
-
-          if (!filterSelect.dataset.listenerAttached) {
-            filterSelect.dataset.listenerAttached = 'true';
-            filterSelect.addEventListener('change', async (e) => {
-              const newMon = parseInt(e.target.value, 10);
-              try {
-                const res = await fetch('/api/edge-filter', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ slot, monitor: newMon }),
-                });
-                if (res.ok) {
-                  const data = await res.json();
-                  edgeFilters = Object.assign(edgeFilters, data.edge_filters || {});
-                  const monLabel = newMon === 255 ? 'Any Monitor' : `Monitor ${newMon + 1}`;
-                  setToast(`✓ ${SLOT_LABELS[slot]} edge will only trigger from ${monLabel}`, 'var(--accent)');
-                }
-              } catch (err) {
-                setToast('⚠ Failed updating edge monitor filter', 'var(--danger)');
-              }
-            });
-          }
-        }
-      });
-
-      // Render Host Monitors chips in the center card
-      const monChipsContainer = document.getElementById('host-monitors-chips');
-      if (monChipsContainer) {
-        monChipsContainer.innerHTML = '';
-        if (hostMonitors && hostMonitors.length > 0) {
-          hostMonitors.forEach((m) => {
-            const chip = document.createElement('span');
-            chip.className = 'host-mon-chip';
-            chip.textContent = `Disp ${m.index + 1}: ${m.width}x${m.height}`;
-            chip.title = `${m.name} (${m.x}, ${m.y} ${m.width}x${m.height})${m.primary ? ' [Primary]' : ''}`;
-            monChipsContainer.appendChild(chip);
-          });
-        }
-      }
-    }
-
     function renderPeers() {
       const container = document.getElementById('peers-pool');
       const countEl = document.getElementById('peer-count');
@@ -1687,7 +1753,7 @@
         const dotClass = peer.kvm_ready ? 'ready' : (peer.online ? 'online' : '');
         let badgeHtml = '';
         if (assignedSlot) {
-          badgeHtml = `<span class="chip-badge assigned">${SLOT_LABELS[assignedSlot]}</span>`;
+          badgeHtml = `<span class="chip-badge assigned">Snapped: ${SLOT_LABELS[assignedSlot]}</span>`;
         } else if (peer.kvm_ready) {
           badgeHtml = `<span class="chip-badge ready">⚡ Ready</span>`;
         }
@@ -1771,12 +1837,37 @@
         ghostEl.style.left = `${e.clientX}px`;
         ghostEl.style.top = `${e.clientY}px`;
 
-        clearDropHighlights();
-        const hoveredCard = getHoveredSlotCard(e.clientX, e.clientY);
-        if (hoveredCard) {
-          hoveredCard.classList.add('dragover');
-        } else if (dragState.sourceSlot && isOverPeersPool(e.clientX, e.clientY)) {
-          peersSectionEl.classList.add('dragover');
+        const board = document.getElementById('display-canvas-board');
+        if (board) {
+          const bRect = board.getBoundingClientRect();
+          const isOverBoard = (e.clientX >= bRect.left && e.clientX <= bRect.right && e.clientY >= bRect.top && e.clientY <= bRect.bottom);
+          board.classList.toggle('drag-target-active', isOverBoard);
+
+          if (isOverBoard) {
+            const relX = e.clientX - bRect.left;
+            const relY = e.clientY - bRect.top;
+            const snap = findNearestHostEdgeForBox(relX - 55, relY - 37, 110, 75);
+            const snapH = document.getElementById('mon-snap-guide-h');
+            const snapV = document.getElementById('mon-snap-guide-v');
+            if (snapH) snapH.style.display = 'none';
+            if (snapV) snapV.style.display = 'none';
+
+            if (snap) {
+              if (snap.guideLine === 'v' && snapV) {
+                snapV.style.display = 'block';
+                snapV.style.left = `${snap.guideCoord}px`;
+                snapV.style.top = `${snap.guideSpanStart}px`;
+                snapV.style.width = '2px';
+                snapV.style.height = `${snap.guideSpanLength}px`;
+              } else if (snap.guideLine === 'h' && snapH) {
+                snapH.style.display = 'block';
+                snapH.style.top = `${snap.guideCoord}px`;
+                snapH.style.left = `${snap.guideSpanStart}px`;
+                snapH.style.height = '2px';
+                snapH.style.width = `${snap.guideSpanLength}px`;
+              }
+            }
+          }
         }
       }
     });
@@ -1788,29 +1879,47 @@
 
       ghostEl.style.display = 'none';
       state.sourceEl.classList.remove('dragging-source');
-      clearDropHighlights();
+
+      const board = document.getElementById('display-canvas-board');
+      if (board) board.classList.remove('drag-target-active');
+
+      const snapH = document.getElementById('mon-snap-guide-h');
+      const snapV = document.getElementById('mon-snap-guide-v');
+      if (snapH) snapH.style.display = 'none';
+      if (snapV) snapV.style.display = 'none';
 
       if (!state.active) {
-        // Treated as a click -> toggle selection for click-to-place!
+        // Clicked peer in pool: select it for click-to-place on canvas
         if (selectedPayload && selectedPayload.ip === state.ip) {
           selectedPayload = null;
           setToast('Selection cleared.');
         } else {
           selectedPayload = { ip: state.ip, name: state.name, sourceSlot: state.sourceSlot };
-          setToast(`Selected ${state.name} — now click Top, Left, Right, or Bottom screen slot to place it!`);
+          setToast(`Selected ${state.name} — now click any edge of your displays on the canvas to place it!`, 'var(--blue)');
         }
         renderAll();
         return;
       }
 
-      const targetCard = getHoveredSlotCard(e.clientX, e.clientY);
-      if (targetCard) {
-        const targetSlot = targetCard.getAttribute('data-slot');
-        await moveOrAssignPeer(state.ip, state.name, state.sourceSlot, targetSlot);
-      } else if (state.sourceSlot && isOverPeersPool(e.clientX, e.clientY)) {
+      // Check if dropped onto the unified display stage board
+      if (board) {
+        const bRect = board.getBoundingClientRect();
+        if (e.clientX >= bRect.left && e.clientX <= bRect.right && e.clientY >= bRect.top && e.clientY <= bRect.bottom) {
+          const relX = e.clientX - bRect.left;
+          const relY = e.clientY - bRect.top;
+          const snap = findNearestHostEdgeForBox(relX - 55, relY - 37, 110, 75);
+          if (snap) {
+            await assignReceiverToEdge(state.ip, state.name, state.sourceSlot, snap.slot, snap.monitorIdx);
+            return;
+          }
+        }
+      }
+
+      // If dragged from a slot and dropped back over peers list -> disconnect
+      if (state.sourceSlot && isOverPeersPool(e.clientX, e.clientY)) {
         const next = Object.assign({}, currentSlots);
         next[state.sourceSlot] = '';
-        await commitLayout(next, `Disconnected ${state.name} from ${SLOT_LABELS[state.sourceSlot]} edge`);
+        await commitLayout(next, `Disconnected ${state.name} from mesh`);
       } else {
         renderAll();
       }
@@ -1821,44 +1930,34 @@
       dragState.sourceEl.classList.remove('dragging-source');
       dragState = null;
       ghostEl.style.display = 'none';
-      clearDropHighlights();
+      const board = document.getElementById('display-canvas-board');
+      if (board) board.classList.remove('drag-target-active');
+      const snapH = document.getElementById('mon-snap-guide-h');
+      const snapV = document.getElementById('mon-snap-guide-v');
+      if (snapH) snapH.style.display = 'none';
+      if (snapV) snapV.style.display = 'none';
       renderAll();
     });
 
-    // Click-to-place handler on slot cards
-    SLOTS.forEach(slot => {
-      const card = document.getElementById(`slot-${slot}`);
-      card.addEventListener('click', async () => {
-        if (!selectedPayload) return;
-        const { ip, name, sourceSlot } = selectedPayload;
-        selectedPayload = null;
-        await moveOrAssignPeer(ip, name, sourceSlot, slot);
-      });
-    });
-
-    async function moveOrAssignPeer(ip, name, sourceSlot, targetSlot) {
-      if (!targetSlot) return;
-      const next = Object.assign({}, currentSlots);
-      const displacedIp = (next[targetSlot] || '').trim();
-
-      // Clear any existing occurrence of `ip` across all slots first
-      SLOTS.forEach(s => {
-        if (next[s] === ip) next[s] = '';
-      });
-
-      // If dragged from an existing slot onto an occupied slot, swap the two screens!
-      if (sourceSlot && sourceSlot !== targetSlot && displacedIp && displacedIp !== ip) {
-        next[sourceSlot] = displacedIp;
+    // Board click-to-place handler for selected peer
+    document.addEventListener('DOMContentLoaded', () => {
+      const board = document.getElementById('display-canvas-board');
+      if (board) {
+        board.addEventListener('click', async (e) => {
+          if (!selectedPayload) return;
+          if (e.target.closest('.display-screen-box')) return; // handled by box drag/click
+          const bRect = board.getBoundingClientRect();
+          const relX = e.clientX - bRect.left;
+          const relY = e.clientY - bRect.top;
+          const snap = findNearestHostEdgeForBox(relX - 55, relY - 37, 110, 75);
+          if (snap) {
+            const { ip, name, sourceSlot } = selectedPayload;
+            selectedPayload = null;
+            await assignReceiverToEdge(ip, name, sourceSlot, snap.slot, snap.monitorIdx);
+          }
+        });
       }
-
-      next[targetSlot] = ip;
-
-      const actionDesc = (sourceSlot && sourceSlot !== targetSlot)
-        ? `Moved ${name} from ${SLOT_LABELS[sourceSlot]} ➔ ${SLOT_LABELS[targetSlot]} edge (Host & Receiver synced)`
-        : `Assigned ${name} to ${SLOT_LABELS[targetSlot]} edge (Host & Receiver synced)`;
-
-      await commitLayout(next, actionDesc);
-    }
+    });
 
     async function commitLayout(nextSlots, successMessage) {
       currentSlots = Object.assign({ right: '', left: '', up: '', down: '' }, nextSlots);
