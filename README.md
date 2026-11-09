@@ -161,9 +161,12 @@ sudo modprobe uinput && sudo udevadm control --reload-rules && sudo udevadm trig
 systemctl --user enable --now kvm-rust-receiver.service
 ```
 
-### 3. Run Manually (Host & Receiver)
-- **Receiver (target computer):** `./run-receiver.sh` (Linux/macOS) or `.\run-receiver.ps1` (Windows)
-- **Host (main keyboard & mouse computer):** `./run-host.sh` (Linux/macOS) or `.\run-host.ps1` (Windows) — auto-probes Tailscale peers and opens `http://localhost:9877` (pass `--no-browser` for headless mode).
+### 3. Run Everywhere (Unified Node)
+- **One command to run anywhere:** `.\run-kvm.ps1` (Windows) or `./run-kvm.sh` (Linux/macOS).
+  - Automatically runs the Receiver daemon in the background (so the computer can receive mouse/keyboard/files) AND launches the Host controller with the Web GUI (so it can also control other screens).
+- **Dedicated modes (optional):**
+  - **Receiver only:** `.\run-kvm.ps1 receiver` or `./run-kvm.sh receiver` (or `.\run-receiver.ps1` / `./run-receiver.sh`)
+  - **Host only:** `.\run-kvm.ps1 host` or `./run-kvm.sh host` (or `.\run-host.ps1` / `./run-host.sh`)
 
 ---
 
