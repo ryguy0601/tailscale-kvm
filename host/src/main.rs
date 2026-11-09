@@ -1855,10 +1855,11 @@ fn open_terminal_on_host(dir_path: &str) {
     });
 }
 
-/// Incoming reverse transfer listener on Host port 9876 (for binary file/image reverse streams)
+/// Incoming reverse transfer listener on Host port 9875 (for binary file/image reverse streams)
 fn start_reverse_transfer_listener() {
     thread::spawn(|| {
-        let Ok(listener) = std::net::TcpListener::bind("0.0.0.0:9876") else {
+        let Ok(listener) = std::net::TcpListener::bind("0.0.0.0:9875") else {
+            eprintln!("[!] Warning: Host reverse transfer listener could not bind 0.0.0.0:9875");
             return;
         };
 

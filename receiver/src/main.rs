@@ -787,7 +787,7 @@ async fn stream_recording_file_to_host(
     session_id: &str,
     remote_filename: &str,
 ) -> Result<(), String> {
-    let addr = std::net::SocketAddr::new(host_ip, 9876);
+    let addr = std::net::SocketAddr::new(host_ip, 9875);
     let mut tx = TcpStream::connect(addr)
         .await
         .map_err(|e| format!("Failed connecting to host {} to upload recording: {}", addr, e))?;
@@ -1410,7 +1410,7 @@ async fn stream_files_to_host(host_ip: std::net::IpAddr, paths: Vec<PathBuf>) {
         return;
     }
 
-    let addr = std::net::SocketAddr::new(host_ip, 9876);
+    let addr = std::net::SocketAddr::new(host_ip, 9875);
     let Ok(mut tx) = TcpStream::connect(addr).await else {
         eprintln!("[!] Failed to connect to host file transfer port: {}", addr);
         return;
