@@ -1,17 +1,17 @@
 # Graph Report - tailscale-kvm  (2026-11-08)
 
 ## Corpus Check
-- 21 files · ~33,979 words
+- 21 files · ~35,204 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 4 file(s) not represented in the graph (top: (none) 3, .toml 1)
 
 ## Summary
-- 514 nodes · 1034 edges · 38 communities (28 shown, 10 thin omitted)
+- 525 nodes · 1057 edges · 38 communities (27 shown, 11 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 12 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8eb069a4`
+- Built from commit: `9d00bf54`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -20,7 +20,7 @@
 - handle_connection
 - windows-host/src/main.rs
 - receiver/src/main.rs
-- spawn_slot_worker
+- receive_binary_file_host
 - ⚡ Tailscale Software KVM — Universal Multi-Directional Mesh (Pure Rust)
 - execute_handoff
 - macos_host.rs
@@ -32,8 +32,8 @@
 - screen_record.rs
 - AtomicI32
 - execute_reverse_handoff
-- ACTIVE_MONITORS
 - update_current_monitor_bounds
+- DragKind
 - ReturnEdge
 - ActiveApp
 - input_adapter.rs
@@ -45,55 +45,55 @@
 - stitch-demo.sh script
 - build.sh script
 - EdgeDirection
-- resolve_initial_layout
-- DragKind
+- RETURN_EDGE
+- AtomicU8
 
 ## God Nodes (most connected - your core abstractions)
-1. `handle_connection()` - 27 edges
-2. `execute_handoff()` - 14 edges
-3. `spawn_slot_worker()` - 13 edges
-4. `main()` - 13 edges
-5. `send_bytes_to_slot()` - 12 edges
-6. `switch_to_local()` - 12 edges
+1. `handle_connection()` - 28 edges
+2. `execute_handoff()` - 16 edges
+3. `send_bytes_to_slot()` - 14 edges
+4. `spawn_slot_worker()` - 14 edges
+5. `monotonic_ms()` - 12 edges
+6. `main()` - 12 edges
 7. `ReturnEdge` - 12 edges
-8. `rec_coord()` - 11 edges
-9. `start_dual_recording()` - 11 edges
-10. `run_linux_host_loop()` - 10 edges
+8. `SlotChannel` - 11 edges
+9. `rec_coord()` - 11 edges
+10. `start_dual_recording()` - 11 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `run_linux_host_loop()` --calls--> `monotonic_ms()`  [INFERRED]
   host/src/linux_host.rs → host/src/main.rs
-- `run_linux_host_loop()` --calls--> `send_to_active_remote()`  [INFERRED]
-  host/src/linux_host.rs → host/src/main.rs
-- `run_linux_host_loop()` --calls--> `switch_to_local()`  [INFERRED]
-  host/src/linux_host.rs → host/src/main.rs
-- `run_linux_host_loop()` --calls--> `switch_to_remote_slot()`  [INFERRED]
-  host/src/linux_host.rs → host/src/main.rs
 - `macos_tap_callback()` --calls--> `monotonic_ms()`  [INFERRED]
   host/src/macos_host.rs → host/src/main.rs
+- `run_linux_host_loop()` --calls--> `send_to_active_remote()`  [INFERRED]
+  host/src/linux_host.rs → host/src/main.rs
+- `macos_tap_callback()` --calls--> `send_to_active_remote()`  [INFERRED]
+  host/src/macos_host.rs → host/src/main.rs
+- `run_linux_host_loop()` --calls--> `switch_to_remote_slot()`  [INFERRED]
+  host/src/linux_host.rs → host/src/main.rs
 
 ## Import Cycles
 - None detected.
 
-## Communities (38 total, 10 thin omitted)
+## Communities (38 total, 11 thin omitted)
 
 ### Community 0 - "AtomicBool"
 Cohesion: 0.18
 Nodes (10): ALT_DOWN, CTRL_DOWN, HANDOFF_BUSY, IGNORE_WARP, IS_REMOTE, LBUTTON_DOWN, OVERLAY_ACTIVE, SLOT_CONNECTED (+2 more)
 
 ### Community 1 - "handle_connection"
-Cohesion: 0.16
-Nodes (12): copy_text_to_system_clipboard(), decode_base64(), downloads_dir(), handle_connection(), notify_files_received(), open_terminal_at_path(), open_url_in_browser(), receive_binary_file() (+4 more)
+Cohesion: 0.15
+Nodes (13): copy_text_to_system_clipboard(), decode_base64(), downloads_dir(), handle_connection(), lock_receiver_workstation(), notify_files_received(), open_terminal_at_path(), open_url_in_browser() (+5 more)
 
 ### Community 2 - "windows-host/src/main.rs"
 Cohesion: 0.05
-Nodes (17): ACTIVE_REMOTE_SLOT, CF_DIB_FMT, CF_DIBV5_FMT, CF_HDROP_FMT, CF_UNICODETEXT_FMT, DRAG_CLICK_HWND, FILE_CHUNK_SIZE, LAST_CLIP_SEQ (+9 more)
+Nodes (19): CF_DIB_FMT, CF_DIBV5_FMT, CF_HDROP_FMT, CF_UNICODETEXT_FMT, DRAG_CLICK_HWND, EDGE_ENTER_MS, FILE_CHUNK_SIZE, LAST_CLIP_SEQ (+11 more)
 
 ### Community 3 - "receiver/src/main.rs"
 Cohesion: 0.09
-Nodes (20): ACTIVE_CONTROL_CLIENTS, ACTIVE_SESSION_ID, CURRENT_BOUND_MAX_X, CURRENT_BOUND_MAX_Y, CURRENT_BOUND_MIN_X, CURRENT_BOUND_MIN_Y, CURSOR_X, CURSOR_Y (+12 more)
+Nodes (19): ACTIVE_CONTROL_CLIENTS, ACTIVE_SESSION_ID, CURRENT_BOUND_MAX_X, CURRENT_BOUND_MAX_Y, CURRENT_BOUND_MIN_X, CURRENT_BOUND_MIN_Y, CURSOR_X, CURSOR_Y (+11 more)
 
-### Community 4 - "spawn_slot_worker"
+### Community 4 - "receive_binary_file_host"
 Cohesion: 0.22
 Nodes (8): get_host_downloads_dir(), on_rec_binary_received(), open_terminal_on_host(), open_url_on_host(), receive_binary_file_host(), sanitize_relative_path(), start_reverse_transfer_listener(), write_clipboard_dib_bytes()
 
@@ -102,20 +102,20 @@ Cohesion: 0.13
 Nodes (14): 1. Build the Workspace, 2. Enable Boot-Time Linux `/dev/uinput` Access & Receiver Auto-Start, 3. Run Manually (Host & Receiver), 🏗 Architecture & Tech Stack, 🎮 Controls & Shortcuts, 🎬 Dual-Computer Demo Recording & Portfolio Sync, 🕸 Graphify Knowledge Graph, 🌟 Key Features (+6 more)
 
 ### Community 6 - "execute_handoff"
-Cohesion: 0.26
-Nodes (10): cancel_active_drag_and_release_mouse(), classify_window(), execute_handoff(), looks_like_url(), make_key_input(), read_clipboard_files(), send_inputs(), tap_chord() (+2 more)
+Cohesion: 0.21
+Nodes (12): cancel_active_drag_and_release_mouse(), classify_window(), execute_handoff(), get_local_tailscale_ip(), looks_like_url(), make_key_input(), read_clipboard_files(), rewrite_localhost_to_tailscale() (+4 more)
 
 ### Community 7 - "macos_host.rs"
 Cohesion: 0.07
-Nodes (44): CFMachPortCreateRunLoopSource(), CFRunLoopAddSource(), CFRunLoopGetCurrent(), CFRunLoopRun(), CGAssociateMouseAndMouseCursorPosition(), CGDisplayPixelsHigh(), CGDisplayPixelsWide(), CGEventGetIntegerValueField() (+36 more)
+Nodes (45): CFMachPortCreateRunLoopSource(), CFRunLoopAddSource(), CFRunLoopGetCurrent(), CFRunLoopRun(), CGAssociateMouseAndMouseCursorPosition(), CGDisplayPixelsHigh(), CGDisplayPixelsWide(), CGEventGetIntegerValueField() (+37 more)
 
 ### Community 8 - "start_windows_clipboard_sync"
-Cohesion: 0.33
-Nodes (6): collect_transfer_entries(), resolve_target_addr(), slot_target_ip(), stream_files_to_receiver(), stream_image_to_connected_receivers(), stream_recording_file_to_receiver()
+Cohesion: 0.18
+Nodes (11): any_slot_connected(), broadcast_clipboard_text(), collect_transfer_entries(), read_clipboard_dib_bytes(), read_clipboard_unicode_text(), resolve_target_addr(), slot_target_ip(), start_windows_clipboard_sync() (+3 more)
 
 ### Community 10 - "linux_host.rs"
-Cohesion: 0.12
-Nodes (12): fcntl(), libc_fcntl_getfl(), libc_fcntl_setfl(), open_physical_input_devices(), query_linux_cursor_pos(), run_linux_host_loop(), start_linux_clipboard_sync(), update_linux_screen_bounds() (+4 more)
+Cohesion: 0.14
+Nodes (8): fcntl(), libc_fcntl_getfl(), libc_fcntl_setfl(), open_physical_input_devices(), query_linux_cursor_pos(), run_linux_host_loop(), start_linux_clipboard_sync(), update_linux_screen_bounds()
 
 ### Community 13 - "screen_record.rs"
 Cohesion: 0.08
@@ -126,16 +126,16 @@ Cohesion: 0.22
 Nodes (8): CENTER_X, CENTER_Y, DRAG_START_X, DRAG_START_Y, HOST_MAX_X, HOST_MAX_Y, HOST_MIN_X, HOST_MIN_Y
 
 ### Community 15 - "execute_reverse_handoff"
-Cohesion: 0.33
-Nodes (6): collect_transfer_entries(), execute_reverse_handoff(), looks_like_url(), parse_file_uris(), percent_decode_str(), stream_files_to_host()
+Cohesion: 0.25
+Nodes (8): collect_transfer_entries(), execute_reverse_handoff(), get_local_tailscale_ip(), looks_like_url(), parse_file_uris(), percent_decode_str(), rewrite_localhost_to_tailscale(), stream_files_to_host()
 
-### Community 16 - "ACTIVE_MONITORS"
-Cohesion: 0.33
-Nodes (4): ACTIVE_MONITORS, control_active_notify(), CONTROL_ACTIVE_NOTIFY, START_INSTANT
+### Community 16 - "update_current_monitor_bounds"
+Cohesion: 0.50
+Nodes (5): apply_single_monitor_if_docked_async(), get_linux_monitors(), monitor_counts(), restore_docked_monitors_if_needed_async(), update_current_monitor_bounds()
 
-### Community 17 - "update_current_monitor_bounds"
-Cohesion: 0.40
-Nodes (6): apply_single_monitor_if_docked_async(), get_linux_monitors(), mark_control_session(), monitor_counts(), restore_docked_monitors_if_needed_async(), update_current_monitor_bounds()
+### Community 17 - "DragKind"
+Cohesion: 0.50
+Nodes (4): DragKind, Browser, Explorer, Other
 
 ### Community 18 - "ReturnEdge"
 Cohesion: 0.19
@@ -146,7 +146,7 @@ Cohesion: 0.40
 Nodes (6): ActiveApp, Browser, FileManager, Other, Terminal, get_active_hyprland_app()
 
 ### Community 20 - "input_adapter.rs"
-Cohesion: 0.08
+Cohesion: 0.07
 Nodes (36): CFRelease(), CGDisplayPixelsHigh(), CGDisplayPixelsWide(), CGEventCreate(), CGEventCreateKeyboardEvent(), CGEventCreateMouseEvent(), CGEventCreateScrollWheelEvent(), CGEventGetLocation() (+28 more)
 
 ### Community 21 - "main"
@@ -154,20 +154,20 @@ Cohesion: 0.31
 Nodes (8): escape_text_for_transmission(), main(), monotonic_ms(), read_windows_clipboard_text(), start_bounds_refresh_worker(), start_clipboard_monitor(), start_cursorpos_worker(), wait_until_control_active()
 
 ### Community 22 - "web_gui.rs"
-Cohesion: 0.10
-Nodes (23): test_layout_deduplication(), build_status_json(), CACHED_PEERS, get_all_slots(), GUI_SLOTS, handle_http_client(), index_to_slot_name(), LAST_GUI_ACTIVITY_MS (+15 more)
+Cohesion: 0.13
+Nodes (22): build_status_json(), CACHED_PEERS, get_all_slots(), GUI_SLOTS, handle_http_client(), index_to_slot_name(), LAST_GUI_ACTIVITY_MS, mark_gui_active() (+14 more)
 
 ### Community 23 - "handle_receiver_record_command"
-Cohesion: 0.31
-Nodes (6): ACTIVE_CONTROL_WRITER, ACTIVE_HOST_PEER, handle_receiver_record_command(), LAST_SYNCED_CLIP_TEXT, send_receiver_rec_caps(), stream_recording_file_to_host()
+Cohesion: 0.17
+Nodes (11): ACTIVE_CONTROL_WRITER, ACTIVE_HOST_PEER, ACTIVE_MONITORS, control_active_notify(), CONTROL_ACTIVE_NOTIFY, handle_receiver_record_command(), LAST_SYNCED_CLIP_TEXT, mark_control_session() (+3 more)
 
 ### Community 24 - "main"
-Cohesion: 0.20
-Nodes (11): any_slot_connected(), broadcast_clipboard_text(), init_edge_overlay(), main(), print_usage(), read_clipboard_dib_bytes(), read_clipboard_unicode_text(), start_all_slot_workers() (+3 more)
+Cohesion: 0.22
+Nodes (9): explicit_cli_target(), init_edge_overlay(), legacy_env_or_config_target(), load_layout_file(), main(), print_usage(), resolve_initial_layout(), start_windows_bounds_refresher() (+1 more)
 
 ### Community 25 - "spawn_slot_worker"
-Cohesion: 0.09
-Nodes (32): warp_linux_cursor(), apply_slot_layout(), build_recording_status_json(), export_latest_recording(), first_connected_slot(), hide_edge_overlay(), HOST_REC_COORD, HostRecState (+24 more)
+Cohesion: 0.08
+Nodes (36): apply_slot_layout(), broadcast_sys_lock(), build_recording_status_json(), export_latest_recording(), first_connected_slot(), get_slot_rtt_ms(), hide_edge_overlay(), HOST_REC_COORD (+28 more)
 
 ### Community 26 - "stitch-demo.sh script"
 Cohesion: 0.83
@@ -181,33 +181,29 @@ Nodes (3): build.sh script, run-host.sh script, run-receiver.sh script
 Cohesion: 0.29
 Nodes (6): EdgeDirection, Down, Left, Right, Up, get_config_direction()
 
-### Community 31 - "resolve_initial_layout"
-Cohesion: 0.40
-Nodes (4): explicit_cli_target(), legacy_env_or_config_target(), load_layout_file(), resolve_initial_layout()
-
-### Community 35 - "DragKind"
+### Community 37 - "AtomicU8"
 Cohesion: 0.50
-Nodes (4): DragKind, Browser, Explorer, Other
+Nodes (3): ACTIVE_REMOTE_SLOT, EDGE_DWELL_SLOT, OVERLAY_DIR
 
 ## Knowledge Gaps
 - **18 isolated node(s):** `Right`, `Left`, `Up`, `Down`, `Browser` (+13 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 133 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 136 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **11 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `InputAdapter` connect `input_adapter.rs` to `handle_connection`, `receiver/src/main.rs`?**
-  _High betweenness centrality (0.041) - this node is a cross-community bridge._
+  _High betweenness centrality (0.042) - this node is a cross-community bridge._
+- **Are the 2 inferred relationships involving `monotonic_ms()` (e.g. with `run_linux_host_loop()` and `macos_tap_callback()`) actually correct?**
+  _`monotonic_ms()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `Right`, `Left`, `Up` to the rest of the system?**
   _18 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `windows-host/src/main.rs` be split into smaller, more focused modules?**
-  _Cohesion score 0.049494949494949494 - nodes in this community are weakly interconnected._
-- **Why does `EdgeDirection` connect `EdgeDirection` to `linux_host.rs`, `windows-host/src/main.rs`, `resolve_initial_layout`?**
+  _Cohesion score 0.04810360777058279 - nodes in this community are weakly interconnected._
+- **Why does `EdgeDirection` connect `EdgeDirection` to `main`, `linux_host.rs`, `windows-host/src/main.rs`?**
   _High betweenness centrality (0.021) - this node is a cross-community bridge._
 - **Should `receiver/src/main.rs` be split into smaller, more focused modules?**
-  _Cohesion score 0.0873440285204991 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09090909090909091 - nodes in this community are weakly interconnected._
 - **Why does `ReturnEdge` connect `ReturnEdge` to `receiver/src/main.rs`, `main`?**
   _High betweenness centrality (0.018) - this node is a cross-community bridge._
-- **Should `⚡ Tailscale Software KVM — Universal Multi-Directional Mesh (Pure Rust)` be split into smaller, more focused modules?**
-  _Cohesion score 0.13333333333333333 - nodes in this community are weakly interconnected._

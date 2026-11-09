@@ -1,8 +1,8 @@
 {
   "README.md": {
-    "mtime": 1794160678.086919,
-    "seen": 1794160685.8147407,
-    "ast_hash": "d75833ce79dce29d379bd11c6ea2d1f2",
+    "mtime": 1794191495.0673063,
+    "seen": 1794191501.5603166,
+    "ast_hash": "7d5b8b03273f4b679aac68e21f8eecdc",
     "semantic_hash": ""
   },
   "Cargo.toml": {
@@ -60,9 +60,9 @@
     "semantic_hash": ""
   },
   "host/src/main.rs": {
-    "mtime": 1794160631.7469258,
-    "seen": 1794160685.8147304,
-    "ast_hash": "4828742d4980d779baa2f1939d66b74b",
+    "mtime": 1794191416.860687,
+    "seen": 1794191501.5603056,
+    "ast_hash": "cf4563755827aad8f264e8fc4428f50c",
     "semantic_hash": ""
   },
   "host/src/vk_map.rs": {
@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "host/src/web_gui.rs": {
-    "mtime": 1794160582.3080978,
-    "seen": 1794160685.8147323,
-    "ast_hash": "7bdb85eed6ccc9af79a62ec83d9469c0",
+    "mtime": 1794191387.5923858,
+    "seen": 1794191501.5603082,
+    "ast_hash": "590155233516fb52383d8443acf0c158",
     "semantic_hash": ""
   },
   "receiver/Cargo.toml": {
@@ -84,33 +84,33 @@
     "semantic_hash": ""
   },
   "receiver/src/main.rs": {
-    "mtime": 1794160566.668493,
-    "seen": 1794160685.8147352,
-    "ast_hash": "aa35bddf4501129fa9625c57d1be392f",
+    "mtime": 1794191336.939599,
+    "seen": 1794191501.5603108,
+    "ast_hash": "5c04ec6606417032ab5b1dd2de68aaf0",
     "semantic_hash": ""
   },
   "host/gui_static/index.html": {
-    "mtime": 1794160814.2753427,
-    "seen": 1794161218.0270147,
-    "ast_hash": "0a0b69f7ab8eb55352d98e7b97b2ce4d",
+    "mtime": 1794191466.643791,
+    "seen": 1794191501.5603175,
+    "ast_hash": "4a7ea74eb1d7c32e6ee41790af881dd2",
     "semantic_hash": ""
   },
   "receiver/src/input_adapter.rs": {
-    "mtime": 1794159928.9342597,
-    "seen": 1794160685.8147342,
-    "ast_hash": "71b5a4050b4a03bb6db31d9284a74529",
+    "mtime": 1794180804.2854097,
+    "seen": 1794180819.9232821,
+    "ast_hash": "5b4b821b34bc36d46f8e0f5c32c9e13f",
     "semantic_hash": ""
   },
   "host/src/linux_host.rs": {
-    "mtime": 1794159959.5873075,
-    "seen": 1794160685.814729,
-    "ast_hash": "b4b426c40734ad1f2f2f36f8f6d7eeea",
+    "mtime": 1794180251.509742,
+    "seen": 1794180448.9878078,
+    "ast_hash": "feece265f8081b11f1e65a6228a12989",
     "semantic_hash": ""
   },
   "host/src/macos_host.rs": {
-    "mtime": 1794025753.7024612,
-    "seen": 1794026525.8101676,
-    "ast_hash": "8e31e1ec395fd2460639fa7ea1154b02",
+    "mtime": 1794180264.724084,
+    "seen": 1794180448.987809,
+    "ast_hash": "7b0b922067ece1580b3e675a0293b143",
     "semantic_hash": ""
   },
   "scripts/stitch-demo.ps1": {
@@ -144,9 +144,15 @@
     "semantic_hash": ""
   },
   "demoPics/03-architecture-graph.png": {
-    "mtime": 1794160849.8357408,
-    "seen": 1794161218.0270202,
+    "mtime": 1794180443.113389,
+    "seen": 1794180448.9878285,
     "ast_hash": "5d9e28a4b30255f37900fd716fd51acd",
+    "semantic_hash": ""
+  },
+  "demoPics/02-dual-screen-demo.webp": {
+    "mtime": 1794162317.232962,
+    "seen": 1794180448.9878275,
+    "ast_hash": "ef21c9ea5c40edc364661a49f1a309ba",
     "semantic_hash": ""
   }
 }
