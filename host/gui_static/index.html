@@ -614,7 +614,10 @@
       <h1>⚡ Tailscale KVM <span class="badge">Universal Mesh</span></h1>
       <p class="subtitle">Drag any peer or connected screen to Top, Left, Right, or Bottom — updates Host & Receiver live</p>
     </div>
-    <button class="quit-btn" id="quit-host-btn" title="Stop KVM Host background controller">⏹ Stop Host</button>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <button class="quit-btn" id="lock-mesh-btn" style="border-color:#388bfd; color:#58a6ff;" title="Synchronized Workstation Lock across all mesh screens">🔒 Lock All</button>
+      <button class="quit-btn" id="quit-host-btn" title="Stop KVM Host background controller">⏹ Stop Host</button>
+    </div>
   </div>
 
   <div class="toast-bar" id="toast-msg">Drag a device onto any side of your Host screen (or click a device, then click a slot)</div>
@@ -720,6 +723,7 @@
     let peersData = [];
     let currentSlots = { right: '', left: '', up: '', down: '' };
     let currentConnected = { right: false, left: false, up: false, down: false };
+    let currentRtt = { right: 0, left: 0, up: 0, down: 0 };
     let activeRemoteSlot = null;
     let hostOs = '';
     let recordingState = null;
@@ -767,6 +771,7 @@
         peersData = data.peers || [];
         currentSlots = Object.assign({ right: '', left: '', up: '', down: '' }, data.slots || {});
         currentConnected = Object.assign({ right: false, left: false, up: false, down: false }, data.connected || {});
+        currentRtt = Object.assign({ right: 0, left: 0, up: 0, down: 0 }, data.rtt_ms || {});
         activeRemoteSlot = data.active_remote_slot || null;
         hostOs = data.host_os || '';
         recordingState = data.recording || null;
@@ -1045,12 +1050,17 @@
           card.classList.add('active');
           card.classList.toggle('connecting', !isConn);
 
+          const rtt = currentRtt[slot] || 0;
+          const rttBadge = (isConn && rtt > 0)
+            ? `<span style="font-size:10.5px; color:#58a6ff; font-family:monospace; margin-left:4px;">[${rtt}ms RTT]</span>`
+            : '';
+
           const isSelected = selectedPayload && selectedPayload.ip === ip && selectedPayload.sourceSlot === slot;
           const div = document.createElement('div');
           div.className = 'assigned-peer' + (isSelected ? ' selected' : '');
 
           const statusHtml = isConn
-            ? `<span class="conn-pill ok">● Connected · Synced</span>`
+            ? `<span class="conn-pill ok">● Connected · Synced ${rttBadge}</span>`
             : `<span class="conn-pill wait">◌ Connecting :9876...</span>`;
 
           div.innerHTML = `
@@ -1323,6 +1333,15 @@
         renderAll();
       }
     }
+
+    document.getElementById('lock-mesh-btn').addEventListener('click', async () => {
+      try {
+        await fetch('/api/lock', { method: 'POST' });
+        setToast('🔒 Broadcasted lock screen to all mesh workstations', '#58a6ff');
+      } catch (e) {
+        setToast('⚠ Failed broadcasting lock', 'var(--danger)');
+      }
+    });
 
     document.getElementById('quit-host-btn').addEventListener('click', async () => {
       if (!confirm('Stop the Tailscale KVM Host controller?')) return;

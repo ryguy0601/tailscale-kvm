@@ -274,6 +274,12 @@ pub fn build_status_json() -> String {
             "up": up_conn,
             "down": down_conn,
         },
+        "rtt_ms": {
+            "right": crate::get_slot_rtt_ms(0),
+            "left": crate::get_slot_rtt_ms(1),
+            "up": crate::get_slot_rtt_ms(2),
+            "down": crate::get_slot_rtt_ms(3),
+        },
         "active_remote_slot": active_remote,
         "peers": peers_json,
         "recording": crate::build_recording_status_json(),
@@ -639,6 +645,18 @@ pub fn handle_http_client(stream: TcpStream) {
                 );
             }
         }
+        return;
+    }
+
+    if path_only == "/api/lock" && method == "POST" {
+        mark_gui_active();
+        crate::broadcast_sys_lock();
+        write_http_response(
+            reader.get_mut(),
+            "200 OK",
+            "application/json",
+            br#"{"status":"locked"}"#,
+        );
         return;
     }
 

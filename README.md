@@ -79,6 +79,8 @@ A low-latency, zero-overhead software KVM switch built in **100% pure Rust** (`h
 | `X <pos> [span]` / `Y <pos> [span]` | Host ↔ Receiver | Proportional cursor alignment across differing monitor resolutions |
 | `T` / `I <len>` / `B <len> <path>` | Bidirectional | Escaped UTF-8 text clipboard, PNG image clipboard, and 64 KB chunked file streaming |
 | `U <url>` / `D <cwd>` | Bidirectional | Instant Chrome/Firefox tab teleport and terminal CWD handoff |
+| `PING <ts>` / `PONG <ts>` | Bidirectional | Real-time round-trip latency (RTT) and network jitter telemetry |
+| `SYS_LOCK` | Host → Receiver | Synchronized multi-workstation screen lock (`hyprlock`/`swaylock`/`LockWorkStation`) |
 | `REC_PING` / `REC_START` / `REC_STOP` / `REC_STITCH` | Bidirectional | Synchronized dual-PC recording handshake, transfer, and remote FFmpeg stitching |
 
 ### Repository Layout
@@ -169,10 +171,12 @@ systemctl --user enable --now kvm-rust-receiver.service
 
 | Action | Trigger |
 | --- | --- |
-| **Enter Receiver Screen** | Move cursor past the assigned screen edge (**Right**, **Left**, **Top**, or **Bottom**) |
+| **Enter Receiver Screen** | Move cursor past the assigned screen edge (**Right**, **Left**, **Top**, or **Bottom**) with pressure barrier suppression |
 | **Return to Host** | Exit the matching opposite screen edge on the Receiver (or press **`F12`** / **`Pause`** / **`Scroll Lock`**) |
+| **Quick Switch to Slot** | Press **`Ctrl + Alt + 1 / 2 / 3 / 4`** or **`Ctrl + Alt + Arrow`** to warp directly to any receiver |
 | **Fling Active Window / Selected Files** | Press **`Win + Right / Left / Up / Down`** toward any connected Receiver |
 | **Teleport Terminal at CWD** | Press **`Win + Alt + T`** to open a terminal on the connected peer |
+| **Synchronized Screen Lock** | Click **🔒 Lock All** in the Dashboard or dispatch `SYS_LOCK` |
 
 ---
 

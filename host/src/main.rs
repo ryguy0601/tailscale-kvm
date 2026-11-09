@@ -101,6 +101,10 @@ static OVERLAY_HWND: AtomicIsize = AtomicIsize::new(0);
 static OVERLAY_ACTIVE: AtomicBool = AtomicBool::new(false);
 #[cfg(windows)]
 static OVERLAY_DIR: AtomicU8 = AtomicU8::new(255);
+#[cfg(windows)]
+static EDGE_ENTER_MS: AtomicU64 = AtomicU64::new(0);
+#[cfg(windows)]
+static EDGE_DWELL_SLOT: AtomicU8 = AtomicU8::new(255);
 
 #[cfg(windows)]
 static mut MOUSE_HOOK: HHOOK = 0;
@@ -131,6 +135,8 @@ pub struct SlotChannel {
     pub generation: AtomicU64,
     pub wake_mutex: Mutex<u64>,
     pub wake_cv: Condvar,
+    pub rtt_ms: AtomicU32,
+    pub last_ping_ms: AtomicU64,
 }
 
 impl SlotChannel {
@@ -141,6 +147,8 @@ impl SlotChannel {
             generation: AtomicU64::new(0),
             wake_mutex: Mutex::new(0),
             wake_cv: Condvar::new(),
+            rtt_ms: AtomicU32::new(0),
+            last_ping_ms: AtomicU64::new(0),
         }
     }
 
@@ -234,6 +242,23 @@ pub fn first_connected_slot() -> Option<usize> {
 #[cfg(windows)]
 fn slot_target_ip(slot_idx: usize) -> Option<String> {
     pool()[slot_idx].target_ip.lock().ok().and_then(|g| g.clone())
+}
+
+pub fn get_slot_rtt_ms(slot_idx: usize) -> u32 {
+    if slot_idx < 4 {
+        pool()[slot_idx].rtt_ms.load(Ordering::Relaxed)
+    } else {
+        0
+    }
+}
+
+pub fn broadcast_sys_lock() {
+    println!("[*] Broadcasting SYS_LOCK to all connected receivers...");
+    for i in 0..4 {
+        if SLOT_CONNECTED[i].load(Ordering::Relaxed) {
+            let _ = send_bytes_to_slot(i, b"SYS_LOCK\n");
+        }
+    }
 }
 
 pub fn send_bytes_to_slot(slot_idx: usize, bytes: &[u8]) -> bool {
@@ -2569,6 +2594,18 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
             }
 
             if let Some(slot_idx) = triggered_slot {
+                let now = monotonic_ms();
+                let last_dwell_slot = EDGE_DWELL_SLOT.load(Ordering::Relaxed);
+                if last_dwell_slot != slot_idx as u8 {
+                    EDGE_DWELL_SLOT.store(slot_idx as u8, Ordering::Relaxed);
+                    EDGE_ENTER_MS.store(now, Ordering::Relaxed);
+                }
+
+                // Configurable subtle pressure/dwell barrier: requires 20ms intentional push at boundary
+                if now.saturating_sub(EDGE_ENTER_MS.load(Ordering::Relaxed)) < 20 {
+                    return CallNextHookEx(MOUSE_HOOK, code, wparam, lparam);
+                }
+
                 let held = LBUTTON_DOWN.load(Ordering::SeqCst);
                 let was_dragging = if slot_idx == SLOT_UP || slot_idx == SLOT_DOWN {
                     let dy_drag = (y - DRAG_START_Y.load(Ordering::Relaxed)).abs();
@@ -2728,6 +2765,31 @@ unsafe extern "system" fn keyboard_hook_proc(code: i32, wparam: WPARAM, lparam: 
             }
         }
 
+        // Global Machine Quick Switcher (Ctrl + Alt + 1/2/3/4 or Ctrl + Alt + Arrow)
+        if is_down && CTRL_DOWN.load(Ordering::Relaxed) && ALT_DOWN.load(Ordering::Relaxed) {
+            let target_slot = match vk {
+                0x31 | VK_NUMPAD1 => Some(SLOT_RIGHT),
+                0x32 | VK_NUMPAD2 => Some(SLOT_LEFT),
+                0x33 | VK_NUMPAD3 => Some(SLOT_UP),
+                0x34 | VK_NUMPAD4 => Some(SLOT_DOWN),
+                VK_RIGHT => Some(SLOT_RIGHT),
+                VK_LEFT => Some(SLOT_LEFT),
+                VK_UP => Some(SLOT_UP),
+                VK_DOWN => Some(SLOT_DOWN),
+                _ => None,
+            };
+            if let Some(slot_idx) = target_slot {
+                if SLOT_CONNECTED[slot_idx].load(Ordering::Relaxed) {
+                    if IS_REMOTE.load(Ordering::SeqCst) {
+                        let cur_slot = (ACTIVE_REMOTE_SLOT.load(Ordering::Relaxed) as usize).min(3);
+                        switch_to_local(cur_slot, None, None);
+                    }
+                    switch_to_remote_slot(slot_idx, false, 500, 1000);
+                    return 1;
+                }
+            }
+        }
+
         // Emergency Release Hotkeys: F12 (0x7B), Pause (0x13), ScrollLock (0x91)
         if vk == 0x7B || vk == 0x13 || vk == 0x91 {
             if IS_REMOTE.load(Ordering::SeqCst) && is_down {
@@ -2872,6 +2934,11 @@ fn spawn_slot_worker(slot_idx: usize) {
                                             open_url_on_host(url.trim());
                                         } else if let Some(dir_p) = trimmed.strip_prefix("D ") {
                                             open_terminal_on_host(dir_p.trim());
+                                        } else if let Some(ts_str) = trimmed.strip_prefix("PONG ") {
+                                            if let Ok(sent_ts) = ts_str.trim().parse::<u64>() {
+                                                let rtt = monotonic_ms().saturating_sub(sent_ts);
+                                                chan.rtt_ms.store(rtt as u32, Ordering::Relaxed);
+                                            }
                                         } else if trimmed.starts_with("REC_") {
                                             on_rec_control_line(slot_idx, trimmed);
                                         }
@@ -2903,10 +2970,27 @@ fn spawn_slot_worker(slot_idx: usize) {
     });
 }
 
+fn start_ping_telemetry_worker() {
+    thread::spawn(|| {
+        loop {
+            thread::sleep(Duration::from_millis(1500));
+            let now = monotonic_ms();
+            for i in 0..4 {
+                if SLOT_CONNECTED[i].load(Ordering::Relaxed) {
+                    pool()[i].last_ping_ms.store(now, Ordering::Relaxed);
+                    let ping_pkt = format!("PING {}\n", now);
+                    let _ = send_bytes_to_slot(i, ping_pkt.as_bytes());
+                }
+            }
+        }
+    });
+}
+
 fn start_all_slot_workers() {
     for idx in 0..4 {
         spawn_slot_worker(idx);
     }
+    start_ping_telemetry_worker();
 }
 
 pub fn shutdown_and_exit() {

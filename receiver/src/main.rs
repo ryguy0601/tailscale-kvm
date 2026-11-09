@@ -677,6 +677,34 @@ fn open_url_in_browser(url: String) {
     });
 }
 
+fn lock_receiver_workstation() {
+    tokio::spawn(async move {
+        #[cfg(target_os = "linux")]
+        {
+            if tokio::process::Command::new("hyprlock").spawn().is_err() {
+                if tokio::process::Command::new("swaylock").spawn().is_err() {
+                    let _ = tokio::process::Command::new("loginctl")
+                        .arg("lock-session")
+                        .spawn();
+                }
+            }
+        }
+        #[cfg(windows)]
+        {
+            use windows_sys::Win32::System::Shutdown::LockWorkStation;
+            unsafe {
+                let _ = LockWorkStation();
+            }
+        }
+        #[cfg(target_os = "macos")]
+        {
+            let _ = tokio::process::Command::new("/System/Library/CoreServices/Menu Extras/User.menu/Contents/Resources/CGSession")
+                .arg("-suspend")
+                .spawn();
+        }
+    });
+}
+
 fn sanitize_relative_path(raw: &str) -> PathBuf {
     let normalized = raw.replace('\\', "/");
     let mut safe = PathBuf::new();
@@ -2244,6 +2272,22 @@ async fn handle_connection(stream: TcpStream, device: Arc<Mutex<InputAdapter>>, 
                             }
                         }
                     }
+                }
+            }
+
+            // "PING <ts>" -> Round-trip telemetry probe
+            b'P' => {
+                if let Some(rest) = trimmed.strip_prefix("PING ") {
+                    let ts = rest.trim();
+                    let pong = format!("PONG {}\n", ts);
+                    let _ = msg_tx.send(pong.into_bytes());
+                }
+            }
+
+            // "SYS_LOCK" -> Synchronized lock screen broadcast
+            b'L' => {
+                if trimmed == "LOCK" || trimmed == "SYS_LOCK" {
+                    lock_receiver_workstation();
                 }
             }
 
