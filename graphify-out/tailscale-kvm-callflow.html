@@ -60,7 +60,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 <div class="container">
 
 <h1>tailscale-kvm — Complete Call Flow &amp; Architecture Documentation</h1>
-<p class="subtitle">Generated from graphify knowledge graph: 551 nodes, 1083 edges, 47 communities. Commit: 2a4fff6</p>
+<p class="subtitle">Generated from graphify knowledge graph: 551 nodes, 1083 edges, 48 communities. Commit: c582c5d</p>
 
 <div class="nav">
     <a href="#overview">Architecture Overview</a>
@@ -72,12 +72,12 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
     <a href="#maprs-host-translate">Maprs Host Translate</a>
     <a href="#host-tailscale-kvm">Host Tailscale Kvm</a>
     <a href="#receiver-tailscale-kvm">Receiver Tailscale Kvm</a>
-    <a href="#atomici32">Atomici32</a>
-    <a href="#mutex">Mutex</a>
+    <a href="#atomicbool">Atomicbool</a>
     <a href="#stitch-demops1-scripts">Stitch Demops1 Scripts</a>
     <a href="#run-hostps1">Run Hostps1</a>
     <a href="#run-receiverps1">Run Receiverps1</a>
     <a href="#void">Void</a>
+    <a href="#atomici32">Atomici32</a>
     <a href="#other">Other</a>
 </div>
 
@@ -88,11 +88,11 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    BUILD_GRAPH_321CBB04("Graph Build<br/><small>62 nodes</small>")
+    BUILD_GRAPH_321CBB04("Graph Build<br/><small>61 nodes</small>")
     class BUILD_GRAPH_321CBB04 module;
-    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>325 nodes</small>")
+    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>323 nodes</small>")
     class CLI_SKILLS_9964CBB8 module;
-    TESTS_FIXTURES_B84B1DCC("Tests &amp; Fixtures<br/><small>95 nodes</small>")
+    TESTS_FIXTURES_B84B1DCC("Tests &amp; Fixtures<br/><small>98 nodes</small>")
     class TESTS_FIXTURES_B84B1DCC module;
     MACOS_HOST_HOSTRS_E706C757("Macos Host Hostrs<br/><small>48 nodes</small>")
     class MACOS_HOST_HOSTRS_E706C757 module;
@@ -104,10 +104,8 @@ flowchart LR
     class HOST_TAILSCALE_KVM_5F916E6E module;
     RECEIVER_TAILSCALE_KVM_389A10DC("Receiver Tailscale Kvm<br/><small>1 nodes</small>")
     class RECEIVER_TAILSCALE_KVM_389A10DC module;
-    ATOMICI32_0BEAF92D("Atomici32<br/><small>1 nodes</small>")
-    class ATOMICI32_0BEAF92D module;
-    MUTEX_72829939("Mutex<br/><small>1 nodes</small>")
-    class MUTEX_72829939 module;
+    ATOMICBOOL_1AFC10A0("Atomicbool<br/><small>1 nodes</small>")
+    class ATOMICBOOL_1AFC10A0 module;
     STITCH_DEMOPS1_SCRIPTS_02721621("Stitch Demops1 Scripts<br/><small>1 nodes</small>")
     class STITCH_DEMOPS1_SCRIPTS_02721621 module;
     RUN_HOSTPS1_87DC0170("Run Hostps1<br/><small>1 nodes</small>")
@@ -116,15 +114,17 @@ flowchart LR
     class RUN_RECEIVERPS1_80A96601 module;
     VOID_E9CEDE9B("Void<br/><small>1 nodes</small>")
     class VOID_E9CEDE9B module;
+    ATOMICI32_0BEAF92D("Atomici32<br/><small>1 nodes</small>")
+    class ATOMICI32_0BEAF92D module;
     OTHER_D0941E68("Other<br/><small>7 nodes</small>")
     class OTHER_D0941E68 module;
-    MACOS_HOST_HOSTRS_E706C757 -->|imports x20| CLI_SKILLS_9964CBB8
-    CLI_SKILLS_9964CBB8 -->|imports x16| BUILD_GRAPH_321CBB04
-    CLI_SKILLS_9964CBB8 -->|imports x11| TESTS_FIXTURES_B84B1DCC
-    TESTS_FIXTURES_B84B1DCC -->|imports x6| CLI_SKILLS_9964CBB8
-    MACOS_HOST_HOSTRS_E706C757 -->|imports x3| BUILD_GRAPH_321CBB04
-    TESTS_FIXTURES_B84B1DCC -->|imports x2| BUILD_GRAPH_321CBB04
-    BUILD_GRAPH_321CBB04 -->|imports x2| CLI_SKILLS_9964CBB8
+    MACOS_HOST_HOSTRS_E706C757 -->|imports x21| CLI_SKILLS_9964CBB8
+    CLI_SKILLS_9964CBB8 -->|imports x16| TESTS_FIXTURES_B84B1DCC
+    CLI_SKILLS_9964CBB8 -->|imports x14| BUILD_GRAPH_321CBB04
+    TESTS_FIXTURES_B84B1DCC -->|imports x4| CLI_SKILLS_9964CBB8
+    BUILD_GRAPH_321CBB04 -->|imports x3| CLI_SKILLS_9964CBB8
+    MACOS_HOST_HOSTRS_E706C757 -->|imports x2| BUILD_GRAPH_321CBB04
+    TESTS_FIXTURES_B84B1DCC -->|imports| BUILD_GRAPH_321CBB04
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -141,19 +141,19 @@ flowchart LR
     <h4>Architecture Layers</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>Layer</th><th>Nodes</th><th>Communities</th></tr>
-      <tr><td>Graph Build</td><td>62</td><td><code>22, 5, 28, 27</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>325</td><td><code>3, 2, 4, 10, 19, 1, 16, 24, 30, 6, 0, 18, 25, 40, 21, 23, 31, 8, 15, 41, 42, 9, 34</code></td></tr><tr><td>Tests &amp; Fixtures</td><td>95</td><td><code>20, 13</code></td></tr><tr><td>Macos Host Hostrs</td><td>48</td><td><code>7</code></td></tr><tr><td>Stitch Demosh Scripts</td><td>4</td><td><code>26</code></td></tr><tr><td>Maprs Host Translate</td><td>2</td><td><code>36</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr><tr><td>Atomici32</td><td>1</td><td><code>14</code></td></tr><tr><td>Mutex</td><td>1</td><td><code>17</code></td></tr><tr><td>Stitch Demops1 Scripts</td><td>1</td><td><code>29</code></td></tr><tr><td>Run Hostps1</td><td>1</td><td><code>32</code></td></tr><tr><td>Run Receiverps1</td><td>1</td><td><code>33</code></td></tr><tr><td>Void</td><td>1</td><td><code>35</code></td></tr><tr><td>Other</td><td>7</td><td><code>37, 38, 39, 43, 44, 45, 46</code></td></tr>
+      <tr><td>Graph Build</td><td>61</td><td><code>22, 5, 28, 27</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>323</td><td><code>3, 2, 10, 19, 4, 1, 16, 24, 40, 6, 8, 0, 18, 25, 42, 21, 23, 31, 30, 14, 15, 41, 9, 34</code></td></tr><tr><td>Tests &amp; Fixtures</td><td>98</td><td><code>20, 13</code></td></tr><tr><td>Macos Host Hostrs</td><td>48</td><td><code>7</code></td></tr><tr><td>Stitch Demosh Scripts</td><td>4</td><td><code>26</code></td></tr><tr><td>Maprs Host Translate</td><td>2</td><td><code>36</code></td></tr><tr><td>Host Tailscale Kvm</td><td>1</td><td><code>11</code></td></tr><tr><td>Receiver Tailscale Kvm</td><td>1</td><td><code>12</code></td></tr><tr><td>Atomicbool</td><td>1</td><td><code>17</code></td></tr><tr><td>Stitch Demops1 Scripts</td><td>1</td><td><code>29</code></td></tr><tr><td>Run Hostps1</td><td>1</td><td><code>32</code></td></tr><tr><td>Run Receiverps1</td><td>1</td><td><code>33</code></td></tr><tr><td>Void</td><td>1</td><td><code>35</code></td></tr><tr><td>Atomici32</td><td>1</td><td><code>37</code></td></tr><tr><td>Other</td><td>7</td><td><code>38, 39, 43, 44, 45, 46, 47</code></td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Core Flow</h4>
-    <div class="arrow-chain">Macos Host Hostrs -&gt; CLI &amp; Skill Installers -&gt; Graph Build -&gt; Tests &amp; Fixtures -&gt; Stitch Demosh Scripts -&gt; Maprs Host Translate -&gt; Host Tailscale Kvm</div>
+    <div class="arrow-chain">Macos Host Hostrs -&gt; CLI &amp; Skill Installers -&gt; Tests &amp; Fixtures -&gt; Graph Build -&gt; Stitch Demosh Scripts -&gt; Maprs Host Translate -&gt; Host Tailscale Kvm</div>
   </div>
 </div>
 <div class="grid">
   <div class="card">
     <h4>Graph Report Highlights</h4>
     <ul>
-      <li>551 nodes · 1083 edges · 47 communities (26 shown, 21 thin omitted)</li>
+      <li>551 nodes · 1083 edges · 48 communities (27 shown, 21 thin omitted)</li>
       <li>Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 12 edges (avg confidence: 0.85)</li>
       <li>Token cost: 0 input · 0 output</li>
       <li>1. `handle_connection()` - 28 edges</li>
@@ -165,12 +165,12 @@ flowchart LR
 <hr>
 <!-- ====== 2. Graph Build ====== -->
 <h2 id="build-graph">2. Graph Build</h2>
-<p>Graph Build groups implementation around web, guirs, host, readmemd, mostly in host/src/web_gui.rs, README.md, run-kvm.sh. This section covers 62 nodes and 90 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>Graph Build groups implementation around web, guirs, host, readmemd, mostly in host/src/web_gui.rs, README.md, run-kvm.sh. This section covers 61 nodes and 89 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Graph Build (62 nodes, 90 edges)
+    %% Section: Graph Build (61 nodes, 89 edges)
     host_src_web_gui_16ccde2b("web_gui.rs")
     host_src_web_gui_handle_http_client_20f6aea7("handle_http_client()<br/><small>host/src/web_gui.rs</small>")
     host_src_web_gui_start_gui_server_9512f502("start_gui_server()<br/><small>host/src/web_gui.rs</small>")
@@ -207,7 +207,7 @@ flowchart LR
     host_src_web_gui_start_gui_server_9512f502 -->|calls| host_src_web_gui_takeover_or_bind_c7f21444
     host_src_web_gui_start_gui_server_9512f502 -->|calls| host_src_web_gui_handle_http_client_20f6aea7
     host_src_web_gui_start_peer_discovery_worker_60725f9c -->|calls| host_src_web_gui_refresh_tailscale_peers_306770d6
-    %% Omitted for readability: 44 nodes, 0 edges
+    %% Omitted for readability: 43 nodes, 0 edges
     class host_src_web_gui_16ccde2b module;
     class host_src_web_gui_handle_http_client_20f6aea7 entry;
     class host_src_web_gui_start_gui_server_9512f502 function;
@@ -505,31 +505,31 @@ flowchart LR
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: contains x40, calls x22, imports x14, references x13. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x40, calls x22, imports x13, references x13. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
 
 <!-- ====== 3. CLI & Skill Installers ====== -->
 <h2 id="cli-skills">3. CLI &amp; Skill Installers</h2>
-<p>CLI &amp; Skill Installers groups implementation around mainrs, host, receiver, slot, mostly in host/src/main.rs, receiver/src/main.rs, host/src/linux_host.rs. This section covers 325 nodes and 667 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>CLI &amp; Skill Installers groups implementation around mainrs, host, receiver, slot, mostly in host/src/main.rs, receiver/src/main.rs, host/src/linux_host.rs. This section covers 323 nodes and 664 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: CLI &amp; Skill Installers (325 nodes, 667 edges)
+    %% Section: CLI &amp; Skill Installers (323 nodes, 664 edges)
     subgraph cli_skills_host_src_main_rs_73a5450b["host/src/main.rs"]
         host_src_main_2cf1d6ba("main.rs")
         host_src_main_execute_handoff_87404872("execute_handoff()<br/><small>host/src/main.rs</small>")
         host_src_main_spawn_slot_worker_ce7f177d("spawn_slot_worker()<br/><small>host/src/main.rs</small>")
-        host_src_main_slotchannel_cf19c057("SlotChannel<br/><small>host/src/main.rs</small>")
-        host_src_main_slotchannel_new_42aeb78c("new()<br/><small>host/src/main.rs</small>")
-        host_src_main_slotchannel_notify_change_13d48a70("notify_change()<br/><small>host/src/main.rs</small>")
-        host_src_main_slotchannel_wait_timeout_928e5907("wait_timeout()<br/><small>host/src/main.rs</small>")
         host_src_main_edgedirection_19e25450("EdgeDirection<br/><small>host/src/main.rs</small>")
         host_src_main_edgedirection_parse_9c2a7180("parse()<br/><small>host/src/main.rs</small>")
         host_src_main_edgedirection_to_slot_index_1de4a372("to_slot_index()<br/><small>host/src/main.rs</small>")
         host_src_main_edgedirection_reciprocal_return_ed_c956ecd4("reciprocal_return_edge()<br/><small>host/src/main.rs</small>")
+        host_src_main_slotchannel_cf19c057("SlotChannel<br/><small>host/src/main.rs</small>")
+        host_src_main_slotchannel_new_42aeb78c("new()<br/><small>host/src/main.rs</small>")
+        host_src_main_slotchannel_notify_change_13d48a70("notify_change()<br/><small>host/src/main.rs</small>")
+        host_src_main_slotchannel_wait_timeout_928e5907("wait_timeout()<br/><small>host/src/main.rs</small>")
     end
     subgraph cli_skills_receiver_src_main_rs_687ecddc["receiver/src/main.rs"]
         receiver_src_main_handle_connection_6d2ddb88("handle_connection()<br/><small>receiver/src/main.rs</small>")
@@ -543,30 +543,30 @@ flowchart LR
     receiver_src_main_returnedge_725f957f -->|method| receiver_src_main_returnedge_parse_e483e4ee
     receiver_src_main_returnedge_725f957f -->|method| receiver_src_main_returnedge_from_u8_80874c07
     receiver_src_main_returnedge_725f957f -->|method| receiver_src_main_returnedge_to_u8_2ccd001c
-    host_src_main_slotchannel_cf19c057 -->|method| host_src_main_slotchannel_new_42aeb78c
-    host_src_main_slotchannel_cf19c057 -->|method| host_src_main_slotchannel_notify_change_13d48a70
-    host_src_main_slotchannel_cf19c057 -->|method| host_src_main_slotchannel_wait_timeout_928e5907
     host_src_main_edgedirection_19e25450 -->|method| host_src_main_edgedirection_parse_9c2a7180
     host_src_main_edgedirection_19e25450 -->|method| host_src_main_edgedirection_to_slot_index_1de4a372
     host_src_main_edgedirection_19e25450 -->|method| host_src_main_edgedirection_reciprocal_return_ed_c956ecd4
+    host_src_main_slotchannel_cf19c057 -->|method| host_src_main_slotchannel_new_42aeb78c
+    host_src_main_slotchannel_cf19c057 -->|method| host_src_main_slotchannel_notify_change_13d48a70
+    host_src_main_slotchannel_cf19c057 -->|method| host_src_main_slotchannel_wait_timeout_928e5907
     receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_returnedge_parse_e483e4ee
     receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_returnedge_to_u8_2ccd001c
     receiver_src_main_handle_connection_6d2ddb88 -->|calls| receiver_src_main_returnedge_from_u8_80874c07
     host_src_main_spawn_slot_worker_ce7f177d -->|calls| host_src_main_slotchannel_wait_timeout_928e5907
     host_src_main_spawn_slot_worker_ce7f177d -->|calls| host_src_main_edgedirection_reciprocal_return_ed_c956ecd4
     host_src_linux_host_77dd91d3 -->|imports| host_src_main_edgedirection_19e25450
-    %% Omitted for readability: 307 nodes, 0 edges
+    %% Omitted for readability: 305 nodes, 0 edges
     class host_src_main_2cf1d6ba module;
     class host_src_main_execute_handoff_87404872 function;
     class host_src_main_spawn_slot_worker_ce7f177d function;
-    class host_src_main_slotchannel_cf19c057 klass;
-    class host_src_main_slotchannel_new_42aeb78c function;
-    class host_src_main_slotchannel_notify_change_13d48a70 function;
-    class host_src_main_slotchannel_wait_timeout_928e5907 function;
     class host_src_main_edgedirection_19e25450 klass;
     class host_src_main_edgedirection_parse_9c2a7180 function;
     class host_src_main_edgedirection_to_slot_index_1de4a372 function;
     class host_src_main_edgedirection_reciprocal_return_ed_c956ecd4 function;
+    class host_src_main_slotchannel_cf19c057 klass;
+    class host_src_main_slotchannel_new_42aeb78c function;
+    class host_src_main_slotchannel_notify_change_13d48a70 function;
+    class host_src_main_slotchannel_wait_timeout_928e5907 function;
     class receiver_src_main_handle_connection_6d2ddb88 function;
     class receiver_src_main_27e70eb4 module;
     class receiver_src_main_returnedge_725f957f klass;
@@ -850,19 +850,19 @@ flowchart LR
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: contains x219, calls x204, references x138, imports x81. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x219, calls x204, references x138, imports x78. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
 
 <!-- ====== 4. Tests & Fixtures ====== -->
 <h2 id="tests-fixtures">4. Tests &amp; Fixtures</h2>
-<p>Tests &amp; Fixtures groups implementation around input, adapterrs, receiver, screen, mostly in receiver/src/input_adapter.rs, shared/screen_record.rs. This section covers 95 nodes and 184 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>Tests &amp; Fixtures groups implementation around input, adapterrs, receiver, screen, mostly in receiver/src/input_adapter.rs, shared/screen_record.rs. This section covers 98 nodes and 187 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Tests &amp; Fixtures (95 nodes, 184 edges)
+    %% Section: Tests &amp; Fixtures (98 nodes, 187 edges)
     subgraph tests_fixtures_receiver_src_input_adapter_rs_2bb08228["receiver/src/input_adapter.rs"]
         receiver_src_input_adapter_6fe877f0("input_adapter.rs")
         receiver_src_input_adapter_inputadapter_4cbcd1aa("InputAdapter<br/><small>receiver/src/input_adapter.rs</small>")
@@ -897,7 +897,7 @@ flowchart LR
     receiver_src_input_adapter_inputadapter_emit_mou_47c9e68d -->|calls| receiver_src_input_adapter_mouse_click_de295e21
     receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca -->|calls| receiver_src_input_adapter_move_mouse_relative_039f9eb0
     receiver_src_input_adapter_inputadapter_warp_cur_0a03f935 -->|calls| receiver_src_input_adapter_inputadapter_emit_mou_7c22ccca
-    %% Omitted for readability: 77 nodes, 0 edges
+    %% Omitted for readability: 80 nodes, 0 edges
     class receiver_src_input_adapter_6fe877f0 module;
     class receiver_src_input_adapter_inputadapter_4cbcd1aa klass;
     class receiver_src_input_adapter_move_mouse_relative_039f9eb0 function;
@@ -1190,7 +1190,7 @@ flowchart LR
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: contains x69, calls x66, references x24, imports x17. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x69, calls x66, references x24, imports x20. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
@@ -1800,16 +1800,16 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 10. Atomici32 ====== -->
-<h2 id="atomici32">10. Atomici32</h2>
-<p>Atomici32 groups implementation around atomici32, mostly in unmapped files. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<!-- ====== 10. Atomicbool ====== -->
+<h2 id="atomicbool">10. Atomicbool</h2>
+<p>Atomicbool groups implementation around atomicbool, mostly in unmapped files. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Atomici32 (1 nodes, 0 edges)
-    host_src_main_rs_atomici32_ac549ab3("AtomicI32")
-    class host_src_main_rs_atomici32_ac549ab3 klass;
+    %% Section: Atomicbool (1 nodes, 0 edges)
+    atomicbool_1afc10a0("AtomicBool")
+    class atomicbool_1afc10a0 klass;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -1833,11 +1833,11 @@ flowchart LR
 </tr>
 <tr>
   <td>1</td>
-  <td><code>AtomicI32</code><br><small style="color:var(--muted)"></small></td>
+  <td><code>AtomicBool</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>AtomicI32 node in project.</td>
+  <td>AtomicBool node in project.</td>
 </tr>
 </table>
 
@@ -1856,64 +1856,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 11. Mutex ====== -->
-<h2 id="mutex">11. Mutex</h2>
-<p>Mutex groups implementation around mutex, mostly in unmapped files. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
-
-<div class="mermaid">
-%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
-flowchart LR
-    %% Section: Mutex (1 nodes, 0 edges)
-    host_src_main_rs_mutex_06309980("Mutex")
-    class host_src_main_rs_mutex_06309980 klass;
-    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
-    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
-    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
-    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
-    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
-    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
-    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
-    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
-    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
-</div>
-
-<h3>Call Details</h3>
-<table class="call-table">
-<tr>
-  <th style="width:5%">#</th>
-  <th style="width:28%">Node</th>
-  <th style="width:10%">Type</th>
-  <th style="width:17%">Caller</th>
-  <th style="width:20%">Callees</th>
-  <th style="width:20%">Description</th>
-</tr>
-<tr>
-  <td>1</td>
-  <td><code>Mutex</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Mutex node in project.</td>
-</tr>
-</table>
-
-<div class="grid">
-  <div class="card">
-    <h4>Key Files</h4>
-    <table style="width:100%;font-size:0.85rem;">
-      <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td colspan="2">No source file mapping</td></tr>
-    </table>
-  </div>
-  <div class="card">
-    <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: No high-confidence call edges detected. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
-  </div>
-</div>
-<hr>
-
-<!-- ====== 12. Stitch Demops1 Scripts ====== -->
-<h2 id="stitch-demops1-scripts">12. Stitch Demops1 Scripts</h2>
+<!-- ====== 11. Stitch Demops1 Scripts ====== -->
+<h2 id="stitch-demops1-scripts">11. Stitch Demops1 Scripts</h2>
 <p>Stitch Demops1 Scripts groups implementation around stitch, demops1, scripts, mostly in scripts/stitch-demo.ps1. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -1968,8 +1912,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 13. Run Hostps1 ====== -->
-<h2 id="run-hostps1">13. Run Hostps1</h2>
+<!-- ====== 12. Run Hostps1 ====== -->
+<h2 id="run-hostps1">12. Run Hostps1</h2>
 <p>Run Hostps1 groups implementation around run, hostps1, mostly in run-host.ps1. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -2024,8 +1968,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 14. Run Receiverps1 ====== -->
-<h2 id="run-receiverps1">14. Run Receiverps1</h2>
+<!-- ====== 13. Run Receiverps1 ====== -->
+<h2 id="run-receiverps1">13. Run Receiverps1</h2>
 <p>Run Receiverps1 groups implementation around run, receiverps1, mostly in run-receiver.ps1. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -2080,8 +2024,8 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 15. Void ====== -->
-<h2 id="void">15. Void</h2>
+<!-- ====== 14. Void ====== -->
+<h2 id="void">14. Void</h2>
 <p>Void groups implementation around void, mostly in unmapped files. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -2136,29 +2080,85 @@ flowchart LR
 </div>
 <hr>
 
+<!-- ====== 15. Atomici32 ====== -->
+<h2 id="atomici32">15. Atomici32</h2>
+<p>Atomici32 groups implementation around atomici32, mostly in unmapped files. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Atomici32 (1 nodes, 0 edges)
+    atomici32_0beaf92d("AtomicI32")
+    class atomici32_0beaf92d klass;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>AtomicI32</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AtomicI32 node in project.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td colspan="2">No source file mapping</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: No high-confidence call edges detected. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
 <!-- ====== 16. Other ====== -->
 <h2 id="other">16. Other</h2>
-<p>Other groups implementation around run, kvmps1, atomicu8, atomicbool, mostly in run-kvm.ps1. This section covers 7 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>Other groups implementation around run, kvmps1, atomicu64, atomicu8, mostly in run-kvm.ps1. This section covers 7 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
     %% Section: Other (7 nodes, 0 edges)
     subgraph other_External_generated_9e8859fa["External / generated"]
-        host_src_main_rs_atomicbool_eb936646("AtomicBool")
-        host_src_main_rs_atomicu64_dd8c4ed5("AtomicU64")
-        host_src_main_rs_atomicu8_0b591eb8("AtomicU8")
-        host_src_main_rs_oncelock_cf713789("OnceLock")
-        host_src_main_rs_r_6c388200("R")
-        host_src_main_rs_tcpstream_1d4347e0("TcpStream")
+        atomicu64_7883652d("AtomicU64")
+        atomicu8_9006953f("AtomicU8")
+        mutex_72829939("Mutex")
+        oncelock_d9d86f2a("OnceLock")
+        r_4dc7c9ec("R")
+        tcpstream_5faf0d74("TcpStream")
     end
     run_kvm_23be59d1("run-kvm.ps1")
-    class host_src_main_rs_atomicbool_eb936646 klass;
-    class host_src_main_rs_atomicu64_dd8c4ed5 klass;
-    class host_src_main_rs_atomicu8_0b591eb8 klass;
-    class host_src_main_rs_oncelock_cf713789 klass;
-    class host_src_main_rs_r_6c388200 klass;
-    class host_src_main_rs_tcpstream_1d4347e0 async;
+    class atomicu64_7883652d klass;
+    class atomicu8_9006953f klass;
+    class mutex_72829939 klass;
+    class oncelock_d9d86f2a klass;
+    class r_4dc7c9ec klass;
+    class tcpstream_5faf0d74 async;
     class run_kvm_23be59d1 function;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
@@ -2183,30 +2183,6 @@ flowchart LR
 </tr>
 <tr>
   <td>1</td>
-  <td><code>AtomicU8</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>AtomicU8 node in project.</td>
-</tr>
-<tr>
-  <td>2</td>
-  <td><code>AtomicBool</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>AtomicBool node in project.</td>
-</tr>
-<tr>
-  <td>3</td>
-  <td><code>R</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>R node in project.</td>
-</tr>
-<tr>
-  <td>4</td>
   <td><code>AtomicU64</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -2214,7 +2190,23 @@ flowchart LR
   <td>AtomicU64 node in project.</td>
 </tr>
 <tr>
-  <td>5</td>
+  <td>2</td>
+  <td><code>AtomicU8</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AtomicU8 node in project.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>Mutex</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Mutex node in project.</td>
+</tr>
+<tr>
+  <td>4</td>
   <td><code>OnceLock</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
@@ -2222,20 +2214,28 @@ flowchart LR
   <td>OnceLock node in project.</td>
 </tr>
 <tr>
-  <td>6</td>
-  <td><code>TcpStream</code><br><small style="color:var(--muted)"></small></td>
-  <td><span class="tag tag-async">Async</span></td>
+  <td>5</td>
+  <td><code>R</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
   <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>TcpStream node in project.</td>
+  <td>R node in project.</td>
 </tr>
 <tr>
-  <td>7</td>
+  <td>6</td>
   <td><code>run-kvm.ps1</code><br><small style="color:var(--muted)">run-kvm.ps1</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
   <td>run-kvm.ps1 node in run-kvm.ps1.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>TcpStream</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>TcpStream node in project.</td>
 </tr>
 </table>
 
@@ -2263,7 +2263,7 @@ flowchart LR
       <tr><td>Nodes</td><td>551</td></tr>
       <tr><td>Edges</td><td>1083</td></tr>
       <tr><td>Hyperedges</td><td>0</td></tr>
-      <tr><td>Communities</td><td>47</td></tr>
+      <tr><td>Communities</td><td>48</td></tr>
       <tr><td>Documented Sections</td><td>15</td></tr>
     </table>
   </div>
@@ -2279,7 +2279,7 @@ flowchart LR
 
 <div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
   <p>tailscale-kvm — Architecture Documentation</p>
-  <p>Generated: 2026-11-09 04:23 UTC · graphify callflow-html</p>
+  <p>Generated: 2026-11-09 04:27 UTC · graphify callflow-html</p>
 </div>
 
 </div><!-- .container -->

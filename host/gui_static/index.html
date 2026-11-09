@@ -694,6 +694,10 @@
       <p class="subtitle">Drag any peer or connected screen to Top, Left, Right, or Bottom — updates Host & Receiver live</p>
     </div>
     <div style="display:flex; align-items:center; gap:8px;">
+      <button class="quit-btn" id="toggle-multi-input-btn" style="border-color:#238636; color:#3fb950; display:flex; align-items:center; gap:6px;" title="Allow other computers to also control this screen (Multi-Input / Bidirectional KVM)">
+        <span id="multi-input-dot" style="width:8px; height:8px; border-radius:50%; background:#3fb950; display:inline-block;"></span>
+        <span id="multi-input-text">Multi-Input: Active</span>
+      </button>
       <button class="quit-btn" id="lock-mesh-btn" style="border-color:#388bfd; color:#58a6ff;" title="Synchronized Workstation Lock across all mesh screens">🔒 Lock All</button>
       <button class="quit-btn" id="quit-host-btn" title="Stop KVM Host background controller">⏹ Stop Host</button>
     </div>
@@ -802,6 +806,7 @@
     let activeRemoteSlot = null;
     let hostOs = '';
     let recordingState = null;
+    let receiverRunning = false;
     let countdownRemaining = 0;
     let countdownTimer = null;
     let lastPreviewUrl = '';
@@ -855,6 +860,7 @@
         activeRemoteSlot = data.active_remote_slot || null;
         hostOs = data.host_os || '';
         recordingState = data.recording || null;
+        receiverRunning = !!data.receiver_running;
 
         renderAll();
       } catch (err) {
@@ -863,6 +869,26 @@
     }
 
     function renderAll() {
+      // Update multi-input bidirectional toggle button
+      const miBtn = document.getElementById('toggle-multi-input-btn');
+      const miDot = document.getElementById('multi-input-dot');
+      const miTxt = document.getElementById('multi-input-text');
+      if (miBtn && miDot && miTxt) {
+        if (receiverRunning) {
+          miBtn.style.borderColor = '#238636';
+          miBtn.style.color = '#3fb950';
+          miDot.style.background = '#3fb950';
+          miTxt.textContent = 'Multi-Input: Active';
+          miBtn.title = 'Other computers CAN control this screen. Click to disable.';
+        } else {
+          miBtn.style.borderColor = '#8b949e';
+          miBtn.style.color = '#8b949e';
+          miDot.style.background = '#8b949e';
+          miTxt.textContent = 'Multi-Input: Disabled';
+          miBtn.title = 'This machine is host-only (cannot receive input). Click to enable multi-input.';
+        }
+      }
+
       if (hostOs) {
         const prettyOs = hostOs.charAt(0).toUpperCase() + hostOs.slice(1);
         const hostLbl = document.getElementById('host-label');
@@ -1993,6 +2019,25 @@
         renderAll();
       }
     }
+
+    document.getElementById('toggle-multi-input-btn').addEventListener('click', async () => {
+      try {
+        setToast('Toggling Multi-Input (Bidirectional KVM)...', '#58a6ff');
+        const res = await fetch('/api/toggle-receiver', { method: 'POST' });
+        if (res.ok) {
+          const data = await res.json();
+          receiverRunning = !!data.receiver_running;
+          if (receiverRunning) {
+            setToast('✓ Multi-Input enabled! Any peer machine can now control this screen.', 'var(--accent)');
+          } else {
+            setToast('Multi-Input disabled (Host-only mode: this machine will not accept remote inputs).', '#8b949e');
+          }
+          renderAll();
+        }
+      } catch (e) {
+        setToast('⚠ Failed toggling multi-input', 'var(--danger)');
+      }
+    });
 
     document.getElementById('lock-mesh-btn').addEventListener('click', async () => {
       try {

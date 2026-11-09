@@ -266,8 +266,11 @@ pub fn build_status_json() -> String {
         .map(|g| g.clone())
         .unwrap_or_default();
 
+    let receiver_running = probe_kvm_receiver_port("127.0.0.1", 60);
+
     let payload = json!({
         "host_os": std::env::consts::OS,
+        "receiver_running": receiver_running,
         "slots": {
             "right": slots[0].clone().unwrap_or_default(),
             "left": slots[1].clone().unwrap_or_default(),
@@ -698,6 +701,84 @@ pub fn handle_http_client(stream: TcpStream) {
             "200 OK",
             "application/json",
             br#"{"status":"locked"}"#,
+        );
+        return;
+    }
+
+    if path_only == "/api/toggle-receiver" && method == "POST" {
+        mark_gui_active();
+        let running = probe_kvm_receiver_port("127.0.0.1", 60);
+        if running {
+            // Stop local receiver
+            #[cfg(windows)]
+            {
+                use std::os::windows::process::CommandExt;
+                const CREATE_NO_WINDOW: u32 = 0x08000000;
+                let mut cmd = std::process::Command::new("taskkill");
+                cmd.args(["/F", "/IM", "tailscale-kvm-receiver.exe"]);
+                cmd.creation_flags(CREATE_NO_WINDOW);
+                let _ = cmd.output();
+            }
+            #[cfg(not(windows))]
+            {
+                let _ = std::process::Command::new("pkill")
+                    .arg("-f")
+                    .arg("tailscale-kvm-receiver")
+                    .output();
+            }
+        } else {
+            // Start local receiver
+            #[cfg(windows)]
+            {
+                use std::os::windows::process::CommandExt;
+                const CREATE_NO_WINDOW: u32 = 0x08000000;
+                // Look for tailscale-kvm-receiver.exe adjacent to current exe or in target/release
+                let current_exe = std::env::current_exe().unwrap_or_default();
+                let parent = current_exe.parent().unwrap_or_else(|| std::path::Path::new("."));
+                let candidate1 = parent.join("tailscale-kvm-receiver.exe");
+                let candidate2 = std::path::Path::new("target/release/tailscale-kvm-receiver.exe");
+                let path = if candidate1.exists() {
+                    candidate1
+                } else if candidate2.exists() {
+                    candidate2.to_path_buf()
+                } else {
+                    std::path::PathBuf::from("tailscale-kvm-receiver.exe")
+                };
+
+                let mut cmd = std::process::Command::new(path);
+                cmd.creation_flags(CREATE_NO_WINDOW);
+                let _ = cmd.spawn();
+            }
+            #[cfg(not(windows))]
+            {
+                let current_exe = std::env::current_exe().unwrap_or_default();
+                let parent = current_exe.parent().unwrap_or_else(|| std::path::Path::new("."));
+                let candidate1 = parent.join("tailscale-kvm-receiver");
+                let candidate2 = std::path::Path::new("target/release/tailscale-kvm-receiver");
+                let path = if candidate1.exists() {
+                    candidate1
+                } else if candidate2.exists() {
+                    candidate2.to_path_buf()
+                } else {
+                    std::path::PathBuf::from("tailscale-kvm-receiver")
+                };
+
+                let _ = std::process::Command::new(path).spawn();
+            }
+        }
+
+        // Brief delay for socket to bind or release
+        thread::sleep(Duration::from_millis(150));
+        let next_status = probe_kvm_receiver_port("127.0.0.1", 60);
+        let resp = json!({
+            "status": "ok",
+            "receiver_running": next_status
+        });
+        write_http_response(
+            reader.get_mut(),
+            "200 OK",
+            "application/json",
+            resp.to_string().as_bytes(),
         );
         return;
     }
