@@ -85,6 +85,9 @@ pub static EDGE_FILTER_LEFT: AtomicU8 = AtomicU8::new(255);
 pub static EDGE_FILTER_UP: AtomicU8 = AtomicU8::new(255);
 pub static EDGE_FILTER_DOWN: AtomicU8 = AtomicU8::new(255);
 
+// Tracks the specific physical monitor index that cursor crossed from when entering remote mode
+pub static LAST_EXIT_MONITOR: AtomicU8 = AtomicU8::new(255);
+
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct HostMonitorInfo {
     pub index: usize,
@@ -2354,35 +2357,82 @@ pub fn switch_to_local(slot_idx: usize, rel_coord: Option<i32>, remote_span: Opt
     #[cfg(windows)]
     unsafe {
         ClipCursor(std::ptr::null());
-        // Snap (x, y) inside the nearest real physical monitor's bounds so staggered
-        // multi-monitor desktops never place the cursor in invisible dead space!
-        let near_mon = MonitorFromPoint(POINT { x, y }, MONITOR_DEFAULTTONEAREST);
-        let mut mi: MONITORINFO = std::mem::zeroed();
-        mi.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
-        if near_mon != 0 && GetMonitorInfoW(near_mon, &mut mi) != 0 {
-            let rc = mi.rcMonitor;
-            let mw = (rc.right - rc.left).max(1);
-            let mh = (rc.bottom - rc.top).max(1);
-            let scale_mon = |m_min: i32, m_len: i32| -> i32 {
-                match (rel_coord, remote_span) {
-                    (Some(c), Some(s)) if s > 0 => {
-                        (m_min + ((c as i64 * m_len as i64) / s as i64) as i32)
-                            .clamp(m_min + 20, (m_min + m_len - 20).max(m_min + 20))
-                    }
-                    (Some(c), _) => c.clamp(m_min + 20, (m_min + m_len - 20).max(m_min + 20)),
-                    (None, _) => m_min + m_len / 2,
+
+        // Determine which physical monitor to return to:
+        // 1. If an edge filter was set for this slot, use that specific monitor.
+        // 2. Otherwise, check if we recorded LAST_EXIT_MONITOR when the cursor left the host.
+        // 3. Fallback to the nearest monitor at the calculated global coordinate.
+        let target_mon_rect: Option<RECT> = {
+            let filter_mon = match slot_idx {
+                SLOT_RIGHT => EDGE_FILTER_RIGHT.load(Ordering::Relaxed),
+                SLOT_LEFT => EDGE_FILTER_LEFT.load(Ordering::Relaxed),
+                SLOT_UP => EDGE_FILTER_UP.load(Ordering::Relaxed),
+                SLOT_DOWN => EDGE_FILTER_DOWN.load(Ordering::Relaxed),
+                _ => 255,
+            };
+            let mon_idx = if filter_mon != 255 {
+                Some(filter_mon as usize)
+            } else {
+                let last_exit = LAST_EXIT_MONITOR.load(Ordering::Relaxed);
+                if last_exit != 255 {
+                    Some(last_exit as usize)
+                } else {
+                    None
                 }
             };
-            let (mx, my) = match slot_idx {
-                SLOT_LEFT => ((rc.left + 55).min(rc.right - 10), scale_mon(rc.top, mh)),
-                SLOT_UP => (scale_mon(rc.left, mw), (rc.top + 55).min(rc.bottom - 10)),
-                SLOT_DOWN => (scale_mon(rc.left, mw), (rc.bottom - 55).max(rc.top + 10)),
-                _ => ((rc.right - 55).max(rc.left + 10), scale_mon(rc.top, mh)),
-            };
-            SetCursorPos(mx, my);
+
+            if let Some(idx) = mon_idx {
+                let mons = detected_monitors().lock().ok();
+                mons.as_ref().and_then(|list| {
+                    list.get(idx).map(|m| RECT {
+                        left: m.x,
+                        top: m.y,
+                        right: m.x + m.width,
+                        bottom: m.y + m.height,
+                    })
+                })
+            } else {
+                None
+            }
+        };
+
+        let rc = if let Some(r) = target_mon_rect {
+            r
         } else {
-            SetCursorPos(x, y);
-        }
+            let near_mon = MonitorFromPoint(POINT { x, y }, MONITOR_DEFAULTTONEAREST);
+            let mut mi: MONITORINFO = std::mem::zeroed();
+            mi.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
+            if near_mon != 0 && GetMonitorInfoW(near_mon, &mut mi) != 0 {
+                mi.rcMonitor
+            } else {
+                RECT {
+                    left: min_x,
+                    top: min_y,
+                    right: max_x,
+                    bottom: max_y,
+                }
+            }
+        };
+
+        let mw = (rc.right - rc.left).max(1);
+        let mh = (rc.bottom - rc.top).max(1);
+        let scale_mon = |m_min: i32, m_len: i32| -> i32 {
+            match (rel_coord, remote_span) {
+                (Some(c), Some(s)) if s > 0 => {
+                    (m_min + ((c as i64 * m_len as i64) / s as i64) as i32)
+                        .clamp(m_min + 20, (m_min + m_len - 20).max(m_min + 20))
+                }
+                (Some(c), _) => c.clamp(m_min + 20, (m_min + m_len - 20).max(m_min + 20)),
+                (None, _) => m_min + m_len / 2,
+            }
+        };
+        let (mx, my) = match slot_idx {
+            SLOT_LEFT => ((rc.left + 55).min(rc.right - 10), scale_mon(rc.top, mh)),
+            SLOT_UP => (scale_mon(rc.left, mw), (rc.top + 55).min(rc.bottom - 10)),
+            SLOT_DOWN => (scale_mon(rc.left, mw), (rc.bottom - 55).max(rc.top + 10)),
+            _ => ((rc.right - 55).max(rc.left + 10), scale_mon(rc.top, mh)),
+        };
+        SetCursorPos(mx, my);
     }
 
     #[cfg(target_os = "linux")]
@@ -2756,6 +2806,10 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
                 } else {
                     ((y - rc.top).max(0), span_h)
                 };
+
+                if let Some(m_idx) = cur_mon_idx {
+                    LAST_EXIT_MONITOR.store(m_idx as u8, Ordering::Relaxed);
+                }
 
                 switch_to_remote_slot(slot_idx, was_dragging, entry_coord, span);
                 if IS_REMOTE.load(Ordering::SeqCst) {
