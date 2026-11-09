@@ -260,6 +260,12 @@ pub fn build_status_json() -> String {
         })
         .collect();
 
+    let filters = crate::get_edge_filters();
+    let monitors = crate::detected_monitors()
+        .lock()
+        .map(|g| g.clone())
+        .unwrap_or_default();
+
     let payload = json!({
         "host_os": std::env::consts::OS,
         "slots": {
@@ -274,6 +280,13 @@ pub fn build_status_json() -> String {
             "up": up_conn,
             "down": down_conn,
         },
+        "edge_filters": {
+            "right": filters[0],
+            "left": filters[1],
+            "up": filters[2],
+            "down": filters[3],
+        },
+        "host_monitors": monitors,
         "rtt_ms": {
             "right": crate::get_slot_rtt_ms(0),
             "left": crate::get_slot_rtt_ms(1),
@@ -409,6 +422,35 @@ pub fn handle_http_client(stream: TcpStream) {
             "200 OK",
             "application/json; charset=UTF-8",
             json_str.as_bytes(),
+        );
+        return;
+    }
+
+    if path_only == "/api/edge-filter" && method == "POST" {
+        mark_gui_active();
+        if let Ok(val) = serde_json::from_slice::<serde_json::Value>(&body_bytes) {
+            if let Some(slot_str) = val.get("slot").and_then(|v| v.as_str()) {
+                if let Some(slot_idx) = slot_name_to_index(slot_str) {
+                    let mon_idx = val.get("monitor").and_then(|v| v.as_u64()).unwrap_or(255) as u8;
+                    crate::set_edge_filter(slot_idx, mon_idx);
+                    let current = get_all_slots();
+                    crate::apply_slot_layout(current, true);
+                    let json_str = build_status_json();
+                    write_http_response(
+                        reader.get_mut(),
+                        "200 OK",
+                        "application/json; charset=UTF-8",
+                        json_str.as_bytes(),
+                    );
+                    return;
+                }
+            }
+        }
+        write_http_response(
+            reader.get_mut(),
+            "400 Bad Request",
+            "application/json",
+            br#"{"error":"invalid edge-filter json"}"#,
         );
         return;
     }

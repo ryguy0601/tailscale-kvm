@@ -209,7 +209,39 @@
       pointer-events: none;
     }
 
-    .assigned-peer {
+    .slot-filter-select {
+      margin-top: 5px;
+      font-size: 10.5px;
+      padding: 2px 6px;
+      background: #0d1522;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text-bright);
+      outline: none;
+      cursor: pointer;
+      max-width: 95%;
+    }
+    .slot-filter-select:hover {
+      border-color: var(--blue);
+    }
+
+    .host-monitors-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 4px;
+      margin-top: 6px;
+      max-width: 210px;
+    }
+    .host-mon-chip {
+      font-size: 9.5px;
+      background: rgba(88, 166, 255, 0.12);
+      border: 1px solid rgba(88, 166, 255, 0.3);
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: #8ab4f8;
+      font-family: monospace;
+    }
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -628,12 +660,18 @@
     <div class="slot-card slot-top" id="slot-up" data-slot="up">
       <div class="slot-label">⬆️ Top Screen</div>
       <div class="slot-content" id="content-up"><span class="empty-hint">Drag screen here</span></div>
+      <select class="slot-filter-select" id="filter-select-up" title="Filter which physical host monitor can trigger this edge">
+        <option value="255">Trigger: Any Monitor</option>
+      </select>
     </div>
 
     <!-- LEFT SLOT -->
     <div class="slot-card slot-left" id="slot-left" data-slot="left">
       <div class="slot-label">⬅️ Left Screen</div>
       <div class="slot-content" id="content-left"><span class="empty-hint">Drag screen here</span></div>
+      <select class="slot-filter-select" id="filter-select-left" title="Filter which physical host monitor can trigger this edge">
+        <option value="255">Trigger: Any Monitor</option>
+      </select>
     </div>
 
     <!-- CENTER HOST -->
@@ -641,18 +679,25 @@
       <div class="slot-label" style="color: #58a6ff;">Primary Controller</div>
       <div class="host-title" id="host-label">🖥️ Host (You)</div>
       <div class="host-sub" id="host-sub-status">Mouse & Keyboard Center</div>
+      <div class="host-monitors-list" id="host-monitors-chips"></div>
     </div>
 
     <!-- RIGHT SLOT -->
     <div class="slot-card slot-right" id="slot-right" data-slot="right">
       <div class="slot-label">➡️ Right Screen</div>
       <div class="slot-content" id="content-right"><span class="empty-hint">Drag screen here</span></div>
+      <select class="slot-filter-select" id="filter-select-right" title="Filter which physical host monitor can trigger this edge">
+        <option value="255">Trigger: Any Monitor</option>
+      </select>
     </div>
 
     <!-- BOTTOM SLOT (ID matches slot-down!) -->
     <div class="slot-card slot-bottom" id="slot-down" data-slot="down">
       <div class="slot-label">⬇️ Bottom Screen</div>
       <div class="slot-content" id="content-down"><span class="empty-hint">Drag screen here</span></div>
+      <select class="slot-filter-select" id="filter-select-down" title="Filter which physical host monitor can trigger this edge">
+        <option value="255">Trigger: Any Monitor</option>
+      </select>
     </div>
   </div>
 
@@ -724,6 +769,8 @@
     let currentSlots = { right: '', left: '', up: '', down: '' };
     let currentConnected = { right: false, left: false, up: false, down: false };
     let currentRtt = { right: 0, left: 0, up: 0, down: 0 };
+    let edgeFilters = { right: 255, left: 255, up: 255, down: 255 };
+    let hostMonitors = [];
     let activeRemoteSlot = null;
     let hostOs = '';
     let recordingState = null;
@@ -772,6 +819,8 @@
         currentSlots = Object.assign({ right: '', left: '', up: '', down: '' }, data.slots || {});
         currentConnected = Object.assign({ right: false, left: false, up: false, down: false }, data.connected || {});
         currentRtt = Object.assign({ right: 0, left: 0, up: 0, down: 0 }, data.rtt_ms || {});
+        edgeFilters = Object.assign({ right: 255, left: 255, up: 255, down: 255 }, data.edge_filters || {});
+        hostMonitors = data.host_monitors || [];
         activeRemoteSlot = data.active_remote_slot || null;
         hostOs = data.host_os || '';
         recordingState = data.recording || null;
@@ -1099,7 +1148,60 @@
           container.innerHTML = `<span class="empty-hint"></span>`;
           container.querySelector('.empty-hint').textContent = hintText;
         }
+
+        // Render & update edge monitor filter dropdown
+        const filterSelect = document.getElementById(`filter-select-${slot}`);
+        if (filterSelect) {
+          const currentFilterVal = edgeFilters[slot] !== undefined ? edgeFilters[slot] : 255;
+          const prevVal = filterSelect.value;
+          
+          let optionsHtml = `<option value="255">Trigger: Any Monitor</option>`;
+          if (hostMonitors && hostMonitors.length > 0) {
+            hostMonitors.forEach((m) => {
+              optionsHtml += `<option value="${m.index}">Trigger: Monitor ${m.index + 1} (${m.width}x${m.height}${m.primary ? ', Primary' : ''})</option>`;
+            });
+          }
+          filterSelect.innerHTML = optionsHtml;
+          filterSelect.value = String(currentFilterVal);
+
+          if (!filterSelect.dataset.listenerAttached) {
+            filterSelect.dataset.listenerAttached = 'true';
+            filterSelect.addEventListener('change', async (e) => {
+              const newMon = parseInt(e.target.value, 10);
+              try {
+                const res = await fetch('/api/edge-filter', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ slot, monitor: newMon }),
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  edgeFilters = Object.assign(edgeFilters, data.edge_filters || {});
+                  const monLabel = newMon === 255 ? 'Any Monitor' : `Monitor ${newMon + 1}`;
+                  setToast(`✓ ${SLOT_LABELS[slot]} edge will only trigger from ${monLabel}`, 'var(--accent)');
+                }
+              } catch (err) {
+                setToast('⚠ Failed updating edge monitor filter', 'var(--danger)');
+              }
+            });
+          }
+        }
       });
+
+      // Render Host Monitors chips in the center card
+      const monChipsContainer = document.getElementById('host-monitors-chips');
+      if (monChipsContainer) {
+        monChipsContainer.innerHTML = '';
+        if (hostMonitors && hostMonitors.length > 0) {
+          hostMonitors.forEach((m) => {
+            const chip = document.createElement('span');
+            chip.className = 'host-mon-chip';
+            chip.textContent = `Disp ${m.index + 1}: ${m.width}x${m.height}`;
+            chip.title = `${m.name} (${m.x}, ${m.y} ${m.width}x${m.height})${m.primary ? ' [Primary]' : ''}`;
+            monChipsContainer.appendChild(chip);
+          });
+        }
+      }
     }
 
     function renderPeers() {

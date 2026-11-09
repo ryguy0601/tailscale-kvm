@@ -25,8 +25,9 @@ pub fn update_linux_screen_bounds() {
                 let mut max_x = i32::MIN;
                 let mut min_y = i32::MAX;
                 let mut max_y = i32::MIN;
+                let mut mons = Vec::new();
 
-                for m in arr {
+                for (idx, m) in arr.iter().enumerate() {
                     if m["disabled"].as_bool() == Some(true) {
                         continue;
                     }
@@ -37,11 +38,29 @@ pub fn update_linux_screen_bounds() {
                     let scale = m["scale"].as_f64().unwrap_or(1.0).max(0.1);
                     let w = (w_raw / scale).round() as i32;
                     let h = (h_raw / scale).round() as i32;
+                    let name = m["name"].as_str().unwrap_or("Display").to_string();
+                    let is_primary = m["focused"].as_bool().unwrap_or(false);
+
+                    mons.push(crate::HostMonitorInfo {
+                        index: idx,
+                        name,
+                        primary: is_primary,
+                        x,
+                        y,
+                        width: w,
+                        height: h,
+                    });
 
                     min_x = min_x.min(x);
                     max_x = max_x.max(x + w);
                     min_y = min_y.min(y);
                     max_y = max_y.max(y + h);
+                }
+
+                if !mons.is_empty() {
+                    if let Ok(mut lock) = crate::detected_monitors().lock() {
+                        *lock = mons;
+                    }
                 }
 
                 if min_x != i32::MAX && max_x > min_x && max_y > min_y {

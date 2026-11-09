@@ -79,6 +79,48 @@ pub static HOST_MAX_Y: AtomicI32 = AtomicI32::new(1080);
 static CENTER_X: AtomicI32 = AtomicI32::new(960);
 static CENTER_Y: AtomicI32 = AtomicI32::new(540);
 
+// Per-edge monitor filtering (255 = Any Monitor, 0..N = specific physical monitor index)
+pub static EDGE_FILTER_RIGHT: AtomicU8 = AtomicU8::new(255);
+pub static EDGE_FILTER_LEFT: AtomicU8 = AtomicU8::new(255);
+pub static EDGE_FILTER_UP: AtomicU8 = AtomicU8::new(255);
+pub static EDGE_FILTER_DOWN: AtomicU8 = AtomicU8::new(255);
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct HostMonitorInfo {
+    pub index: usize,
+    pub name: String,
+    pub primary: bool,
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+}
+
+static DETECTED_MONITORS: OnceLock<Mutex<Vec<HostMonitorInfo>>> = OnceLock::new();
+
+pub fn detected_monitors() -> &'static Mutex<Vec<HostMonitorInfo>> {
+    DETECTED_MONITORS.get_or_init(|| Mutex::new(Vec::new()))
+}
+
+pub fn get_edge_filters() -> [u8; 4] {
+    [
+        EDGE_FILTER_RIGHT.load(Ordering::Relaxed),
+        EDGE_FILTER_LEFT.load(Ordering::Relaxed),
+        EDGE_FILTER_UP.load(Ordering::Relaxed),
+        EDGE_FILTER_DOWN.load(Ordering::Relaxed),
+    ]
+}
+
+pub fn set_edge_filter(slot_idx: usize, monitor_idx: u8) {
+    match slot_idx {
+        SLOT_RIGHT => EDGE_FILTER_RIGHT.store(monitor_idx, Ordering::Relaxed),
+        SLOT_LEFT => EDGE_FILTER_LEFT.store(monitor_idx, Ordering::Relaxed),
+        SLOT_UP => EDGE_FILTER_UP.store(monitor_idx, Ordering::Relaxed),
+        SLOT_DOWN => EDGE_FILTER_DOWN.store(monitor_idx, Ordering::Relaxed),
+        _ => {}
+    }
+}
+
 #[cfg(windows)]
 static LBUTTON_DOWN: AtomicBool = AtomicBool::new(false);
 #[cfg(windows)]
@@ -342,11 +384,18 @@ fn unescape_text_line(escaped: &str) -> String {
 }
 
 fn save_layout_file(slots: &[Option<String>; 4]) {
+    let filters = get_edge_filters();
     let data = json!({
         "right": slots[0].clone().unwrap_or_default(),
         "left": slots[1].clone().unwrap_or_default(),
         "up": slots[2].clone().unwrap_or_default(),
         "down": slots[3].clone().unwrap_or_default(),
+        "edge_filters": {
+            "right": filters[0],
+            "left": filters[1],
+            "up": filters[2],
+            "down": filters[3],
+        }
     });
     if let Ok(pretty) = serde_json::to_string_pretty(&data) {
         let _ = fs::write(LAYOUT_FILE_NAME, pretty);
@@ -356,6 +405,22 @@ fn save_layout_file(slots: &[Option<String>; 4]) {
 fn load_layout_file() -> Option<[Option<String>; 4]> {
     let raw = fs::read_to_string(LAYOUT_FILE_NAME).ok()?;
     let val: serde_json::Value = serde_json::from_str(&raw).ok()?;
+
+    if let Some(ef) = val.get("edge_filters") {
+        if let Some(r) = ef.get("right").and_then(|v| v.as_u64()) {
+            EDGE_FILTER_RIGHT.store(r as u8, Ordering::Relaxed);
+        }
+        if let Some(l) = ef.get("left").and_then(|v| v.as_u64()) {
+            EDGE_FILTER_LEFT.store(l as u8, Ordering::Relaxed);
+        }
+        if let Some(u) = ef.get("up").and_then(|v| v.as_u64()) {
+            EDGE_FILTER_UP.store(u as u8, Ordering::Relaxed);
+        }
+        if let Some(d) = ef.get("down").and_then(|v| v.as_u64()) {
+            EDGE_FILTER_DOWN.store(d as u8, Ordering::Relaxed);
+        }
+    }
+
     let norm = |k: &str| -> Option<String> {
         let s = val.get(k)?.as_str()?.trim();
         if s.is_empty() || s.eq_ignore_ascii_case("none") {
@@ -2328,8 +2393,60 @@ pub fn switch_to_local(slot_idx: usize, rel_coord: Option<i32>, remote_span: Opt
 }
 
 #[cfg(windows)]
+unsafe extern "system" fn enum_monitors_callback(
+    hmon: HMONITOR,
+    _hdc: HDC,
+    _lprc: *mut RECT,
+    lparam: LPARAM,
+) -> BOOL {
+    let list_ptr = lparam as *mut Vec<HostMonitorInfo>;
+    if list_ptr.is_null() {
+        return 1;
+    }
+    let mut mi: MONITORINFOEXW = std::mem::zeroed();
+    mi.cbSize = std::mem::size_of::<MONITORINFOEXW>() as u32;
+    if GetMonitorInfoW(hmon, &mut mi as *mut _ as *mut MONITORINFO) != 0 {
+        let rc = mi.rcMonitor;
+        let w = (rc.right - rc.left).max(1);
+        let h = (rc.bottom - rc.top).max(1);
+        let is_pri = (mi.dwFlags & 1) != 0; // MONITORINFOF_PRIMARY = 1
+
+        let dev_name = {
+            let len = mi.szDevice.iter().position(|&c| c == 0).unwrap_or(mi.szDevice.len());
+            String::from_utf16_lossy(&mi.szDevice[..len])
+        };
+
+        let list = &mut *list_ptr;
+        let idx = list.len();
+        list.push(HostMonitorInfo {
+            index: idx,
+            name: if is_pri { format!("{} (Primary)", dev_name) } else { dev_name },
+            primary: is_pri,
+            x: rc.left,
+            y: rc.top,
+            width: w,
+            height: h,
+        });
+    }
+    1
+}
+
+#[cfg(windows)]
 fn update_windows_screen_bounds() {
     unsafe {
+        let mut mons: Vec<HostMonitorInfo> = Vec::new();
+        EnumDisplayMonitors(
+            0,
+            std::ptr::null(),
+            Some(enum_monitors_callback),
+            &mut mons as *mut _ as isize,
+        );
+        if !mons.is_empty() {
+            if let Ok(mut lock) = detected_monitors().lock() {
+                *lock = mons;
+            }
+        }
+
         let sw = GetSystemMetrics(SM_CXSCREEN).max(1280);
         let sh = GetSystemMetrics(SM_CYSCREEN).max(720);
         CENTER_X.store(sw / 2, Ordering::SeqCst);
@@ -2529,11 +2646,30 @@ unsafe extern "system" fn mouse_hook_proc(code: i32, wparam: WPARAM, lparam: LPA
             let span_w = (rc.right - rc.left).max(1);
             let span_h = (rc.bottom - rc.top).max(1);
 
+            let cur_mon_idx: Option<usize> = {
+                let mons = detected_monitors().lock().ok();
+                mons.as_ref().and_then(|list| {
+                    list.iter().position(|m| {
+                        x >= m.x && x < m.x + m.width && y >= m.y && y < m.y + m.height
+                    })
+                })
+            };
+
+            let filter_right = EDGE_FILTER_RIGHT.load(Ordering::Relaxed);
+            let filter_left = EDGE_FILTER_LEFT.load(Ordering::Relaxed);
+            let filter_up = EDGE_FILTER_UP.load(Ordering::Relaxed);
+            let filter_down = EDGE_FILTER_DOWN.load(Ordering::Relaxed);
+
+            let right_mon_allowed = filter_right == 255 || cur_mon_idx == Some(filter_right as usize);
+            let left_mon_allowed = filter_left == 255 || cur_mon_idx == Some(filter_left as usize);
+            let up_mon_allowed = filter_up == 255 || cur_mon_idx == Some(filter_up as usize);
+            let down_mon_allowed = filter_down == 255 || cur_mon_idx == Some(filter_down as usize);
+
             // Lock-free O(1) atomic checks per physical edge + MonitorFromPoint outer-edge check
-            let right_ready = SLOT_CONNECTED[SLOT_RIGHT].load(Ordering::Relaxed);
-            let left_ready = SLOT_CONNECTED[SLOT_LEFT].load(Ordering::Relaxed);
-            let up_ready = SLOT_CONNECTED[SLOT_UP].load(Ordering::Relaxed);
-            let down_ready = SLOT_CONNECTED[SLOT_DOWN].load(Ordering::Relaxed);
+            let right_ready = SLOT_CONNECTED[SLOT_RIGHT].load(Ordering::Relaxed) && right_mon_allowed;
+            let left_ready = SLOT_CONNECTED[SLOT_LEFT].load(Ordering::Relaxed) && left_mon_allowed;
+            let up_ready = SLOT_CONNECTED[SLOT_UP].load(Ordering::Relaxed) && up_mon_allowed;
+            let down_ready = SLOT_CONNECTED[SLOT_DOWN].load(Ordering::Relaxed) && down_mon_allowed;
 
             let near_slot: Option<u8> = if right_ready
                 && x >= rc.right - 45
